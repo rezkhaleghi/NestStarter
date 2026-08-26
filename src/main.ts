@@ -1,18 +1,34 @@
 import { DomainExceptionFilter } from "./api/domain-exception.filter";
+import { randomUUID } from "crypto";
 import { NestFactory } from "@nestjs/core";
 import { ValidationPipe } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import helmet from "helmet";
 import session = require("express-session");
 import * as passport from "passport";
 import { RedisStore } from "connect-redis";
 import type { RedisClientType } from "redis";
+import type { Request, Response } from "express";
 import { AppModule } from "./app.module";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
   app.enableShutdownHooks();
+  if (configService.get<string>("NODE_ENV") === "production") {
+    app.getHttpAdapter().getInstance().set("trust proxy", 1);
+  }
+  app.enableCors({
+    origin: configService.getOrThrow<string>("FRONTEND_URL"),
+    credentials: true,
+  });
+  app.use(helmet());
+  app.use((request: Request, response: Response, next: () => void) => {
+    const requestId = request.header("X-Request-Id") ?? randomUUID();
+    response.setHeader("X-Request-Id", requestId);
+    next();
+  });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

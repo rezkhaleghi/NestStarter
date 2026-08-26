@@ -7,7 +7,12 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main",
-    "test": "jest"
+    "test": "jest",
+    "typeorm": "typeorm-ts-node-commonjs -d src/infrastructure/config/data-source.ts",
+    "migration:generate": "npm run typeorm -- migration:generate",
+    "migration:run": "npm run typeorm -- migration:run",
+    "migration:revert": "npm run typeorm -- migration:revert",
+    "migration:run:prod": "typeorm -d dist/infrastructure/config/data-source.js migration:run"
   },
   "dependencies": {
     "@nestjs/common": "^10.4.9",
@@ -24,6 +29,7 @@
     "class-validator": "^0.14.1",
     "connect-redis": "^9.0.0",
     "express-session": "^1.18.1",
+    "helmet": "^8.3.0",
     "joi": "^18.2.5",
     "nodemailer": "^9.0.5",
     "passport": "^0.7.0",

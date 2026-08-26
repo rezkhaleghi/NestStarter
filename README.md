@@ -77,6 +77,44 @@ npm install
 cp .env.example .env
 ```
 
+## Docker setup
+
+Make sure `.env` contains the required application settings, then start the
+API, PostgreSQL, and Redis together:
+
+```bash
+docker compose up --build
+```
+
+The API runs at `http://localhost:3000` and Swagger is available at
+`http://localhost:3000/api/docs`. Stop the containers with:
+
+```bash
+docker compose down
+```
+
+Database and Redis data are kept in named Docker volumes. To remove the data
+as well as the containers, use `docker compose down -v`.
+
+For a production-like Compose deployment, create `.env.production` from
+`.env.production.example`, replace every placeholder with real production
+values, and run:
+
+```bash
+docker compose --env-file .env.production -f docker-compose.production.yml up --build -d
+```
+
+The migration CLI reads variables from the environment supplied by Compose;
+the application container is the only service that receives the full
+`.env.production` file.
+
+The production Compose file runs migrations before starting the API and does
+not publish PostgreSQL or Redis ports. Stop it with:
+
+```bash
+docker compose --env-file .env.production -f docker-compose.production.yml down
+```
+
 Start PostgreSQL and Redis with Docker:
 
 ```bash

@@ -133,7 +133,7 @@ export class AdminUsersController {
     @Param("id", ParseUUIDPipe) id: string,
     @Req() request: Request,
   ) {
-    await this.deleteUserUseCase.execute(id, (request.session as any).userId);
+    await this.deleteUserUseCase.execute(id, request.session.userId!);
     return { message: "User deleted." };
   }
 

@@ -189,7 +189,7 @@ export class AuthController {
   })
   @ApiResponse({ status: 401, description: "Not authenticated" })
   async profile(@Req() req: Request) {
-    const userId = (req.session as any)?.userId;
+    const userId = req.session.userId;
     if (!userId) {
       throw new UnauthorizedException();
     }
@@ -219,7 +219,7 @@ export class AuthController {
     @Req() req: Request,
   ) {
     await this.changeUserPasswordUseCase.execute({
-      userId: (req.session as any).userId,
+      userId: req.session.userId!,
       password: dto.password,
     });
     return { message: "Password changed" };
@@ -239,7 +239,7 @@ export class AuthController {
     @Req() req: Request,
   ) {
     const user = await this.updateCurrentUserUseCase.execute({
-      userId: (req.session as any).userId,
+      userId: req.session.userId!,
       firstName: dto.firstName,
       lastName: dto.lastName,
       userName: dto.userName,
@@ -271,7 +271,7 @@ export class AuthController {
           reject(error);
           return;
         }
-        (req.session as any).userId = userId;
+        req.session.userId = userId;
         resolve();
       });
     });
