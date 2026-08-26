@@ -17,6 +17,8 @@ import { SeedAdminService } from "./database/seed-admin.service";
 import * as Joi from "joi";
 import { RedisLoginProtectionService } from "./services/redis-login-protection.service";
 import { LoginProtection } from "../application/interfaces/login-protection.interface";
+import { NotificationService } from "../application/interfaces/notification.service.interface";
+import { SmtpNotificationService } from "./services/notification.service";
 
 /**
  * This module is the ONLY place where abstract tokens (interfaces) from
@@ -95,6 +97,8 @@ import { LoginProtection } from "../application/interfaces/login-protection.inte
     RedisOtpStore,
     RedisLoginProtectionService,
     { provide: LoginProtection, useExisting: RedisLoginProtectionService },
+    SmtpNotificationService,
+    { provide: NotificationService, useExisting: SmtpNotificationService },
     { provide: OtpService, useClass: OtpServiceImpl },
     SeedAdminService,
     GoogleStrategy,
@@ -105,6 +109,7 @@ import { LoginProtection } from "../application/interfaces/login-protection.inte
     PasswordHasher,
     OtpService,
     LoginProtection,
+    NotificationService,
     "REDIS_CLIENT",
   ],
 })

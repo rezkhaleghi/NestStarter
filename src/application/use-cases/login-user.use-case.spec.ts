@@ -99,7 +99,7 @@ describe("LoginUserUseCase", () => {
     repository.save.mockResolvedValue(verifiedUser);
 
     await expect(useCase.loginOtp(user.email, "123456")).resolves.toBe(
-      verifiedUser,
+      unverifiedUser,
     );
     expect(repository.save).toHaveBeenCalledWith(
       expect.objectContaining({ emailVerified: true }),

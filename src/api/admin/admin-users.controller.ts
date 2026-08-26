@@ -135,6 +135,7 @@ export class AdminUsersController {
     role: string;
     emailVerified: boolean;
     createdAt: Date;
+    updatedAt: Date;
   }) {
     return {
       id: user.id,
@@ -142,6 +143,7 @@ export class AdminUsersController {
       role: user.role,
       emailVerified: user.emailVerified,
       createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
     };
   }
 }
