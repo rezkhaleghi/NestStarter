@@ -12,8 +12,11 @@ PostgreSQL, Redis, SMTP email, cookie-based sessions, and Google OAuth.
 - OTP delivery through SMTP, including Gmail App Password support.
 - Sessions stored in Redis and identified by an HTTP-only cookie.
 - Google OAuth login and signup.
+- Google account linking through a unique provider ID.
 - Safe current-user profile endpoint.
+- Self-service profile updates for optional name, username, and birth-date fields.
 - Admin-only user CRUD with pagination.
+- Admin profile and password management.
 - Password hashing with bcrypt.
 - Request validation with `class-validator`.
 - Global throttling for abuse-sensitive endpoints.
@@ -21,7 +24,11 @@ PostgreSQL, Redis, SMTP email, cookie-based sessions, and Google OAuth.
 - OTP expiration, maximum attempts, and resend cooldown.
 - Database and Redis health checks at `/health`.
 - Environment validation with Joi.
+- Secure HTTP headers with Helmet and credentialed CORS.
+- Stable error responses with request IDs.
 - Swagger documentation.
+- Docker Compose development and production profiles.
+- TypeORM migrations for production schema changes.
 
 ## Requirements
 
@@ -43,12 +50,15 @@ src/
    application/
       dtos/           Use-case input models
       interfaces/     Ports implemented by infrastructure
-      use-cases/      Focused application operations
+      use-cases/
+         auth/        Login, OTP, and Google authentication
+         users/       User account operations
+         admin-users/ Administrator operations
    infrastructure/
-      auth/           Passport adapters
-      config/         Database configuration
-      database/       TypeORM entities, repositories, and bootstrap
-      services/       SMTP, Redis OTP, and password adapters
+      auth/           Passport and session adapters
+      config/         TypeORM configuration and migration data source
+      database/       Migrations, entities, repositories, and bootstrap
+      services/       SMTP, Redis, and password adapters
    api/
       auth/           Authentication controller and DTOs
       admin/          Admin guard, controller, module, and DTOs
