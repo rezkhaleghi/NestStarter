@@ -10,16 +10,19 @@ import { LoginUserUseCase } from "./login-user.use-case";
 describe("LoginUserUseCase", () => {
   const user = new User(
     "user-id",
-    "user@example.com",
+    "user@gmail.com",
     "hashed-password",
     UserRole.USER,
+    true,
   );
   const findByEmail = jest.fn<() => Promise<User | null>>();
+  const save = jest.fn<(user: User) => Promise<User>>();
   const compare =
     jest.fn<(plain: string, hashed: string) => Promise<boolean>>();
   const verify = jest.fn<(email: string, otp: string) => Promise<boolean>>();
   const repository = {
     findByEmail,
+    save,
   };
   const passwordHasher = {
     compare,
@@ -27,14 +30,21 @@ describe("LoginUserUseCase", () => {
   const otpService = {
     verify,
   };
+  const loginProtection = {
+    isLocked: jest.fn<() => Promise<boolean>>(),
+    recordFailure: jest.fn<() => Promise<void>>(),
+    clear: jest.fn<() => Promise<void>>(),
+  };
   const useCase = new LoginUserUseCase(
     repository as any,
     passwordHasher as any,
     otpService as any,
+    loginProtection as any,
   );
 
   beforeEach(() => {
     jest.clearAllMocks();
+    loginProtection.isLocked.mockResolvedValue(false);
   });
 
   it("authenticates a password user", async () => {
@@ -42,9 +52,12 @@ describe("LoginUserUseCase", () => {
     passwordHasher.compare.mockResolvedValue(true);
 
     await expect(
-      useCase.loginEmail({ email: " USER@example.com ", password: "password" }),
+      useCase.loginPassword({
+        email: " USER@gmail.com ",
+        password: "password",
+      }),
     ).resolves.toBe(user);
-    expect(repository.findByEmail).toHaveBeenCalledWith("user@example.com");
+    expect(repository.findByEmail).toHaveBeenCalledWith("user@gmail.com");
   });
 
   it("rejects an invalid password", async () => {
@@ -52,7 +65,7 @@ describe("LoginUserUseCase", () => {
     passwordHasher.compare.mockResolvedValue(false);
 
     await expect(
-      useCase.loginEmail({ email: "user@example.com", password: "wrong" }),
+      useCase.loginPassword({ email: "user@gmail.com", password: "wrong" }),
     ).rejects.toBeInstanceOf(InvalidCredentialsException);
   });
 
@@ -60,12 +73,36 @@ describe("LoginUserUseCase", () => {
     repository.findByEmail.mockResolvedValue(user);
     otpService.verify.mockResolvedValue(true);
 
-    await expect(
-      useCase.loginOtp(" USER@example.com ", "123456"),
-    ).resolves.toBe(user);
-    expect(otpService.verify).toHaveBeenCalledWith(
-      "user@example.com",
-      "123456",
+    await expect(useCase.loginOtp(" USER@gmail.com ", "123456")).resolves.toBe(
+      user,
+    );
+    expect(otpService.verify).toHaveBeenCalledWith("user@gmail.com", "123456");
+  });
+
+  it("verifies an unverified user after a valid OTP", async () => {
+    const unverifiedUser = new User(
+      user.id,
+      user.email,
+      user.hashedPassword,
+      user.role,
+      false,
+    );
+    const verifiedUser = new User(
+      user.id,
+      user.email,
+      user.hashedPassword,
+      user.role,
+      true,
+    );
+    repository.findByEmail.mockResolvedValue(unverifiedUser);
+    otpService.verify.mockResolvedValue(true);
+    repository.save.mockResolvedValue(verifiedUser);
+
+    await expect(useCase.loginOtp(user.email, "123456")).resolves.toBe(
+      verifiedUser,
+    );
+    expect(repository.save).toHaveBeenCalledWith(
+      expect.objectContaining({ emailVerified: true }),
     );
   });
 

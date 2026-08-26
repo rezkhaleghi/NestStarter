@@ -11,6 +11,7 @@ export class User {
     public readonly email: string,
     public readonly hashedPassword: string | null,
     public readonly role: UserRole = UserRole.USER,
+    public emailVerified = false,
     public readonly createdAt: Date = new Date(),
     public readonly updatedAt: Date = new Date(),
   ) {}

@@ -5,6 +5,10 @@ import { UserRepository } from "../../../domain/repositories/user.repository";
 import { User } from "../../../domain/entities/user.entity";
 import { UserOrmEntity } from "../orm-entities/user.orm-entity";
 import { UserRole } from "../../../domain/enums/user-role.enum";
+import {
+  PageQuery,
+  PageResult,
+} from "../../../application/dtos/page-query.input";
 
 /**
  * Concrete implementation of the domain's UserRepository contract.
@@ -31,17 +35,21 @@ export class UserRepositoryImpl implements UserRepository {
     return row ? this.toDomain(row) : null;
   }
 
-  async findAll(params: { offset: number; limit: number }): Promise<User[]> {
-    const rows = await this.repo.find({
-      order: { createdAt: "DESC" },
-      skip: params.offset,
+  async findPage(
+    params: PageQuery<"createdAt" | "email" | "role">,
+  ): Promise<PageResult<User>> {
+    const [rows, total] = await this.repo.findAndCount({
+      order: { [params.sortBy ?? "createdAt"]: params.sortDirection ?? "DESC" },
+      skip: (params.page - 1) * params.limit,
       take: params.limit,
     });
-    return rows.map((row) => this.toDomain(row));
-  }
-
-  async count(): Promise<number> {
-    return this.repo.count();
+    return {
+      data: rows.map((row) => this.toDomain(row)),
+      page: params.page,
+      limit: params.limit,
+      total,
+      totalPages: Math.ceil(total / params.limit),
+    };
   }
 
   async countByRole(role: string): Promise<number> {
@@ -64,6 +72,7 @@ export class UserRepositoryImpl implements UserRepository {
       row.email,
       row.hashedPassword,
       row.role,
+      row.emailVerified,
       row.createdAt,
       row.updatedAt,
     );
@@ -75,6 +84,7 @@ export class UserRepositoryImpl implements UserRepository {
     row.email = user.email;
     row.hashedPassword = user.hashedPassword;
     row.role = user.role;
+    row.emailVerified = user.emailVerified;
     row.createdAt = user.createdAt;
     row.updatedAt = user.updatedAt;
     return row;

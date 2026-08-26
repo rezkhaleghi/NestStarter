@@ -6,6 +6,7 @@ import { OtpService } from "../interfaces/otp.service.interface";
 import { LoginUserInput } from "../dtos/login-user.input";
 import { User } from "../../domain/entities/user.entity";
 import { InvalidOtpException } from "../../domain/exceptions/domain.exception";
+import { LoginProtection } from "../interfaces/login-protection.interface";
 
 @Injectable()
 export class LoginUserUseCase {
@@ -13,13 +14,17 @@ export class LoginUserUseCase {
     private readonly userRepository: UserRepository,
     private readonly passwordHasher: PasswordHasher,
     private readonly otpService: OtpService,
+    private readonly loginProtection: LoginProtection,
   ) {}
 
-  async loginEmail(input: LoginUserInput): Promise<User> {
-    const user = await this.userRepository.findByEmail(
-      input.email.trim().toLowerCase(),
-    );
+  async loginPassword(input: LoginUserInput): Promise<User> {
+    const email = input.email.trim().toLowerCase();
+    if (await this.loginProtection.isLocked(email)) {
+      throw new InvalidCredentialsException();
+    }
+    const user = await this.userRepository.findByEmail(email);
     if (!user?.hashedPassword) {
+      await this.loginProtection.recordFailure(email);
       throw new InvalidCredentialsException();
     }
 
@@ -28,8 +33,11 @@ export class LoginUserUseCase {
       user.hashedPassword,
     );
     if (!passwordMatches) {
+      await this.loginProtection.recordFailure(email);
       throw new InvalidCredentialsException();
     }
+
+    await this.loginProtection.clear(email);
 
     return user;
   }
@@ -44,6 +52,11 @@ export class LoginUserUseCase {
     const isValid = await this.otpService.verify(normalizedEmail, otp);
     if (!isValid) {
       throw new InvalidOtpException();
+    }
+
+    if (!user.emailVerified) {
+      user.emailVerified = true;
+      await this.userRepository.save(user);
     }
 
     return user;

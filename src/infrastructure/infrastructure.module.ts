@@ -15,6 +15,8 @@ import { GoogleStrategy } from "./auth/google.strategy";
 import { SessionSerializer } from "./auth/session.serializer";
 import { SeedAdminService } from "./database/seed-admin.service";
 import * as Joi from "joi";
+import { RedisLoginProtectionService } from "./services/redis-login-protection.service";
+import { LoginProtection } from "../application/interfaces/login-protection.interface";
 
 /**
  * This module is the ONLY place where abstract tokens (interfaces) from
@@ -45,6 +47,13 @@ import * as Joi from "joi";
           .max(900)
           .default(300),
         OTP_MAX_ATTEMPTS: Joi.number().integer().min(1).max(10).default(5),
+        OTP_RESEND_COOLDOWN_SECONDS: Joi.number().integer().min(1).default(60),
+        LOGIN_MAX_ATTEMPTS: Joi.number().integer().min(1).default(5),
+        LOGIN_ATTEMPT_WINDOW_SECONDS: Joi.number()
+          .integer()
+          .min(60)
+          .default(900),
+        LOGIN_LOCK_SECONDS: Joi.number().integer().min(60).default(900),
         OTP_LOG_CODE: Joi.boolean()
           .truthy("true")
           .falsy("false")
@@ -84,11 +93,19 @@ import * as Joi from "joi";
     { provide: UserRepository, useClass: UserRepositoryImpl },
     { provide: PasswordHasher, useClass: BcryptPasswordHasher },
     RedisOtpStore,
+    RedisLoginProtectionService,
+    { provide: LoginProtection, useExisting: RedisLoginProtectionService },
     { provide: OtpService, useClass: OtpServiceImpl },
     SeedAdminService,
     GoogleStrategy,
     SessionSerializer,
   ],
-  exports: [UserRepository, PasswordHasher, OtpService],
+  exports: [
+    UserRepository,
+    PasswordHasher,
+    OtpService,
+    LoginProtection,
+    "REDIS_CLIENT",
+  ],
 })
 export class InfrastructureModule {}

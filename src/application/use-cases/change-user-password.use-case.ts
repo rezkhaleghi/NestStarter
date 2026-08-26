@@ -27,6 +27,7 @@ export class ChangeUserPasswordUseCase {
       user.email,
       await this.passwordHasher.hash(input.password),
       user.role,
+      user.emailVerified,
       user.createdAt,
       user.updatedAt,
     );

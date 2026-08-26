@@ -1,8 +1,8 @@
-import { Injectable } from '@nestjs/common';
-import { randomUUID } from 'crypto';
-import { UserRepository } from '../../domain/repositories/user.repository';
-import { User } from '../../domain/entities/user.entity';
-import { GoogleAuthInput } from '../dtos/google-auth.input';
+import { Injectable } from "@nestjs/common";
+import { randomUUID } from "crypto";
+import { UserRepository } from "../../domain/repositories/user.repository";
+import { User } from "../../domain/entities/user.entity";
+import { GoogleAuthInput } from "../dtos/google-auth.input";
 
 /**
  * Find-or-create flow for Google sign-in/sign-up.
@@ -24,7 +24,8 @@ export class GoogleAuthUseCase {
       email: input.email,
       hashedPassword: null,
     });
-
-    return this.userRepository.save(user);
+    return this.userRepository.save(
+      new User(user.id, user.email, user.hashedPassword, user.role, true),
+    );
   }
 }

@@ -7,7 +7,7 @@ import { ApiProperty } from "@nestjs/swagger";
  * even though it never reaches the database layer.
  */
 export class SignUpRequestDto {
-  @ApiProperty({ example: "user@example.com" })
+  @ApiProperty({ example: "user@gmail.com" })
   @IsEmail()
   email!: string;
 
@@ -23,13 +23,13 @@ export class SignUpRequestDto {
 }
 
 export class RequestOtpDto {
-  @ApiProperty({ example: "user@example.com" })
+  @ApiProperty({ example: "user@gmail.com" })
   @IsEmail()
   email!: string;
 }
 
-export class LoginEmailRequestDto {
-  @ApiProperty({ example: "user@example.com" })
+export class LoginPasswordRequestDto {
+  @ApiProperty({ example: "user@gmail.com" })
   @IsEmail()
   email!: string;
 
@@ -40,7 +40,7 @@ export class LoginEmailRequestDto {
 }
 
 export class LoginOtpRequestDto {
-  @ApiProperty({ example: "user@example.com" })
+  @ApiProperty({ example: "user@gmail.com" })
   @IsEmail()
   email!: string;
 

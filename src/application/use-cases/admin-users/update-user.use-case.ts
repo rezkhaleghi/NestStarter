@@ -14,6 +14,7 @@ export interface UpdateAdminUserInput {
   email?: string;
   password?: string;
   role?: UserRole;
+  emailVerified?: boolean;
 }
 
 @Injectable()
@@ -51,6 +52,7 @@ export class UpdateAdminUserUseCase {
         ? await this.passwordHasher.hash(input.password)
         : existing.hashedPassword,
       input.role ?? existing.role,
+      input.emailVerified ?? existing.emailVerified,
       existing.createdAt,
     );
     return this.userRepository.save(updated);

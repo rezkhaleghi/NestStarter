@@ -27,6 +27,8 @@ export class CreateUserUseCase {
       hashedPassword,
     });
 
-    return this.userRepository.save(user);
+    return this.userRepository.save(
+      new User(user.id, user.email, user.hashedPassword, user.role, true),
+    );
   }
 }

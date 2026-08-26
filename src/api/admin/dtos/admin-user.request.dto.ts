@@ -6,6 +6,7 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  IsBoolean,
   Max,
   Min,
   MinLength,
@@ -27,10 +28,23 @@ export class ListUsersQueryDto {
   @Min(1)
   @Max(100)
   limit = 20;
+
+  @ApiPropertyOptional({
+    enum: ["createdAt", "email", "role"],
+    default: "createdAt",
+  })
+  @IsOptional()
+  @IsEnum(["createdAt", "email", "role"])
+  sortBy: "createdAt" | "email" | "role" = "createdAt";
+
+  @ApiPropertyOptional({ enum: ["ASC", "DESC"], default: "DESC" })
+  @IsOptional()
+  @IsEnum(["ASC", "DESC"])
+  sortDirection: "ASC" | "DESC" = "DESC";
 }
 
 export class CreateAdminUserRequestDto {
-  @ApiProperty({ example: "user@example.com" })
+  @ApiProperty({ example: "user@gmail.com" })
   @IsEmail()
   email: string;
 
@@ -46,7 +60,7 @@ export class CreateAdminUserRequestDto {
 }
 
 export class UpdateAdminUserRequestDto {
-  @ApiPropertyOptional({ example: "updated@example.com" })
+  @ApiPropertyOptional({ example: "updated@gmail.com" })
   @IsOptional()
   @IsEmail()
   email?: string;
@@ -61,4 +75,9 @@ export class UpdateAdminUserRequestDto {
   @IsOptional()
   @IsEnum(UserRole)
   role?: UserRole;
+
+  @ApiPropertyOptional({ description: "Whether the email address is verified" })
+  @IsOptional()
+  @IsBoolean()
+  emailVerified?: boolean;
 }

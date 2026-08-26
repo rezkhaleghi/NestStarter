@@ -14,6 +14,7 @@ import {
   InvalidOtpException,
   UserAlreadyExistsException,
   UserNotFoundException,
+  OtpCooldownException,
 } from "../domain/exceptions/domain.exception";
 
 @Catch(DomainException)
@@ -43,6 +44,9 @@ export class DomainExceptionFilter implements ExceptionFilter {
     }
     if (exception instanceof CannotRemoveLastAdminException) {
       return 409;
+    }
+    if (exception instanceof OtpCooldownException) {
+      return 429;
     }
     return 400;
   }

@@ -26,6 +26,7 @@ export class SeedAdminService implements OnModuleInit {
       email.toLowerCase(),
       await this.passwordHasher.hash(password),
       UserRole.ADMIN,
+      true,
     );
     await this.userRepository.save(admin);
   }

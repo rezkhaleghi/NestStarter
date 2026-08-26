@@ -26,7 +26,7 @@ import { ChangePasswordRequestDto } from "./dtos/change-password.request.dto";
 import {
   SignUpRequestDto,
   RequestOtpDto,
-  LoginEmailRequestDto,
+  LoginPasswordRequestDto,
   LoginOtpRequestDto,
 } from "./dtos/auth.request.dto";
 
@@ -60,6 +60,7 @@ export class AuthController {
   }
 
   @Post("sign-up")
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: "Verify OTP and create a new user" })
   @ApiResponse({ status: 201, description: "User created" })
   @ApiResponse({
@@ -76,7 +77,11 @@ export class AuthController {
 
     await this.establishSession(req, user.id);
 
-    return { id: user.id, email: user.email };
+    return {
+      id: user.id,
+      email: user.email,
+      emailVerified: user.emailVerified,
+    };
   }
 
   @Post("login-email")
@@ -85,14 +90,21 @@ export class AuthController {
   @ApiOperation({ summary: "Log in with email and password" })
   @ApiResponse({ status: 200, description: "Logged in" })
   @ApiResponse({ status: 401, description: "Invalid email or password" })
-  async loginEmail(@Body() dto: LoginEmailRequestDto, @Req() req: Request) {
-    const user = await this.loginUserUseCase.loginEmail({
+  async loginPassword(
+    @Body() dto: LoginPasswordRequestDto,
+    @Req() req: Request,
+  ) {
+    const user = await this.loginUserUseCase.loginPassword({
       email: dto.email,
       password: dto.password,
     });
 
     await this.establishSession(req, user.id);
-    return { id: user.id, email: user.email };
+    return {
+      id: user.id,
+      email: user.email,
+      emailVerified: user.emailVerified,
+    };
   }
 
   @Post("login-otp")
@@ -105,7 +117,11 @@ export class AuthController {
     const user = await this.loginUserUseCase.loginOtp(dto.email, dto.otp);
 
     await this.establishSession(req, user.id);
-    return { id: user.id, email: user.email };
+    return {
+      id: user.id,
+      email: user.email,
+      emailVerified: user.emailVerified,
+    };
   }
 
   @Get("google")
@@ -143,6 +159,7 @@ export class AuthController {
       id: user.id,
       email: user.email,
       role: user.role,
+      emailVerified: user.emailVerified,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };

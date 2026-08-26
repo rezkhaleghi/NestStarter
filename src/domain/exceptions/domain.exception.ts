@@ -16,6 +16,12 @@ export class InvalidOtpException extends DomainException {
   }
 }
 
+export class OtpCooldownException extends DomainException {
+  constructor() {
+    super("Please wait before requesting another OTP.");
+  }
+}
+
 export class UserAlreadyExistsException extends DomainException {
   constructor(email: string) {
     super(`A user with email "${email}" already exists.`);

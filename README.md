@@ -9,6 +9,7 @@ PostgreSQL, Redis, SMTP email, cookie-based sessions, and Google OAuth.
 ## Features
 
 - Email/password signup and login.
+- Email verification state is persisted and can be managed by administrators.
 - Email OTP signup and passwordless login.
 - OTP hashes stored in Redis with expiration and attempt limits.
 - OTP delivery through SMTP, including Gmail App Password support.
@@ -19,6 +20,9 @@ PostgreSQL, Redis, SMTP email, cookie-based sessions, and Google OAuth.
 - Password hashing with bcrypt.
 - Request validation with `class-validator`.
 - Global throttling for abuse-sensitive endpoints.
+- Redis-backed account lockout after repeated failed password logins.
+- OTP expiration, maximum attempts, and resend cooldown.
+- Database and Redis health checks at `/health`.
 - Environment validation with Joi.
 - Swagger documentation.
 
@@ -182,11 +186,14 @@ npm test -- --runInBand
 ```bash
 curl -X POST http://localhost:3000/auth/request-otp \
    -H "Content-Type: application/json" \
-   -d '{"email":"user@example.com"}'
+   -d '{"email":"user@gmail.com"}'
 ```
 
 The OTP is sent by SMTP. With `OTP_LOG_CODE=true` in development, a failed
 SMTP delivery logs the code and leaves its Redis record available for testing.
+OTP requests are throttled globally and per email through the configured resend
+cooldown. Invalid OTPs are limited by `OTP_MAX_ATTEMPTS` and expire after
+`OTP_EXPIRY_SECONDS`.
 
 ### Signup
 
@@ -194,7 +201,7 @@ SMTP delivery logs the code and leaves its Redis record available for testing.
 curl -c cookies.txt -X POST http://localhost:3000/auth/sign-up \
    -H "Content-Type: application/json" \
    -d '{
-      "email":"user@example.com",
+      "email":"user@gmail.com",
       "password":"strongPassword123",
       "otp":"123456"
    }'
@@ -209,7 +216,7 @@ an HTTP-only `connect.sid` cookie when a cookie-aware client is used.
 curl -c cookies.txt -X POST http://localhost:3000/auth/login-email \
    -H "Content-Type: application/json" \
    -d '{
-      "email":"user@example.com",
+      "email":"user@gmail.com",
       "password":"strongPassword123"
    }'
 ```
@@ -220,7 +227,7 @@ curl -c cookies.txt -X POST http://localhost:3000/auth/login-email \
 curl -c cookies.txt -X POST http://localhost:3000/auth/login-otp \
    -H "Content-Type: application/json" \
    -d '{
-      "email":"user@example.com",
+      "email":"user@gmail.com",
       "otp":"123456"
    }'
 ```
@@ -238,6 +245,18 @@ curl -b cookies.txt -X POST http://localhost:3000/auth/logout
 
 The profile response contains `id`, `email`, `role`, and `createdAt`. It never
 contains `password` or `hashedPassword`.
+
+### Admin list sorting and pagination
+
+`GET /admin/users` accepts `page`, `limit`, `sortBy` (`createdAt`, `email`, or
+`role`), and `sortDirection` (`ASC` or `DESC`). The response includes `data`,
+`total`, and `totalPages`. The shared `PageQuery` and `PageResult` contracts can
+be reused by repository implementations for other models.
+
+### Health
+
+`GET /health` checks PostgreSQL and Redis and returns an unhealthy response when
+either essential service cannot be reached.
 
 Sessions use Redis, not process memory. The cookie contains only a session ID;
 the authenticated user ID is stored server-side.
@@ -262,7 +281,7 @@ Responses never include password hashes. Pagination accepts `page` from 1 and
 For a new database, temporarily set these values in `.env`:
 
 ```env
-INITIAL_ADMIN_EMAIL=admin@example.com
+INITIAL_ADMIN_EMAIL=admin@gmail.com
 INITIAL_ADMIN_PASSWORD=a-strong-password-at-least-12-chars
 ```
 
@@ -278,7 +297,7 @@ Login and save the session cookie:
 curl -c admin-cookies.txt -X POST http://localhost:3000/auth/login-email \
    -H "Content-Type: application/json" \
    -d '{
-      "email":"admin@example.com",
+      "email":"admin@gmail.com",
       "password":"a-strong-password-at-least-12-chars"
    }'
 ```
@@ -296,7 +315,7 @@ Create another admin:
 curl -b admin-cookies.txt -X POST http://localhost:3000/admin/users \
    -H "Content-Type: application/json" \
    -d '{
-      "email":"another-admin@example.com",
+      "email":"another-admin@gmail.com",
       "password":"another-strong-password",
       "role":"admin"
    }'

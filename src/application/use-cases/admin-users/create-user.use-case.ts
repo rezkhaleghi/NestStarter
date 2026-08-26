@@ -30,6 +30,7 @@ export class CreateAdminUserUseCase {
       email,
       await this.passwordHasher.hash(input.password),
       input.role,
+      true,
     );
     return this.userRepository.save(user);
   }

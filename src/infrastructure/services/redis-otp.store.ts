@@ -2,11 +2,13 @@ import { Inject, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { createHash } from "crypto";
 import type { RedisClientType } from "redis";
+import { OtpCooldownException } from "../../domain/exceptions/domain.exception";
 
 @Injectable()
 export class RedisOtpStore {
   private readonly expirySeconds: number;
   private readonly maxAttempts: number;
+  private readonly resendCooldownSeconds: number;
 
   constructor(
     private readonly configService: ConfigService,
@@ -18,9 +20,19 @@ export class RedisOtpStore {
     this.maxAttempts = Number(
       this.configService.get<string>("OTP_MAX_ATTEMPTS", "5"),
     );
+    this.resendCooldownSeconds = Number(
+      this.configService.get<string>("OTP_RESEND_COOLDOWN_SECONDS", "60"),
+    );
   }
 
   async save(email: string, otp: string): Promise<void> {
+    const accepted = await this.redis.set(this.cooldownKeyFor(email), "1", {
+      EX: this.resendCooldownSeconds,
+      NX: true,
+    });
+    if (accepted !== "OK") {
+      throw new OtpCooldownException();
+    }
     await this.redis.set(this.keyFor(email), this.hash(otp), {
       EX: this.expirySeconds,
     });
@@ -51,6 +63,10 @@ export class RedisOtpStore {
 
   private attemptsKeyFor(email: string): string {
     return `otp-attempts:${email.toLowerCase()}`;
+  }
+
+  private cooldownKeyFor(email: string): string {
+    return `otp-cooldown:${email.toLowerCase()}`;
   }
 
   private hash(value: string): string {
