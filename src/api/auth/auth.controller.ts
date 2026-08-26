@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Patch,
   Post,
   Req,
   Res,
@@ -15,6 +16,7 @@ import { ConfigService } from "@nestjs/config";
 import { Throttle } from "@nestjs/throttler";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import type { Request, Response } from "express";
+import { User } from "../../domain/entities/user.entity";
 import { CreateUserUseCase } from "../../application/use-cases/users/create-user.use-case";
 import { VerifyOtpUseCase } from "../../application/use-cases/auth/verify-otp.use-case";
 import { GoogleAuthUseCase } from "../../application/use-cases/auth/google-auth.use-case";
@@ -25,6 +27,9 @@ import { OtpService } from "../../application/interfaces/otp.service.interface";
 import { ChangeUserPasswordUseCase } from "../../application/use-cases/users/change-user-password.use-case";
 import { AuthSessionGuard } from "./auth-session.guard";
 import { ChangePasswordRequestDto } from "./dtos/change-password.request.dto";
+import { UpdateProfileRequestDto } from "./dtos/update-profile.request.dto";
+import { AuthenticatedUserResponseDto } from "./dtos/authenticated-user.response.dto";
+import { UpdateCurrentUserUseCase } from "../../application/use-cases/users/update-current-user.use-case";
 import {
   SignUpRequestDto,
   RequestOtpDto,
@@ -52,6 +57,7 @@ export class AuthController {
     private readonly getCurrentUserUseCase: GetCurrentUserUseCase,
     private readonly otpService: OtpService,
     private readonly changeUserPasswordUseCase: ChangeUserPasswordUseCase,
+    private readonly updateCurrentUserUseCase: UpdateCurrentUserUseCase,
   ) {}
 
   @Post("request-otp")
@@ -66,7 +72,11 @@ export class AuthController {
   @Post("sign-up")
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: "Verify OTP and create a new user" })
-  @ApiResponse({ status: 201, description: "User created" })
+  @ApiResponse({
+    status: 201,
+    description: "User created",
+    type: AuthenticatedUserResponseDto,
+  })
   @ApiResponse({
     status: 400,
     description: "Invalid OTP or user already exists",
@@ -85,6 +95,10 @@ export class AuthController {
       id: user.id,
       email: user.email,
       emailVerified: user.emailVerified,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      userName: user.userName,
+      dateOfBirth: user.dateOfBirth,
     };
   }
 
@@ -92,7 +106,11 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Log in with email and password" })
-  @ApiResponse({ status: 200, description: "Logged in" })
+  @ApiResponse({
+    status: 200,
+    description: "Logged in",
+    type: AuthenticatedUserResponseDto,
+  })
   @ApiResponse({ status: 401, description: "Invalid email or password" })
   async loginPassword(
     @Body() dto: LoginPasswordRequestDto,
@@ -108,6 +126,10 @@ export class AuthController {
       id: user.id,
       email: user.email,
       emailVerified: user.emailVerified,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      userName: user.userName,
+      dateOfBirth: user.dateOfBirth,
     };
   }
 
@@ -115,7 +137,11 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Log in with email and otp" })
-  @ApiResponse({ status: 200, description: "Logged in" })
+  @ApiResponse({
+    status: 200,
+    description: "Logged in",
+    type: AuthenticatedUserResponseDto,
+  })
   @ApiResponse({ status: 401, description: "Invalid otp" })
   async loginOtp(@Body() dto: LoginOtpRequestDto, @Req() req: Request) {
     const user = await this.loginWithOtpUseCase.execute(dto.email, dto.otp);
@@ -125,6 +151,10 @@ export class AuthController {
       id: user.id,
       email: user.email,
       emailVerified: user.emailVerified,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      userName: user.userName,
+      dateOfBirth: user.dateOfBirth,
     };
   }
 
@@ -152,7 +182,11 @@ export class AuthController {
 
   @Get("profile")
   @ApiOperation({ summary: "Get the profile of the currently logged-in user" })
-  @ApiResponse({ status: 200, description: "Current user profile" })
+  @ApiResponse({
+    status: 200,
+    description: "Current user profile",
+    type: AuthenticatedUserResponseDto,
+  })
   @ApiResponse({ status: 401, description: "Not authenticated" })
   async profile(@Req() req: Request) {
     const userId = (req.session as any)?.userId;
@@ -166,6 +200,10 @@ export class AuthController {
       email: user.email,
       role: user.role,
       emailVerified: user.emailVerified,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      userName: user.userName,
+      dateOfBirth: user.dateOfBirth,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
@@ -185,6 +223,32 @@ export class AuthController {
       password: dto.password,
     });
     return { message: "Password changed" };
+  }
+
+  @Patch("profile")
+  @UseGuards(AuthSessionGuard)
+  @ApiOperation({ summary: "Update the current user's profile" })
+  @ApiResponse({
+    status: 200,
+    description: "Profile updated",
+    type: AuthenticatedUserResponseDto,
+  })
+  @ApiResponse({ status: 409, description: "Username already exists" })
+  async updateProfile(
+    @Body() dto: UpdateProfileRequestDto,
+    @Req() req: Request,
+  ) {
+    const user = await this.updateCurrentUserUseCase.execute({
+      userId: (req.session as any).userId,
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+      userName: dto.userName,
+      dateOfBirth:
+        dto.dateOfBirth === undefined || dto.dateOfBirth === null
+          ? dto.dateOfBirth
+          : new Date(dto.dateOfBirth),
+    });
+    return this.toUserResponse(user);
   }
 
   @Post("logout")
@@ -211,5 +275,17 @@ export class AuthController {
         resolve();
       });
     });
+  }
+
+  private toUserResponse(user: User) {
+    return {
+      id: user.id,
+      email: user.email,
+      emailVerified: user.emailVerified,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      userName: user.userName,
+      dateOfBirth: user.dateOfBirth,
+    };
   }
 }

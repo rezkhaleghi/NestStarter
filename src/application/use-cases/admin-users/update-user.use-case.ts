@@ -5,6 +5,7 @@ import {
   CannotRemoveLastAdminException,
   UserAlreadyExistsException,
   UserNotFoundException,
+  UsernameAlreadyExistsException,
 } from "../../../domain/exceptions/domain.exception";
 import { UserRepository } from "../../../domain/repositories/user.repository";
 import { PasswordHasher } from "../../interfaces/password-hasher.interface";
@@ -16,6 +17,10 @@ export interface UpdateAdminUserInput {
   password?: string;
   role?: UserRole;
   emailVerified?: boolean;
+  firstName?: string | null;
+  lastName?: string | null;
+  userName?: string | null;
+  dateOfBirth?: Date | null;
 }
 
 @Injectable()
@@ -37,6 +42,13 @@ export class UpdateAdminUserUseCase {
         throw new UserAlreadyExistsException(email);
       }
     }
+    if (
+      input.userName &&
+      input.userName !== existing.userName &&
+      (await this.userRepository.findByUserName(input.userName))
+    ) {
+      throw new UsernameAlreadyExistsException(input.userName);
+    }
 
     const updated = new User(
       existing.id,
@@ -47,6 +59,14 @@ export class UpdateAdminUserUseCase {
       input.role ?? existing.role,
       input.emailVerified ?? existing.emailVerified,
       existing.createdAt,
+      existing.updatedAt,
+      existing.googleId,
+      input.firstName === undefined ? existing.firstName : input.firstName,
+      input.lastName === undefined ? existing.lastName : input.lastName,
+      input.userName === undefined ? existing.userName : input.userName,
+      input.dateOfBirth === undefined
+        ? existing.dateOfBirth
+        : input.dateOfBirth,
     );
     const saved = await this.userRepository.saveAdminMutation(
       updated,

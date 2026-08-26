@@ -19,6 +19,10 @@ export class User {
     public readonly createdAt: Date = new Date(),
     public readonly updatedAt: Date = new Date(),
     googleId: string | null = null,
+    public readonly firstName: string | null = null,
+    public readonly lastName: string | null = null,
+    public readonly userName: string | null = null,
+    public readonly dateOfBirth: Date | null = null,
   ) {
     this._emailVerified = emailVerified;
     this._googleId = googleId;

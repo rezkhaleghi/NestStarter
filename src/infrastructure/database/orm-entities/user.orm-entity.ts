@@ -26,6 +26,18 @@ export class UserOrmEntity {
   @Column({ nullable: true, unique: true, type: "varchar" })
   googleId: string | null;
 
+  @Column({ nullable: true, type: "varchar" })
+  firstName: string | null;
+
+  @Column({ nullable: true, type: "varchar" })
+  lastName: string | null;
+
+  @Column({ nullable: true, unique: true, type: "varchar" })
+  userName: string | null;
+
+  @Column({ nullable: true, type: "date" })
+  dateOfBirth: Date | null;
+
   @Column({ type: "enum", enum: UserRole, default: UserRole.USER })
   role: UserRole;
 

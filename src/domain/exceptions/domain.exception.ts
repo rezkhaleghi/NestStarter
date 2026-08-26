@@ -28,6 +28,12 @@ export class UserAlreadyExistsException extends DomainException {
   }
 }
 
+export class UsernameAlreadyExistsException extends DomainException {
+  constructor(userName: string) {
+    super(`A user with username "${userName}" already exists.`);
+  }
+}
+
 export class InvalidCredentialsException extends DomainException {
   constructor() {
     super("Invalid email or password.");

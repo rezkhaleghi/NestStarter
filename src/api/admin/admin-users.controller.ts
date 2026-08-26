@@ -32,6 +32,7 @@ import {
 } from "./dtos/admin-user.request.dto";
 import { ChangeUserPasswordRequestDto } from "./dtos/change-user-password.request.dto";
 import { ChangeUserPasswordUseCase } from "../../application/use-cases/users/change-user-password.use-case";
+import { AdminUserResponseDto } from "./dtos/admin-user.response.dto";
 
 @ApiTags("admin-users")
 @Controller("admin/users")
@@ -50,7 +51,11 @@ export class AdminUsersController {
   @ApiOperation({ summary: "List all users" })
   @ApiQuery({ name: "page", required: false, type: Number, example: 1 })
   @ApiQuery({ name: "limit", required: false, type: Number, example: 20 })
-  @ApiResponse({ status: 200, description: "Paginated user list" })
+  @ApiResponse({
+    status: 200,
+    description: "Paginated user list",
+    type: AdminUserResponseDto,
+  })
   @ApiResponse({ status: 401, description: "Authentication required" })
   @ApiResponse({ status: 403, description: "Administrator access required" })
   async list(@Query() query: ListUsersQueryDto) {
@@ -64,7 +69,11 @@ export class AdminUsersController {
   @Get(":id")
   @ApiOperation({ summary: "Get one user by ID" })
   @ApiParam({ name: "id", description: "User UUID", format: "uuid" })
-  @ApiResponse({ status: 200, description: "User details" })
+  @ApiResponse({
+    status: 200,
+    description: "User details",
+    type: AdminUserResponseDto,
+  })
   @ApiResponse({ status: 404, description: "User not found" })
   async get(@Param("id", ParseUUIDPipe) id: string) {
     return this.toResponse(await this.getUserUseCase.execute(id));
@@ -72,7 +81,11 @@ export class AdminUsersController {
 
   @Post()
   @ApiOperation({ summary: "Create a user or administrator" })
-  @ApiResponse({ status: 201, description: "User created" })
+  @ApiResponse({
+    status: 201,
+    description: "User created",
+    type: AdminUserResponseDto,
+  })
   @ApiResponse({ status: 409, description: "Email already exists" })
   async create(@Body() dto: CreateAdminUserRequestDto) {
     return this.toResponse(await this.createUserUseCase.execute(dto));
@@ -81,7 +94,11 @@ export class AdminUsersController {
   @Patch(":id")
   @ApiOperation({ summary: "Update a user's email, password, or role" })
   @ApiParam({ name: "id", description: "User UUID", format: "uuid" })
-  @ApiResponse({ status: 200, description: "User updated" })
+  @ApiResponse({
+    status: 200,
+    description: "User updated",
+    type: AdminUserResponseDto,
+  })
   @ApiResponse({ status: 404, description: "User not found" })
   @ApiResponse({
     status: 409,
@@ -92,7 +109,14 @@ export class AdminUsersController {
     @Body() dto: UpdateAdminUserRequestDto,
   ) {
     return this.toResponse(
-      await this.updateUserUseCase.execute({ id, ...dto }),
+      await this.updateUserUseCase.execute({
+        id,
+        ...dto,
+        dateOfBirth:
+          dto.dateOfBirth === undefined || dto.dateOfBirth === null
+            ? dto.dateOfBirth
+            : new Date(dto.dateOfBirth),
+      }),
     );
   }
 
@@ -134,6 +158,10 @@ export class AdminUsersController {
     email: string;
     role: string;
     emailVerified: boolean;
+    firstName: string | null;
+    lastName: string | null;
+    userName: string | null;
+    dateOfBirth: Date | null;
     createdAt: Date;
     updatedAt: Date;
   }) {
@@ -142,6 +170,10 @@ export class AdminUsersController {
       email: user.email,
       role: user.role,
       emailVerified: user.emailVerified,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      userName: user.userName,
+      dateOfBirth: user.dateOfBirth,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };

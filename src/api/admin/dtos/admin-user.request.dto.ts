@@ -10,6 +10,8 @@ import {
   Max,
   Min,
   MinLength,
+  IsDateString,
+  Length,
 } from "class-validator";
 import { UserRole } from "../../../domain/enums/user-role.enum";
 
@@ -80,4 +82,27 @@ export class UpdateAdminUserRequestDto {
   @IsOptional()
   @IsBoolean()
   emailVerified?: boolean;
+
+  @ApiPropertyOptional({ example: "Jane", nullable: true })
+  @IsOptional()
+  @IsString()
+  @Length(1, 100)
+  firstName?: string | null;
+
+  @ApiPropertyOptional({ example: "Doe", nullable: true })
+  @IsOptional()
+  @IsString()
+  @Length(1, 100)
+  lastName?: string | null;
+
+  @ApiPropertyOptional({ example: "jane_doe", nullable: true })
+  @IsOptional()
+  @IsString()
+  @Length(3, 50)
+  userName?: string | null;
+
+  @ApiPropertyOptional({ example: "1990-05-20", nullable: true })
+  @IsOptional()
+  @IsDateString()
+  dateOfBirth?: string | null;
 }

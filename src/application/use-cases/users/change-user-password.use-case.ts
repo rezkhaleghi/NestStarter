@@ -31,6 +31,10 @@ export class ChangeUserPasswordUseCase {
       user.createdAt,
       user.updatedAt,
       user.googleId,
+      user.firstName,
+      user.lastName,
+      user.userName,
+      user.dateOfBirth,
     );
     await this.userRepository.save(updated);
   }

@@ -15,6 +15,7 @@ import {
   InvalidOtpException,
   GoogleAccountConflictException,
   UserAlreadyExistsException,
+  UsernameAlreadyExistsException,
   UserNotFoundException,
   OtpCooldownException,
 } from "../domain/exceptions/domain.exception";
@@ -39,6 +40,9 @@ export class DomainExceptionFilter implements ExceptionFilter {
       return new NotFoundException().getStatus();
     }
     if (exception instanceof UserAlreadyExistsException) {
+      return new ConflictException().getStatus();
+    }
+    if (exception instanceof UsernameAlreadyExistsException) {
       return new ConflictException().getStatus();
     }
     if (exception instanceof InvalidOtpException) {

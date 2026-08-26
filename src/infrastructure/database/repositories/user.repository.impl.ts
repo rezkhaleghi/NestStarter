@@ -40,6 +40,11 @@ export class UserRepositoryImpl implements UserRepository {
     return row ? this.toDomain(row) : null;
   }
 
+  async findByUserName(userName: string): Promise<User | null> {
+    const row = await this.repo.findOne({ where: { userName } });
+    return row ? this.toDomain(row) : null;
+  }
+
   async findPage(
     params: PageQuery<"createdAt" | "email" | "role">,
   ): Promise<PageResult<User>> {
@@ -117,6 +122,10 @@ export class UserRepositoryImpl implements UserRepository {
       row.createdAt,
       row.updatedAt,
       row.googleId,
+      row.firstName,
+      row.lastName,
+      row.userName,
+      row.dateOfBirth,
     );
   }
 
@@ -128,6 +137,10 @@ export class UserRepositoryImpl implements UserRepository {
     row.role = user.role;
     row.emailVerified = user.emailVerified;
     row.googleId = user.googleId;
+    row.firstName = user.firstName;
+    row.lastName = user.lastName;
+    row.userName = user.userName;
+    row.dateOfBirth = user.dateOfBirth;
     row.createdAt = user.createdAt;
     row.updatedAt = user.updatedAt;
     return row;
