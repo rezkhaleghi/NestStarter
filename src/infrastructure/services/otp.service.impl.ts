@@ -4,6 +4,7 @@ import { randomInt } from "crypto";
 import { OtpService } from "../../application/interfaces/otp.service.interface";
 import { NotificationService } from "../../application/interfaces/notification.service.interface";
 import { RedisOtpStore } from "./redis-otp.store";
+import { normalizeEmail } from "../../application/utils/normalize-email";
 
 @Injectable()
 export class OtpServiceImpl implements OtpService {
@@ -22,6 +23,7 @@ export class OtpServiceImpl implements OtpService {
   }
 
   async generateAndSend(email: string): Promise<void> {
+    email = normalizeEmail(email);
     const otp = randomInt(100000, 1000000).toString();
     await this.otpStore.save(email, otp);
     const expirySeconds = Number(

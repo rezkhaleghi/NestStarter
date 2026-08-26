@@ -35,6 +35,11 @@ export class UserRepositoryImpl implements UserRepository {
     return row ? this.toDomain(row) : null;
   }
 
+  async findByGoogleId(googleId: string): Promise<User | null> {
+    const row = await this.repo.findOne({ where: { googleId } });
+    return row ? this.toDomain(row) : null;
+  }
+
   async findPage(
     params: PageQuery<"createdAt" | "email" | "role">,
   ): Promise<PageResult<User>> {
@@ -62,6 +67,42 @@ export class UserRepositoryImpl implements UserRepository {
     return this.toDomain(saved);
   }
 
+  async saveAdminMutation(user: User, wasAdmin: boolean): Promise<User | null> {
+    if (!wasAdmin || user.role === UserRole.ADMIN) {
+      return this.save(user);
+    }
+
+    return this.repo.manager.transaction(async (manager) => {
+      const admins = await manager.find(UserOrmEntity, {
+        where: { role: UserRole.ADMIN },
+        lock: { mode: "pessimistic_write" },
+      });
+      if (admins.length <= 1) {
+        return null;
+      }
+      const saved = await manager.save(UserOrmEntity, this.toOrm(user));
+      return this.toDomain(saved);
+    });
+  }
+
+  async deleteAdminUser(id: string): Promise<boolean> {
+    return this.repo.manager.transaction(async (manager) => {
+      const admins = await manager.find(UserOrmEntity, {
+        where: { role: UserRole.ADMIN },
+        lock: { mode: "pessimistic_write" },
+      });
+      const user = await manager.findOne(UserOrmEntity, { where: { id } });
+      if (!user) {
+        return false;
+      }
+      if (user.role === UserRole.ADMIN && admins.length <= 1) {
+        return false;
+      }
+      await manager.delete(UserOrmEntity, id);
+      return true;
+    });
+  }
+
   async deleteById(id: string): Promise<void> {
     await this.repo.delete(id);
   }
@@ -75,6 +116,7 @@ export class UserRepositoryImpl implements UserRepository {
       row.emailVerified,
       row.createdAt,
       row.updatedAt,
+      row.googleId,
     );
   }
 
@@ -85,6 +127,7 @@ export class UserRepositoryImpl implements UserRepository {
     row.hashedPassword = user.hashedPassword;
     row.role = user.role;
     row.emailVerified = user.emailVerified;
+    row.googleId = user.googleId;
     row.createdAt = user.createdAt;
     row.updatedAt = user.updatedAt;
     return row;

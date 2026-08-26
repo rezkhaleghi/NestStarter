@@ -23,6 +23,9 @@ export class UserOrmEntity {
   @Column({ nullable: true, type: "varchar" })
   hashedPassword: string | null;
 
+  @Column({ nullable: true, unique: true, type: "varchar" })
+  googleId: string | null;
+
   @Column({ type: "enum", enum: UserRole, default: UserRole.USER })
   role: UserRole;
 

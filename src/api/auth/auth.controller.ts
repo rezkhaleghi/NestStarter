@@ -11,6 +11,7 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
+import { ConfigService } from "@nestjs/config";
 import { Throttle } from "@nestjs/throttler";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import type { Request, Response } from "express";
@@ -41,6 +42,7 @@ import {
 @Controller("auth")
 export class AuthController {
   constructor(
+    private readonly configService: ConfigService,
     private readonly createUserUseCase: CreateUserUseCase,
     private readonly verifyOtpUseCase: VerifyOtpUseCase,
     private readonly googleAuthUseCase: GoogleAuthUseCase,
@@ -141,7 +143,9 @@ export class AuthController {
     // express-session: req.session persists across requests via cookie
     await this.establishSession(req, user.id);
 
-    res.redirect("/"); // redirect to your frontend post-login route
+    res.redirect(
+      this.configService.get<string>("FRONTEND_URL", "http://localhost:3000"),
+    );
   }
 
   @Get("profile")

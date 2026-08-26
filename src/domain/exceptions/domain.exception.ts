@@ -34,6 +34,12 @@ export class InvalidCredentialsException extends DomainException {
   }
 }
 
+export class GoogleAccountConflictException extends DomainException {
+  constructor() {
+    super("This Google account cannot be linked to the requested user.");
+  }
+}
+
 export class UserNotFoundException extends DomainException {
   constructor() {
     super("User not found.");
@@ -43,5 +49,11 @@ export class UserNotFoundException extends DomainException {
 export class CannotRemoveLastAdminException extends DomainException {
   constructor() {
     super("The last administrator cannot be removed or demoted.");
+  }
+}
+
+export class CannotDeleteSelfException extends DomainException {
+  constructor() {
+    super("An administrator cannot delete their own account.");
   }
 }

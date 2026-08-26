@@ -9,9 +9,11 @@ import {
 import { Response } from "express";
 import {
   CannotRemoveLastAdminException,
+  CannotDeleteSelfException,
   DomainException,
   InvalidCredentialsException,
   InvalidOtpException,
+  GoogleAccountConflictException,
   UserAlreadyExistsException,
   UserNotFoundException,
   OtpCooldownException,
@@ -42,7 +44,13 @@ export class DomainExceptionFilter implements ExceptionFilter {
     if (exception instanceof InvalidOtpException) {
       return new UnauthorizedException().getStatus();
     }
-    if (exception instanceof CannotRemoveLastAdminException) {
+    if (exception instanceof GoogleAccountConflictException) {
+      return new UnauthorizedException().getStatus();
+    }
+    if (
+      exception instanceof CannotRemoveLastAdminException ||
+      exception instanceof CannotDeleteSelfException
+    ) {
       return 409;
     }
     if (exception instanceof OtpCooldownException) {

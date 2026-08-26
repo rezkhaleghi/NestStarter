@@ -1,5 +1,4 @@
 import { Module } from "@nestjs/common";
-import { InfrastructureModule } from "../infrastructure/infrastructure.module";
 import { CreateUserUseCase } from "./use-cases/create-user.use-case";
 import { VerifyOtpUseCase } from "./use-cases/verify-otp.use-case";
 import { GoogleAuthUseCase } from "./use-cases/google-auth.use-case";
@@ -13,7 +12,6 @@ import { ChangeUserPasswordUseCase } from "./use-cases/change-user-password.use-
  * tokens to their concrete infrastructure implementations.
  */
 @Module({
-  imports: [InfrastructureModule],
   providers: [
     CreateUserUseCase,
     VerifyOtpUseCase,

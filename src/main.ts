@@ -1,38 +1,41 @@
 import { DomainExceptionFilter } from "./api/domain-exception.filter";
 import { NestFactory } from "@nestjs/core";
 import { ValidationPipe } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import session = require("express-session");
 import * as passport from "passport";
-import { createClient } from "redis";
 import { RedisStore } from "connect-redis";
+import type { RedisClientType } from "redis";
 import { AppModule } from "./app.module";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  const configService = app.get(ConfigService);
+  app.enableShutdownHooks();
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
   app.useGlobalFilters(new DomainExceptionFilter());
 
-  const redisClient = createClient({
-    socket: {
-      host: process.env.REDIS_HOST ?? "localhost",
-      port: Number(process.env.REDIS_PORT ?? "6379"),
-    },
-    password: process.env.REDIS_PASSWORD || undefined,
-  });
-  await redisClient.connect();
+  const redisClient = app.get<RedisClientType>("REDIS_CLIENT");
+  const sessionSecret = configService.getOrThrow<string>("SESSION_SECRET");
 
   // Session must be set up before passport.session()
   app.use(
     session({
-      secret: process.env.SESSION_SECRET ?? "dev-secret-change-me",
+      secret: sessionSecret,
       store: new RedisStore({ client: redisClient, prefix: "session:" }),
       resave: false,
       saveUninitialized: false,
       cookie: {
         httpOnly: true,
         sameSite: "lax",
-        secure: process.env.NODE_ENV === "production",
+        secure: configService.get<string>("NODE_ENV") === "production",
         maxAge: 1000 * 60 * 60 * 24,
       },
     }),
@@ -48,6 +51,6 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup("api/docs", app, document);
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(configService.get<number>("PORT", 3000));
 }
 bootstrap();

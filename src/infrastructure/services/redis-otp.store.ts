@@ -26,16 +26,24 @@ export class RedisOtpStore {
   }
 
   async save(email: string, otp: string): Promise<void> {
-    const accepted = await this.redis.set(this.cooldownKeyFor(email), "1", {
-      EX: this.resendCooldownSeconds,
-      NX: true,
-    });
-    if (accepted !== "OK") {
+    const result = await this.redis.eval(
+      "if redis.call('SET', KEYS[1], '1', 'EX', ARGV[1], 'NX') == false then return 0; end; redis.call('SET', KEYS[2], ARGV[2], 'EX', ARGV[3]); redis.call('DEL', KEYS[3]); return 1;",
+      {
+        keys: [
+          this.cooldownKeyFor(email),
+          this.keyFor(email),
+          this.attemptsKeyFor(email),
+        ],
+        arguments: [
+          String(this.resendCooldownSeconds),
+          this.hash(otp),
+          String(this.expirySeconds),
+        ],
+      },
+    );
+    if (Number(result) !== 1) {
       throw new OtpCooldownException();
     }
-    await this.redis.set(this.keyFor(email), this.hash(otp), {
-      EX: this.expirySeconds,
-    });
   }
 
   async verify(email: string, otp: string): Promise<boolean> {
@@ -54,7 +62,11 @@ export class RedisOtpStore {
   }
 
   async delete(email: string): Promise<void> {
-    await this.redis.del(this.keyFor(email));
+    await this.redis.del([
+      this.keyFor(email),
+      this.attemptsKeyFor(email),
+      this.cooldownKeyFor(email),
+    ]);
   }
 
   private keyFor(email: string): string {

@@ -5,6 +5,7 @@ import { User } from "../../domain/entities/user.entity";
 import { UserRole } from "../../domain/enums/user-role.enum";
 import { UserRepository } from "../../domain/repositories/user.repository";
 import { PasswordHasher } from "../../application/interfaces/password-hasher.interface";
+import { normalizeEmail } from "../../application/utils/normalize-email";
 
 @Injectable()
 export class SeedAdminService implements OnModuleInit {
@@ -15,15 +16,21 @@ export class SeedAdminService implements OnModuleInit {
   ) {}
 
   async onModuleInit(): Promise<void> {
-    const email = this.configService.get<string>("INITIAL_ADMIN_EMAIL");
+    const configuredEmail = this.configService.get<string>(
+      "INITIAL_ADMIN_EMAIL",
+    );
     const password = this.configService.get<string>("INITIAL_ADMIN_PASSWORD");
-    if (!email || !password || (await this.userRepository.findByEmail(email))) {
+    if (!configuredEmail || !password) {
+      return;
+    }
+    const email = normalizeEmail(configuredEmail);
+    if (await this.userRepository.findByEmail(email)) {
       return;
     }
 
     const admin = new User(
       randomUUID(),
-      email.toLowerCase(),
+      email,
       await this.passwordHasher.hash(password),
       UserRole.ADMIN,
       true,

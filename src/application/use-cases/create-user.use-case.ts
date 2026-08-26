@@ -5,6 +5,7 @@ import { User } from "../../domain/entities/user.entity";
 import { PasswordHasher } from "../interfaces/password-hasher.interface";
 import { CreateUserInput } from "../dtos/create-user.input";
 import { UserAlreadyExistsException } from "../../domain/exceptions/domain.exception";
+import { normalizeEmail } from "../utils/normalize-email";
 
 @Injectable()
 export class CreateUserUseCase {
@@ -14,7 +15,7 @@ export class CreateUserUseCase {
   ) {}
 
   async execute(input: CreateUserInput): Promise<User> {
-    const email = input.email.trim().toLowerCase();
+    const email = normalizeEmail(input.email);
     const existing = await this.userRepository.findByEmail(email);
     if (existing) {
       throw new UserAlreadyExistsException(email);

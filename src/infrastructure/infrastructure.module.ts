@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { Global, Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { createClient } from "redis";
@@ -19,12 +19,14 @@ import { RedisLoginProtectionService } from "./services/redis-login-protection.s
 import { LoginProtection } from "../application/interfaces/login-protection.interface";
 import { NotificationService } from "../application/interfaces/notification.service.interface";
 import { SmtpNotificationService } from "./services/notification.service";
+import { RedisClientLifecycle } from "./services/redis-client.lifecycle";
 
 /**
  * This module is the ONLY place where abstract tokens (interfaces) from
  * domain/application get bound to concrete infrastructure implementations.
  * Everything above (application, api) stays unaware of TypeORM, bcrypt, etc.
  */
+@Global()
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -69,6 +71,10 @@ import { SmtpNotificationService } from "./services/notification.service";
         SESSION_SECRET: Joi.string().min(32).required(),
         INITIAL_ADMIN_EMAIL: Joi.string().email().allow(""),
         INITIAL_ADMIN_PASSWORD: Joi.string().min(12).allow(""),
+        GOOGLE_CLIENT_ID: Joi.string().required(),
+        GOOGLE_CLIENT_SECRET: Joi.string().required(),
+        GOOGLE_CALLBACK_URL: Joi.string().uri().required(),
+        FRONTEND_URL: Joi.string().uri().default("http://localhost:3000"),
       }),
     }),
     TypeOrmModule.forRootAsync({
@@ -92,6 +98,7 @@ import { SmtpNotificationService } from "./services/notification.service";
         return client;
       },
     },
+    RedisClientLifecycle,
     { provide: UserRepository, useClass: UserRepositoryImpl },
     { provide: PasswordHasher, useClass: BcryptPasswordHasher },
     RedisOtpStore,

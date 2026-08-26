@@ -9,10 +9,16 @@ import { PageQuery, PageResult } from "../../application/dtos/page-query.input";
 export abstract class UserRepository {
   abstract findById(id: string): Promise<User | null>;
   abstract findByEmail(email: string): Promise<User | null>;
+  abstract findByGoogleId(googleId: string): Promise<User | null>;
   abstract findPage(
     params: PageQuery<"createdAt" | "email" | "role">,
   ): Promise<PageResult<User>>;
   abstract countByRole(role: string): Promise<number>;
   abstract save(user: User): Promise<User>;
+  abstract saveAdminMutation(
+    user: User,
+    wasAdmin: boolean,
+  ): Promise<User | null>;
+  abstract deleteAdminUser(id: string): Promise<boolean>;
   abstract deleteById(id: string): Promise<void>;
 }

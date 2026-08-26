@@ -5,6 +5,7 @@ import { UserRole } from "../../../domain/enums/user-role.enum";
 import { UserAlreadyExistsException } from "../../../domain/exceptions/domain.exception";
 import { UserRepository } from "../../../domain/repositories/user.repository";
 import { PasswordHasher } from "../../interfaces/password-hasher.interface";
+import { normalizeEmail } from "../../utils/normalize-email";
 
 export interface CreateAdminUserInput {
   email: string;
@@ -20,7 +21,7 @@ export class CreateAdminUserUseCase {
   ) {}
 
   async execute(input: CreateAdminUserInput): Promise<User> {
-    const email = input.email.toLowerCase();
+    const email = normalizeEmail(input.email);
     if (await this.userRepository.findByEmail(email)) {
       throw new UserAlreadyExistsException(email);
     }

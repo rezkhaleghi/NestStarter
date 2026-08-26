@@ -87,16 +87,9 @@ describe("LoginUserUseCase", () => {
       user.role,
       false,
     );
-    const verifiedUser = new User(
-      user.id,
-      user.email,
-      user.hashedPassword,
-      user.role,
-      true,
-    );
     repository.findByEmail.mockResolvedValue(unverifiedUser);
     otpService.verify.mockResolvedValue(true);
-    repository.save.mockResolvedValue(verifiedUser);
+    repository.save.mockResolvedValue(unverifiedUser);
 
     await expect(useCase.loginOtp(user.email, "123456")).resolves.toBe(
       unverifiedUser,

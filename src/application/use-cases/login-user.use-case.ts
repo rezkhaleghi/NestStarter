@@ -7,6 +7,7 @@ import { LoginUserInput } from "../dtos/login-user.input";
 import { User } from "../../domain/entities/user.entity";
 import { InvalidOtpException } from "../../domain/exceptions/domain.exception";
 import { LoginProtection } from "../interfaces/login-protection.interface";
+import { normalizeEmail } from "../utils/normalize-email";
 
 @Injectable()
 export class LoginUserUseCase {
@@ -18,7 +19,7 @@ export class LoginUserUseCase {
   ) {}
 
   async loginPassword(input: LoginUserInput): Promise<User> {
-    const email = input.email.trim().toLowerCase();
+    const email = normalizeEmail(input.email);
     if (await this.loginProtection.isLocked(email)) {
       throw new InvalidCredentialsException();
     }
@@ -43,7 +44,7 @@ export class LoginUserUseCase {
   }
 
   async loginOtp(email: string, otp: string): Promise<User> {
-    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedEmail = normalizeEmail(email);
     const user = await this.userRepository.findByEmail(normalizedEmail);
     if (!user) {
       throw new InvalidCredentialsException();
@@ -55,7 +56,7 @@ export class LoginUserUseCase {
     }
 
     if (!user.emailVerified) {
-      user.emailVerified = true;
+      user.verifyEmail();
       await this.userRepository.save(user);
     }
 

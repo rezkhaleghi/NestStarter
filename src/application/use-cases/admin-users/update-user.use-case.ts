@@ -8,6 +8,7 @@ import {
 } from "../../../domain/exceptions/domain.exception";
 import { UserRepository } from "../../../domain/repositories/user.repository";
 import { PasswordHasher } from "../../interfaces/password-hasher.interface";
+import { normalizeEmail } from "../../utils/normalize-email";
 
 export interface UpdateAdminUserInput {
   id: string;
@@ -30,24 +31,16 @@ export class UpdateAdminUserUseCase {
       throw new UserNotFoundException();
     }
 
-    if (input.email && input.email.toLowerCase() !== existing.email) {
-      const email = input.email.toLowerCase();
+    const email = input.email ? normalizeEmail(input.email) : existing.email;
+    if (email !== existing.email) {
       if (await this.userRepository.findByEmail(email)) {
         throw new UserAlreadyExistsException(email);
       }
     }
 
-    if (
-      existing.role === UserRole.ADMIN &&
-      input.role === UserRole.USER &&
-      (await this.userRepository.countByRole(UserRole.ADMIN)) <= 1
-    ) {
-      throw new CannotRemoveLastAdminException();
-    }
-
     const updated = new User(
       existing.id,
-      input.email?.toLowerCase() ?? existing.email,
+      email,
       input.password
         ? await this.passwordHasher.hash(input.password)
         : existing.hashedPassword,
@@ -55,6 +48,13 @@ export class UpdateAdminUserUseCase {
       input.emailVerified ?? existing.emailVerified,
       existing.createdAt,
     );
-    return this.userRepository.save(updated);
+    const saved = await this.userRepository.saveAdminMutation(
+      updated,
+      existing.role === UserRole.ADMIN,
+    );
+    if (!saved) {
+      throw new CannotRemoveLastAdminException();
+    }
+    return saved;
   }
 }

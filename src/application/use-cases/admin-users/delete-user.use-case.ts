@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { UserRole } from "../../../domain/enums/user-role.enum";
 import {
+  CannotDeleteSelfException,
   CannotRemoveLastAdminException,
   UserNotFoundException,
 } from "../../../domain/exceptions/domain.exception";
@@ -16,15 +17,11 @@ export class DeleteAdminUserUseCase {
       throw new UserNotFoundException();
     }
     if (id === requesterId) {
+      throw new CannotDeleteSelfException();
+    }
+    const deleted = await this.userRepository.deleteAdminUser(id);
+    if (!deleted) {
       throw new CannotRemoveLastAdminException();
     }
-    if (
-      user.role === UserRole.ADMIN &&
-      (await this.userRepository.countByRole(UserRole.ADMIN)) <= 1
-    ) {
-      throw new CannotRemoveLastAdminException();
-    }
-
-    await this.userRepository.deleteById(id);
   }
 }
