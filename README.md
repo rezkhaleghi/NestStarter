@@ -1,6 +1,3 @@
-| POST | `/auth/change-password` | Change the authenticated user's password |
-| PATCH | `/admin/users/:id/password` | Reset a user's password |
-
 # NestJS Clean Architecture API
 
 A NestJS authentication and user-management API using Clean Architecture,
@@ -208,16 +205,17 @@ npm test -- --runInBand
 
 ## Authentication API
 
-| Method | Route                   | Purpose                                 |
-| ------ | ----------------------- | --------------------------------------- |
-| POST   | `/auth/request-otp`     | Send an OTP to an email                 |
-| POST   | `/auth/sign-up`         | Verify OTP and create a user            |
-| POST   | `/auth/login-email`     | Login with email and password           |
-| POST   | `/auth/login-otp`       | Login with email and OTP                |
-| GET    | `/auth/google`          | Start Google OAuth                      |
-| GET    | `/auth/google/callback` | Complete Google OAuth                   |
-| GET    | `/auth/profile`         | Return the authenticated user's profile |
-| POST   | `/auth/logout`          | Destroy the current session             |
+| Method | Route                   | Purpose                                  |
+| ------ | ----------------------- | ---------------------------------------- |
+| POST   | `/auth/request-otp`     | Send an OTP to an email                  |
+| POST   | `/auth/sign-up`         | Verify OTP and create a user             |
+| POST   | `/auth/login-email`     | Login with email and password            |
+| POST   | `/auth/login-otp`       | Login with email and OTP                 |
+| GET    | `/auth/google`          | Start Google OAuth                       |
+| GET    | `/auth/google/callback` | Complete Google OAuth                    |
+| GET    | `/auth/profile`         | Return the authenticated user's profile  |
+| POST   | `/auth/logout`          | Destroy the current session              |
+| POST   | `/auth/change-password` | Change the authenticated user's password |
 
 ### Request an OTP
 
@@ -310,6 +308,7 @@ Every admin route requires a valid session whose user has the `admin` role.
 | POST   | `/admin/users`                 | Create a user or admin          |
 | PATCH  | `/admin/users/:id`             | Update email, password, or role |
 | DELETE | `/admin/users/:id`             | Delete a user                   |
+| PATCH  | `/admin/users/:id/password`    | Reset a user's password         |
 
 Responses never include password hashes. Pagination accepts `page` from 1 and
 `limit` from 1 through 100.
