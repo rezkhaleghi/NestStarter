@@ -1,8 +1,8 @@
 import { Injectable } from "@nestjs/common";
-import { User } from "../../domain/entities/user.entity";
-import { UserNotFoundException } from "../../domain/exceptions/domain.exception";
-import { UserRepository } from "../../domain/repositories/user.repository";
-import { PasswordHasher } from "../interfaces/password-hasher.interface";
+import { User } from "../../../domain/entities/user.entity";
+import { UserNotFoundException } from "../../../domain/exceptions/domain.exception";
+import { UserRepository } from "../../../domain/repositories/user.repository";
+import { PasswordHasher } from "../../interfaces/password-hasher.interface";
 
 export interface ChangeUserPasswordInput {
   userId: string;
@@ -30,6 +30,7 @@ export class ChangeUserPasswordUseCase {
       user.emailVerified,
       user.createdAt,
       user.updatedAt,
+      user.googleId,
     );
     await this.userRepository.save(updated);
   }

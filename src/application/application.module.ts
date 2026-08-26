@@ -1,22 +1,23 @@
 import { Module } from "@nestjs/common";
-import { CreateUserUseCase } from "./use-cases/create-user.use-case";
-import { VerifyOtpUseCase } from "./use-cases/verify-otp.use-case";
-import { GoogleAuthUseCase } from "./use-cases/google-auth.use-case";
-import { LoginUserUseCase } from "./use-cases/login-user.use-case";
-import { GetCurrentUserUseCase } from "./use-cases/get-current-user.use-case";
-import { ChangeUserPasswordUseCase } from "./use-cases/change-user-password.use-case";
+import { CreateUserUseCase } from "./use-cases/users/create-user.use-case";
+import { VerifyOtpUseCase } from "./use-cases/auth/verify-otp.use-case";
+import { GoogleAuthUseCase } from "./use-cases/auth/google-auth.use-case";
+import { LoginWithPasswordUseCase } from "./use-cases/auth/login-with-password.use-case";
+import { LoginWithOtpUseCase } from "./use-cases/auth/login-with-otp.use-case";
+import { GetCurrentUserUseCase } from "./use-cases/users/get-current-user.use-case";
+import { ChangeUserPasswordUseCase } from "./use-cases/users/change-user-password.use-case";
 
 /**
- * Wires use cases together. Imports InfrastructureModule so Nest's DI
- * container can resolve the abstract UserRepository/OtpService/PasswordHasher
- * tokens to their concrete infrastructure implementations.
+ * Registers application use cases. Infrastructure bindings are supplied by
+ * the composition root and injected through application interfaces.
  */
 @Module({
   providers: [
     CreateUserUseCase,
     VerifyOtpUseCase,
     GoogleAuthUseCase,
-    LoginUserUseCase,
+    LoginWithPasswordUseCase,
+    LoginWithOtpUseCase,
     GetCurrentUserUseCase,
     ChangeUserPasswordUseCase,
   ],
@@ -24,7 +25,8 @@ import { ChangeUserPasswordUseCase } from "./use-cases/change-user-password.use-
     CreateUserUseCase,
     VerifyOtpUseCase,
     GoogleAuthUseCase,
-    LoginUserUseCase,
+    LoginWithPasswordUseCase,
+    LoginWithOtpUseCase,
     GetCurrentUserUseCase,
     ChangeUserPasswordUseCase,
   ],

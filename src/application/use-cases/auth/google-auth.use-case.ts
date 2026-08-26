@@ -1,15 +1,10 @@
 import { Injectable } from "@nestjs/common";
 import { randomUUID } from "crypto";
-import { UserRepository } from "../../domain/repositories/user.repository";
-import { User } from "../../domain/entities/user.entity";
-import { GoogleAuthInput } from "../dtos/google-auth.input";
-import { normalizeEmail } from "../utils/normalize-email";
+import { UserRepository } from "../../../domain/repositories/user.repository";
+import { User } from "../../../domain/entities/user.entity";
+import { GoogleAuthInput } from "../../dtos/google-auth.input";
+import { normalizeEmail } from "../../utils/normalize-email";
 
-/**
- * Find-or-create flow for Google sign-in/sign-up.
- * Reuses the SAME UserRepository interface as CreateUserUseCase —
- * no new repository needed. hashedPassword is null for Google users.
- */
 @Injectable()
 export class GoogleAuthUseCase {
   constructor(private readonly userRepository: UserRepository) {}

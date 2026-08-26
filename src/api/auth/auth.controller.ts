@@ -15,13 +15,14 @@ import { ConfigService } from "@nestjs/config";
 import { Throttle } from "@nestjs/throttler";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import type { Request, Response } from "express";
-import { CreateUserUseCase } from "../../application/use-cases/create-user.use-case";
-import { VerifyOtpUseCase } from "../../application/use-cases/verify-otp.use-case";
-import { GoogleAuthUseCase } from "../../application/use-cases/google-auth.use-case";
-import { LoginUserUseCase } from "../../application/use-cases/login-user.use-case";
-import { GetCurrentUserUseCase } from "../../application/use-cases/get-current-user.use-case";
+import { CreateUserUseCase } from "../../application/use-cases/users/create-user.use-case";
+import { VerifyOtpUseCase } from "../../application/use-cases/auth/verify-otp.use-case";
+import { GoogleAuthUseCase } from "../../application/use-cases/auth/google-auth.use-case";
+import { LoginWithPasswordUseCase } from "../../application/use-cases/auth/login-with-password.use-case";
+import { LoginWithOtpUseCase } from "../../application/use-cases/auth/login-with-otp.use-case";
+import { GetCurrentUserUseCase } from "../../application/use-cases/users/get-current-user.use-case";
 import { OtpService } from "../../application/interfaces/otp.service.interface";
-import { ChangeUserPasswordUseCase } from "../../application/use-cases/change-user-password.use-case";
+import { ChangeUserPasswordUseCase } from "../../application/use-cases/users/change-user-password.use-case";
 import { AuthSessionGuard } from "./auth-session.guard";
 import { ChangePasswordRequestDto } from "./dtos/change-password.request.dto";
 import {
@@ -46,7 +47,8 @@ export class AuthController {
     private readonly createUserUseCase: CreateUserUseCase,
     private readonly verifyOtpUseCase: VerifyOtpUseCase,
     private readonly googleAuthUseCase: GoogleAuthUseCase,
-    private readonly loginUserUseCase: LoginUserUseCase,
+    private readonly loginWithPasswordUseCase: LoginWithPasswordUseCase,
+    private readonly loginWithOtpUseCase: LoginWithOtpUseCase,
     private readonly getCurrentUserUseCase: GetCurrentUserUseCase,
     private readonly otpService: OtpService,
     private readonly changeUserPasswordUseCase: ChangeUserPasswordUseCase,
@@ -96,7 +98,7 @@ export class AuthController {
     @Body() dto: LoginPasswordRequestDto,
     @Req() req: Request,
   ) {
-    const user = await this.loginUserUseCase.loginPassword({
+    const user = await this.loginWithPasswordUseCase.execute({
       email: dto.email,
       password: dto.password,
     });
@@ -116,7 +118,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: "Logged in" })
   @ApiResponse({ status: 401, description: "Invalid otp" })
   async loginOtp(@Body() dto: LoginOtpRequestDto, @Req() req: Request) {
-    const user = await this.loginUserUseCase.loginOtp(dto.email, dto.otp);
+    const user = await this.loginWithOtpUseCase.execute(dto.email, dto.otp);
 
     await this.establishSession(req, user.id);
     return {

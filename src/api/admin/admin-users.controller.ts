@@ -31,7 +31,7 @@ import {
   UpdateAdminUserRequestDto,
 } from "./dtos/admin-user.request.dto";
 import { ChangeUserPasswordRequestDto } from "./dtos/change-user-password.request.dto";
-import { ChangeUserPasswordUseCase } from "../../application/use-cases/change-user-password.use-case";
+import { ChangeUserPasswordUseCase } from "../../application/use-cases/users/change-user-password.use-case";
 
 @ApiTags("admin-users")
 @Controller("admin/users")

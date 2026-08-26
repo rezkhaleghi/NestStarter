@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
-import { User } from "../../domain/entities/user.entity";
-import { UserRole } from "../../domain/enums/user-role.enum";
+import { User } from "../../../domain/entities/user.entity";
+import { UserRole } from "../../../domain/enums/user-role.enum";
 import { GoogleAuthUseCase } from "./google-auth.use-case";
 
 describe("GoogleAuthUseCase", () => {
@@ -15,39 +15,20 @@ describe("GoogleAuthUseCase", () => {
   });
 
   it("returns an account already linked to Google", async () => {
-    const user = new User(
-      "user-id",
-      "user@example.com",
-      null,
-      UserRole.USER,
-      true,
-      new Date(),
-      new Date(),
-      "google-id",
-    );
+    const user = new User("user-id", "user@example.com", null, UserRole.USER, true, new Date(), new Date(), "google-id");
     findByGoogleId.mockResolvedValue(user);
 
-    await expect(
-      useCase.execute({ email: "other@example.com", googleId: "google-id" }),
-    ).resolves.toBe(user);
+    await expect(useCase.execute({ email: "other@example.com", googleId: "google-id" })).resolves.toBe(user);
     expect(findByEmail).not.toHaveBeenCalled();
   });
 
   it("links and verifies an existing local account", async () => {
-    const user = new User(
-      "user-id",
-      "user@example.com",
-      "hashed-password",
-      UserRole.USER,
-      false,
-    );
+    const user = new User("user-id", "user@example.com", "hashed-password");
     findByGoogleId.mockResolvedValue(null);
     findByEmail.mockResolvedValue(user);
     save.mockResolvedValue(user);
 
-    await expect(
-      useCase.execute({ email: " USER@example.com ", googleId: "google-id" }),
-    ).resolves.toBe(user);
+    await expect(useCase.execute({ email: " USER@example.com ", googleId: "google-id" })).resolves.toBe(user);
     expect(user.googleId).toBe("google-id");
     expect(user.emailVerified).toBe(true);
     expect(save).toHaveBeenCalledWith(user);
@@ -58,10 +39,7 @@ describe("GoogleAuthUseCase", () => {
     findByEmail.mockResolvedValue(null);
     save.mockImplementation(async (user) => user);
 
-    const result = await useCase.execute({
-      email: " USER@example.com ",
-      googleId: "google-id",
-    });
+    const result = await useCase.execute({ email: " USER@example.com ", googleId: "google-id" });
 
     expect(result.email).toBe("user@example.com");
     expect(result.googleId).toBe("google-id");
