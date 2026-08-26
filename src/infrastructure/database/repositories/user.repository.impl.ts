@@ -65,6 +65,7 @@ export class UserRepositoryImpl implements UserRepository {
       row.hashedPassword,
       row.role,
       row.createdAt,
+      row.updatedAt,
     );
   }
 
@@ -74,6 +75,8 @@ export class UserRepositoryImpl implements UserRepository {
     row.email = user.email;
     row.hashedPassword = user.hashedPassword;
     row.role = user.role;
+    row.createdAt = user.createdAt;
+    row.updatedAt = user.updatedAt;
     return row;
   }
 }

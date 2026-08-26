@@ -1,4 +1,4 @@
-import { UserRole } from '../enums/user-role.enum';
+import { UserRole } from "../enums/user-role.enum";
 
 /**
  * Domain entity — represents business truth about a User.
@@ -12,6 +12,7 @@ export class User {
     public readonly hashedPassword: string | null,
     public readonly role: UserRole = UserRole.USER,
     public readonly createdAt: Date = new Date(),
+    public readonly updatedAt: Date = new Date(),
   ) {}
 
   static create(params: {
