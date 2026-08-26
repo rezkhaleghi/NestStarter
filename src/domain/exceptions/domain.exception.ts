@@ -1,0 +1,41 @@
+/**
+ * Base class for all domain-level errors.
+ * These represent business rule violations, not HTTP or infrastructure errors.
+ * The API layer is responsible for translating these into proper HTTP responses.
+ */
+export class DomainException extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = this.constructor.name;
+  }
+}
+
+export class InvalidOtpException extends DomainException {
+  constructor() {
+    super("The provided OTP is invalid or has expired.");
+  }
+}
+
+export class UserAlreadyExistsException extends DomainException {
+  constructor(email: string) {
+    super(`A user with email "${email}" already exists.`);
+  }
+}
+
+export class InvalidCredentialsException extends DomainException {
+  constructor() {
+    super("Invalid email or password.");
+  }
+}
+
+export class UserNotFoundException extends DomainException {
+  constructor() {
+    super("User not found.");
+  }
+}
+
+export class CannotRemoveLastAdminException extends DomainException {
+  constructor() {
+    super("The last administrator cannot be removed or demoted.");
+  }
+}

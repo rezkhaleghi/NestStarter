@@ -1,0 +1,49 @@
+import {
+  ArgumentsHost,
+  Catch,
+  ConflictException,
+  ExceptionFilter,
+  NotFoundException,
+  UnauthorizedException,
+} from "@nestjs/common";
+import { Response } from "express";
+import {
+  CannotRemoveLastAdminException,
+  DomainException,
+  InvalidCredentialsException,
+  InvalidOtpException,
+  UserAlreadyExistsException,
+  UserNotFoundException,
+} from "../domain/exceptions/domain.exception";
+
+@Catch(DomainException)
+export class DomainExceptionFilter implements ExceptionFilter {
+  catch(exception: DomainException, host: ArgumentsHost): void {
+    const response = host.switchToHttp().getResponse<Response>();
+    const status = this.statusFor(exception);
+    response.status(status).json({
+      statusCode: status,
+      message: exception.message,
+      error: exception.name,
+    });
+  }
+
+  private statusFor(exception: DomainException): number {
+    if (exception instanceof InvalidCredentialsException) {
+      return new UnauthorizedException().getStatus();
+    }
+    if (exception instanceof UserNotFoundException) {
+      return new NotFoundException().getStatus();
+    }
+    if (exception instanceof UserAlreadyExistsException) {
+      return new ConflictException().getStatus();
+    }
+    if (exception instanceof InvalidOtpException) {
+      return new UnauthorizedException().getStatus();
+    }
+    if (exception instanceof CannotRemoveLastAdminException) {
+      return 409;
+    }
+    return 400;
+  }
+}
