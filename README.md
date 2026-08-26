@@ -1,3 +1,6 @@
+| POST | `/auth/change-password` | Change the authenticated user's password |
+| PATCH | `/admin/users/:id/password` | Reset a user's password |
+
 # NestJS Clean Architecture API
 
 A NestJS authentication and user-management API using Clean Architecture,
@@ -367,4 +370,5 @@ admin authorization, and concurrent last-admin changes.
 Avoid large generic services that combine unrelated authentication, user, and
 administration workflows. Focused use cases keep permissions and business
 rules explicit and independently testable.
+
 # NestStarter

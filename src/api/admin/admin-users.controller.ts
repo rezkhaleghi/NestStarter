@@ -24,6 +24,8 @@ import {
   ListUsersQueryDto,
   UpdateAdminUserRequestDto,
 } from "./dtos/admin-user.request.dto";
+import { ChangeUserPasswordRequestDto } from "./dtos/change-user-password.request.dto";
+import { ChangeUserPasswordUseCase } from "../../application/use-cases/change-user-password.use-case";
 
 @ApiTags("admin-users")
 @Controller("admin/users")
@@ -35,6 +37,7 @@ export class AdminUsersController {
     private readonly createUserUseCase: CreateAdminUserUseCase,
     private readonly updateUserUseCase: UpdateAdminUserUseCase,
     private readonly deleteUserUseCase: DeleteAdminUserUseCase,
+    private readonly changeUserPasswordUseCase: ChangeUserPasswordUseCase,
   ) {}
 
   @Get()
@@ -73,6 +76,18 @@ export class AdminUsersController {
   ) {
     await this.deleteUserUseCase.execute(id, (request.session as any).userId);
     return { message: "User deleted." };
+  }
+
+  @Patch(":id/password")
+  async changePassword(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body() dto: ChangeUserPasswordRequestDto,
+  ) {
+    await this.changeUserPasswordUseCase.execute({
+      userId: id,
+      password: dto.password,
+    });
+    return { message: "Password changed." };
   }
 
   private toResponse(user: {

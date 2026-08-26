@@ -20,6 +20,9 @@ import { GoogleAuthUseCase } from "../../application/use-cases/google-auth.use-c
 import { LoginUserUseCase } from "../../application/use-cases/login-user.use-case";
 import { GetCurrentUserUseCase } from "../../application/use-cases/get-current-user.use-case";
 import { OtpService } from "../../application/interfaces/otp.service.interface";
+import { ChangeUserPasswordUseCase } from "../../application/use-cases/change-user-password.use-case";
+import { AuthSessionGuard } from "./auth-session.guard";
+import { ChangePasswordRequestDto } from "./dtos/change-password.request.dto";
 import {
   SignUpRequestDto,
   RequestOtpDto,
@@ -44,6 +47,7 @@ export class AuthController {
     private readonly loginUserUseCase: LoginUserUseCase,
     private readonly getCurrentUserUseCase: GetCurrentUserUseCase,
     private readonly otpService: OtpService,
+    private readonly changeUserPasswordUseCase: ChangeUserPasswordUseCase,
   ) {}
 
   @Post("request-otp")
@@ -142,6 +146,22 @@ export class AuthController {
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
+  }
+
+  @Post("change-password")
+  @UseGuards(AuthSessionGuard)
+  @ApiOperation({ summary: "Change the current user's password" })
+  @ApiResponse({ status: 200, description: "Password changed" })
+  @ApiResponse({ status: 401, description: "Not authenticated" })
+  async changePassword(
+    @Body() dto: ChangePasswordRequestDto,
+    @Req() req: Request,
+  ) {
+    await this.changeUserPasswordUseCase.execute({
+      userId: (req.session as any).userId,
+      password: dto.password,
+    });
+    return { message: "Password changed" };
   }
 
   @Post("logout")
