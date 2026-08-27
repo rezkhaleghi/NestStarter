@@ -20,7 +20,13 @@ import {
 import { AuthGuard } from "@nestjs/passport";
 import { ConfigService } from "@nestjs/config";
 import { Throttle } from "@nestjs/throttler";
-import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
+import {
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+  ApiBody,
+  ApiConsumes,
+} from "@nestjs/swagger";
 import type { Request, Response } from "express";
 import { User } from "../../domain/entities/user.entity";
 import { CreateUserUseCase } from "../../application/use-cases/users/create-user.use-case";
@@ -44,6 +50,9 @@ import {
   LoginOtpRequestDto,
 } from "./dtos/auth.request.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
+
+
+
 /**
  * The controller ORCHESTRATES use cases — it contains no business logic
  * itself. For sign-up: verify OTP first, then create the user, as two
@@ -281,6 +290,19 @@ export class AuthController {
   @UseGuards(AuthSessionGuard)
   @UseInterceptors(FileInterceptor("file"))
   @ApiOperation({ summary: "Update the current user's avatar" })
+  @ApiConsumes("multipart/form-data")
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        file: {
+          type: "string",
+          format: "binary",
+        },
+      },
+      required: ["file"],
+    },
+  })
   async updateAvatar(
     @UploadedFile(
       new ParseFilePipe({

@@ -25,7 +25,7 @@ export class UpdateUserAvatarUseCase {
     }
 
     const extension = file.mimetype.split("/")[1] || "bin";
-    const objectName = `users/${userId}/avatar.${extension}`;
+    const objectName = `avatars/${userId}/avatar.${extension}`;
 
     await this.fileStorage.upload(objectName, file.buffer, file.mimetype);
 
