@@ -49,4 +49,10 @@ export class UserOrmEntity {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @Column({ nullable: true, type: "varchar" })
+  avatar: string | null;
+
+  @Column({ nullable: true, type: "varchar" })
+  bio: string | null;
 }

@@ -206,6 +206,8 @@ export class AuthController {
       dateOfBirth: user.dateOfBirth,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
+      avatar: user.avatar,
+      bio: user.bio,
     };
   }
 
@@ -238,16 +240,21 @@ export class AuthController {
     @Body() dto: UpdateProfileRequestDto,
     @Req() req: Request,
   ) {
-    const user = await this.updateCurrentUserUseCase.execute({
-      userId: req.session.userId!,
-      firstName: dto.firstName,
-      lastName: dto.lastName,
-      userName: dto.userName,
-      dateOfBirth:
-        dto.dateOfBirth === undefined || dto.dateOfBirth === null
-          ? dto.dateOfBirth
-          : new Date(dto.dateOfBirth),
-    });
+    const user = await this.updateCurrentUserUseCase.execute(
+      req.session.userId!,
+      {
+        // userId: req.session.userId!,
+        firstName: dto.firstName,
+        lastName: dto.lastName,
+        userName: dto.userName,
+        dateOfBirth:
+          dto.dateOfBirth === undefined || dto.dateOfBirth === null
+            ? dto.dateOfBirth
+            : new Date(dto.dateOfBirth),
+        avatar: dto.avatar,
+        bio: dto.bio,
+      },
+    );
     return this.toUserResponse(user);
   }
 
@@ -286,6 +293,8 @@ export class AuthController {
       lastName: user.lastName,
       userName: user.userName,
       dateOfBirth: user.dateOfBirth,
+      avatar: user.avatar,
+      bio: user.bio,
     };
   }
 }

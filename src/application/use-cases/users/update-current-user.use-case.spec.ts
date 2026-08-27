@@ -39,8 +39,7 @@ describe("UpdateCurrentUserUseCase", () => {
     findByUserName.mockResolvedValue(null);
     save.mockImplementation(async (user) => user);
 
-    const result = await useCase.execute({
-      userId: "id",
+    const result = await useCase.execute("userId", {
       firstName: "New",
       userName: "new_name",
     });
@@ -57,14 +56,14 @@ describe("UpdateCurrentUserUseCase", () => {
       new User("other", "other@example.com", "hashed"),
     );
     await expect(
-      useCase.execute({ userId: "id", userName: "taken" }),
+      useCase.execute("userId", { userName: "taken" }),
     ).rejects.toBeInstanceOf(UsernameAlreadyExistsException);
   });
 
   it("rejects a missing user", async () => {
     findById.mockResolvedValue(null);
-    await expect(useCase.execute({ userId: "missing" })).rejects.toBeInstanceOf(
-      UserNotFoundException,
-    );
+    await expect(
+      useCase.execute("", { userName: "missing" }),
+    ).rejects.toBeInstanceOf(UserNotFoundException);
   });
 });

@@ -23,6 +23,8 @@ export class User {
     public readonly lastName: string | null = null,
     public readonly userName: string | null = null,
     public readonly dateOfBirth: Date | null = null,
+    public readonly avatar: string | null = null,
+    public readonly bio: string | null = null,
   ) {
     this._emailVerified = emailVerified;
     this._googleId = googleId;

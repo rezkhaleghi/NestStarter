@@ -112,6 +112,14 @@ export class UserRepositoryImpl implements UserRepository {
     await this.repo.delete(id);
   }
 
+  /**
+   * Converts a TypeORM entity into the domain User entity.
+   *
+   * ORM entities belong to the infrastructure layer and should
+   * never leak into the domain or application layers.
+   *
+   * Database → ORM Entity → Domain Entity
+   */
   private toDomain(row: UserOrmEntity): User {
     return new User(
       row.id,
@@ -126,9 +134,22 @@ export class UserRepositoryImpl implements UserRepository {
       row.lastName,
       row.userName,
       row.dateOfBirth,
+      row.avatar,
+      row.bio,
     );
   }
 
+  /**
+   * Converts a domain User into a TypeORM entity.
+   *
+   * This keeps ORM-specific persistence details inside the
+   * infrastructure layer.
+   *
+   * Domain Entity → ORM Entity → Database
+   *
+   * Whenever a new property is added to the User domain entity,
+   * it should also be mapped here and in toDomain().
+   */
   private toOrm(user: User): UserOrmEntity {
     const row = new UserOrmEntity();
     row.id = user.id;
@@ -143,6 +164,8 @@ export class UserRepositoryImpl implements UserRepository {
     row.dateOfBirth = user.dateOfBirth;
     row.createdAt = user.createdAt;
     row.updatedAt = user.updatedAt;
+    row.avatar = user.avatar;
+    row.bio = user.bio;
     return row;
   }
 }

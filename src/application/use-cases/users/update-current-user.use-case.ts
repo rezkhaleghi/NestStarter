@@ -11,8 +11,8 @@ import { UpdateUserProfileInput } from "../../dtos/update-user-profile.input";
 export class UpdateCurrentUserUseCase {
   constructor(private readonly userRepository: UserRepository) {}
 
-  async execute(input: UpdateUserProfileInput): Promise<User> {
-    const existing = await this.userRepository.findById(input.userId);
+  async execute(userId: string, input: UpdateUserProfileInput): Promise<User> {
+    const existing = await this.userRepository.findById(userId);
     if (!existing) {
       throw new UserNotFoundException();
     }
@@ -39,6 +39,8 @@ export class UpdateCurrentUserUseCase {
       input.dateOfBirth === undefined
         ? existing.dateOfBirth
         : input.dateOfBirth,
+      input.avatar === undefined ? existing.avatar : input.avatar,
+      input.bio === undefined ? existing.bio : input.bio,
     );
     return this.userRepository.save(updated);
   }
