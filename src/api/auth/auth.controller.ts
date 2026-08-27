@@ -16,6 +16,7 @@ import {
   ParseFilePipe,
   MaxFileSizeValidator,
   FileTypeValidator,
+  Delete,
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { ConfigService } from "@nestjs/config";
@@ -50,8 +51,7 @@ import {
   LoginOtpRequestDto,
 } from "./dtos/auth.request.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
-
-
+import { DeleteUserAvatarUseCase } from "@application/use-cases/users/delete-user-avatar.use-case";
 
 /**
  * The controller ORCHESTRATES use cases — it contains no business logic
@@ -75,6 +75,7 @@ export class AuthController {
     private readonly changeUserPasswordUseCase: ChangeUserPasswordUseCase,
     private readonly updateCurrentUserUseCase: UpdateCurrentUserUseCase,
     private readonly updateUserAvatarUseCase: UpdateUserAvatarUseCase,
+    private readonly deleteUserAvatarUseCase: DeleteUserAvatarUseCase,
   ) {}
 
   @Post("request-otp")
@@ -328,6 +329,22 @@ export class AuthController {
         buffer: file.buffer,
         mimetype: file.mimetype,
       },
+    );
+
+    return this.toUserResponse(user);
+  }
+
+  @Delete("profile/avatar")
+  @UseGuards(AuthSessionGuard)
+  @ApiOperation({ summary: "Delete the current user's avatar" })
+  @ApiResponse({
+    status: 200,
+    description: "Avatar deleted",
+    type: AuthenticatedUserResponseDto,
+  })
+  async deleteAvatar(@Req() req: Request) {
+    const user = await this.deleteUserAvatarUseCase.execute(
+      req.session.userId!,
     );
 
     return this.toUserResponse(user);

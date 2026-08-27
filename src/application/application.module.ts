@@ -8,6 +8,7 @@ import { GetCurrentUserUseCase } from "./use-cases/users/get-current-user.use-ca
 import { ChangeUserPasswordUseCase } from "./use-cases/users/change-user-password.use-case";
 import { UpdateCurrentUserUseCase } from "./use-cases/users/update-current-user.use-case";
 import { UpdateUserAvatarUseCase } from "./use-cases/users/update-user-avatar.use-case";
+import { DeleteUserAvatarUseCase } from "./use-cases/users/delete-user-avatar.use-case";
 /**
  * Registers application use cases. Infrastructure bindings are supplied by
  * the composition root and injected through application interfaces.
@@ -23,6 +24,7 @@ import { UpdateUserAvatarUseCase } from "./use-cases/users/update-user-avatar.us
     ChangeUserPasswordUseCase,
     UpdateCurrentUserUseCase,
     UpdateUserAvatarUseCase,
+    DeleteUserAvatarUseCase,
   ],
   exports: [
     CreateUserUseCase,
@@ -34,6 +36,7 @@ import { UpdateUserAvatarUseCase } from "./use-cases/users/update-user-avatar.us
     ChangeUserPasswordUseCase,
     UpdateCurrentUserUseCase,
     UpdateUserAvatarUseCase,
+    DeleteUserAvatarUseCase,
   ],
 })
 export class ApplicationModule {}
