@@ -2,6 +2,12 @@ import { registerAs } from "@nestjs/config";
 import { TypeOrmModuleOptions } from "@nestjs/typeorm";
 import { UserOrmEntity } from "../database/orm-entities/user.orm-entity";
 
+/**
+ * NestJS database configuration.
+ *
+ * This configuration is used by TypeORM when running
+ * inside the NestJS application.
+ */
 export default registerAs(
   "database",
   (): TypeOrmModuleOptions => ({
@@ -15,3 +21,15 @@ export default registerAs(
     synchronize: process.env.NODE_ENV === "development",
   }),
 );
+
+//                     Database
+//                        │
+//           ┌────────────┴────────────┐
+//           │                         │
+//       NestJS app                TypeORM CLI
+//           │                         │
+//           ▼                         ▼
+// typeorm-config.ts             data-source.ts
+//           │                         │
+//           ▼                         ▼
+//    TypeOrmModule              DataSource
