@@ -3,12 +3,14 @@ import { User } from "../../../domain/entities/user.entity";
 import { UserNotFoundException } from "../../../domain/exceptions/domain.exception";
 import { UserRepository } from "../../../domain/repositories/user.repository";
 import { FileStorage } from "../../interfaces/file-storage.interface";
+import { ImageProcessing } from "../../interfaces/image-processing.interface";
 
 @Injectable()
 export class UpdateUserAvatarUseCase {
   constructor(
     private readonly userRepository: UserRepository,
     private readonly fileStorage: FileStorage,
+    private readonly imageProcessing: ImageProcessing,
   ) {}
 
   async execute(
@@ -24,10 +26,20 @@ export class UpdateUserAvatarUseCase {
       throw new UserNotFoundException();
     }
 
-    const extension = file.mimetype.split("/")[1] || "bin";
-    const objectName = `avatars/${userId}/avatar.${extension}`;
+    // Process the uploaded image:
+    // - fixes EXIF orientation
+    // - resizes to 512x512
+    // - converts it to WebP
+    // - compresses it with quality 85
+    const processedImage = await this.imageProcessing.processAvatar(
+      file.buffer,
+    );
 
-    await this.fileStorage.upload(objectName, file.buffer, file.mimetype);
+    // All avatars are stored as WebP after processing.
+    const objectName = `avatars/${userId}/avatar.webp`;
+
+    // Upload the processed image, not the original file.
+    await this.fileStorage.upload(objectName, processedImage, "image/webp");
 
     const oldAvatar = existing.avatar;
 
@@ -50,6 +62,7 @@ export class UpdateUserAvatarUseCase {
 
     const saved = await this.userRepository.save(updated);
 
+    // Delete the previous avatar after the database update succeeds.
     if (oldAvatar && oldAvatar !== objectName) {
       await this.fileStorage.delete(oldAvatar);
     }

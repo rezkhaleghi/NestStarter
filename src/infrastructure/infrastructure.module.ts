@@ -22,7 +22,8 @@ import { SmtpNotificationService } from "./services/notification.service";
 import { RedisClientLifecycle } from "./services/redis-client.lifecycle";
 import { MinioService } from "./services/minio.service";
 import { FileStorage } from "../application/interfaces/file-storage.interface";
-
+import { ImageProcessingService } from "./services/image-processing.service";
+import { ImageProcessing } from "@application/interfaces/image-processing.interface";
 /**
  * This module is the ONLY place where abstract tokens (interfaces) from
  * domain/application get bound to concrete infrastructure implementations.
@@ -117,6 +118,11 @@ import { FileStorage } from "../application/interfaces/file-storage.interface";
       provide: FileStorage,
       useExisting: MinioService,
     },
+    ImageProcessingService,
+    {
+      provide: ImageProcessing,
+      useClass: ImageProcessingService,
+    },
   ],
   exports: [
     UserRepository,
@@ -126,6 +132,7 @@ import { FileStorage } from "../application/interfaces/file-storage.interface";
     NotificationService,
     "REDIS_CLIENT",
     FileStorage,
+    ImageProcessing,
   ],
 })
 export class InfrastructureModule {}
