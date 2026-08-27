@@ -20,6 +20,8 @@ import { LoginProtection } from "../application/interfaces/login-protection.inte
 import { NotificationService } from "../application/interfaces/notification.service.interface";
 import { SmtpNotificationService } from "./services/notification.service";
 import { RedisClientLifecycle } from "./services/redis-client.lifecycle";
+import { MinioService } from "./services/minio.service";
+import { FileStorage } from "../application/interfaces/file-storage.interface";
 
 /**
  * This module is the ONLY place where abstract tokens (interfaces) from
@@ -110,6 +112,11 @@ import { RedisClientLifecycle } from "./services/redis-client.lifecycle";
     SeedAdminService,
     GoogleStrategy,
     SessionSerializer,
+    MinioService,
+    {
+      provide: FileStorage,
+      useExisting: MinioService,
+    },
   ],
   exports: [
     UserRepository,
@@ -118,6 +125,7 @@ import { RedisClientLifecycle } from "./services/redis-client.lifecycle";
     LoginProtection,
     NotificationService,
     "REDIS_CLIENT",
+    FileStorage,
   ],
 })
 export class InfrastructureModule {}
