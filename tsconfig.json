@@ -24,5 +24,6 @@
       "@infrastructure/*": ["src/infrastructure/*"],
       "@api/*": ["src/api/*"]
     }
+    // "esModuleInterop": true
   }
 }
