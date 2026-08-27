@@ -10,6 +10,12 @@ import {
   Res,
   UnauthorizedException,
   UseGuards,
+  UploadedFile,
+  UseInterceptors,
+  BadRequestException,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { ConfigService } from "@nestjs/config";
@@ -29,6 +35,7 @@ import { AuthSessionGuard } from "./auth-session.guard";
 import { ChangePasswordRequestDto } from "./dtos/change-password.request.dto";
 import { UpdateProfileRequestDto } from "./dtos/update-profile.request.dto";
 import { AuthenticatedUserResponseDto } from "./dtos/authenticated-user.response.dto";
+import { UpdateUserAvatarUseCase } from "../../application/use-cases/users/update-user-avatar.use-case";
 import { UpdateCurrentUserUseCase } from "../../application/use-cases/users/update-current-user.use-case";
 import {
   SignUpRequestDto,
@@ -36,7 +43,7 @@ import {
   LoginPasswordRequestDto,
   LoginOtpRequestDto,
 } from "./dtos/auth.request.dto";
-
+import { FileInterceptor } from "@nestjs/platform-express";
 /**
  * The controller ORCHESTRATES use cases — it contains no business logic
  * itself. For sign-up: verify OTP first, then create the user, as two
@@ -58,6 +65,7 @@ export class AuthController {
     private readonly otpService: OtpService,
     private readonly changeUserPasswordUseCase: ChangeUserPasswordUseCase,
     private readonly updateCurrentUserUseCase: UpdateCurrentUserUseCase,
+    private readonly updateUserAvatarUseCase: UpdateUserAvatarUseCase,
   ) {}
 
   @Post("request-otp")
@@ -243,7 +251,6 @@ export class AuthController {
     const user = await this.updateCurrentUserUseCase.execute(
       req.session.userId!,
       {
-        // userId: req.session.userId!,
         firstName: dto.firstName,
         lastName: dto.lastName,
         userName: dto.userName,
@@ -251,7 +258,6 @@ export class AuthController {
           dto.dateOfBirth === undefined || dto.dateOfBirth === null
             ? dto.dateOfBirth
             : new Date(dto.dateOfBirth),
-        avatar: dto.avatar,
         bio: dto.bio,
       },
     );
@@ -269,6 +275,40 @@ export class AuthController {
       res.clearCookie("connect.sid");
       res.status(200).json({ message: "Logged out" });
     });
+  }
+
+  @Post("profile/avatar")
+  @UseGuards(AuthSessionGuard)
+  @UseInterceptors(FileInterceptor("file"))
+  @ApiOperation({ summary: "Update the current user's avatar" })
+  async updateAvatar(
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({
+            maxSize: 5 * 1024 * 1024,
+          }),
+          new FileTypeValidator({
+            fileType: /^image\/(jpeg|png|webp|gif)$/,
+          }),
+        ],
+      }),
+    )
+    file: {
+      buffer: Buffer;
+      mimetype: string;
+    },
+    @Req() req: Request,
+  ) {
+    const user = await this.updateUserAvatarUseCase.execute(
+      req.session.userId!,
+      {
+        buffer: file.buffer,
+        mimetype: file.mimetype,
+      },
+    );
+
+    return this.toUserResponse(user);
   }
 
   private establishSession(req: Request, userId: string): Promise<void> {

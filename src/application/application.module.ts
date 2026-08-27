@@ -7,7 +7,7 @@ import { LoginWithOtpUseCase } from "./use-cases/auth/login-with-otp.use-case";
 import { GetCurrentUserUseCase } from "./use-cases/users/get-current-user.use-case";
 import { ChangeUserPasswordUseCase } from "./use-cases/users/change-user-password.use-case";
 import { UpdateCurrentUserUseCase } from "./use-cases/users/update-current-user.use-case";
-
+import { UpdateUserAvatarUseCase } from "./use-cases/users/update-user-avatar.use-case";
 /**
  * Registers application use cases. Infrastructure bindings are supplied by
  * the composition root and injected through application interfaces.
@@ -22,6 +22,7 @@ import { UpdateCurrentUserUseCase } from "./use-cases/users/update-current-user.
     GetCurrentUserUseCase,
     ChangeUserPasswordUseCase,
     UpdateCurrentUserUseCase,
+    UpdateUserAvatarUseCase,
   ],
   exports: [
     CreateUserUseCase,
@@ -32,6 +33,7 @@ import { UpdateCurrentUserUseCase } from "./use-cases/users/update-current-user.
     GetCurrentUserUseCase,
     ChangeUserPasswordUseCase,
     UpdateCurrentUserUseCase,
+    UpdateUserAvatarUseCase,
   ],
 })
 export class ApplicationModule {}

@@ -39,7 +39,7 @@ export class UpdateCurrentUserUseCase {
       input.dateOfBirth === undefined
         ? existing.dateOfBirth
         : input.dateOfBirth,
-      input.avatar === undefined ? existing.avatar : input.avatar,
+      existing.avatar,
       input.bio === undefined ? existing.bio : input.bio,
     );
     return this.userRepository.save(updated);

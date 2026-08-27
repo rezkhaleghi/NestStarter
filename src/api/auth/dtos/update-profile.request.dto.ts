@@ -25,14 +25,6 @@ export class UpdateProfileRequestDto {
   @IsDateString()
   dateOfBirth?: string | null;
 
-  @ApiPropertyOptional({
-    example: "https://example.com/avatar.jpg",
-    nullable: true,
-  })
-  @IsOptional()
-  @IsString()
-  avatar?: string | null;
-
   @ApiPropertyOptional({ example: "This is my bio.", nullable: true })
   @IsOptional()
   @IsString()
