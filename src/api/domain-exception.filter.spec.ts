@@ -1,10 +1,10 @@
 import { ArgumentsHost } from "@nestjs/common";
 import { describe, expect, it, jest } from "@jest/globals";
-import { DomainExceptionFilter } from "./domain-exception.filter";
+import { HttpExceptionFilter } from "./http-exception.filter";
 import { UserNotFoundException } from "../domain/exceptions/domain.exception";
 
-describe("DomainExceptionFilter", () => {
-  const filter = new DomainExceptionFilter();
+describe("HttpExceptionFilter", () => {
+  const filter = new HttpExceptionFilter();
 
   it("returns the stable response shape for domain errors", () => {
     const json = jest.fn();

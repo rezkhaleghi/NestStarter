@@ -1,4 +1,4 @@
-import { DomainExceptionFilter } from "./api/domain-exception.filter";
+import { HttpExceptionFilter } from "./api/http-exception.filter";
 import { randomUUID } from "crypto";
 import { NestFactory } from "@nestjs/core";
 import { ValidationPipe } from "@nestjs/common";
@@ -46,10 +46,13 @@ async function bootstrap() {
   // Adds Colleration ID to each request and response for tracing.
   app.use((request: Request, response: Response, next: () => void) => {
     const requestId = request.header("X-Request-Id") ?? randomUUID();
+
     response.setHeader("X-Request-Id", requestId);
+
+    (request as Request & { requestId: string }).requestId = requestId;
+
     next();
   });
-  // (request as Request & { requestId: string }).requestId = requestId; // Puts colleration id on the request too.
 
   // Enable global DTO validation.
   // This means every controller using DTO validation automatically gets the same validation behavior.
@@ -62,8 +65,8 @@ async function bootstrap() {
     }),
   );
 
-  // Domain/application exceptions converts into consistent HTTP responses.
-  app.useGlobalFilters(new DomainExceptionFilter());
+  // HTTP/application exceptions converts into consistent HTTP responses.
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   // Retrieve the Redis client registered by AppModule.
   const redisClient = app.get<RedisClientType>("REDIS_CLIENT");
