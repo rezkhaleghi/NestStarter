@@ -23,8 +23,22 @@ export class AdminUserResponseDto {
   @ApiProperty({ nullable: true })
   userName!: string | null;
 
-  @ApiProperty({ nullable: true, type: String, format: "date" })
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    format: "date",
+  })
   dateOfBirth!: Date | null;
+
+  @ApiProperty({
+    nullable: true,
+  })
+  avatar!: string | null;
+
+  @ApiProperty({
+    nullable: true,
+  })
+  bio!: string | null;
 
   @ApiProperty()
   createdAt!: Date;

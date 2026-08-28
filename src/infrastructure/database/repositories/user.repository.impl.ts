@@ -1,7 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { UserRepository } from "../../../domain/repositories/user.repository";
 import { User } from "../../../domain/entities/user.entity";
 import { UserOrmEntity } from "../orm-entities/user.orm-entity";
 import { UserRole } from "../../../domain/enums/user-role.enum";
@@ -10,6 +9,8 @@ import {
   PageResult,
 } from "../../../application/dtos/page-query.input";
 import { UserSearchResult } from "../../../application/dtos/user-search-result";
+import { UserRepository } from "../../../domain/repositories/user.repository";
+import { AdminUserSearchFilters } from "../../../application/dtos/admin-user-search-filters";
 
 /**
  * Concrete implementation of the domain's UserRepository contract.
@@ -214,6 +215,93 @@ export class UserRepositoryImpl implements UserRepository {
         dateOfBirth: row.dateOfBirth,
         createdAt: row.createdAt,
       })),
+      page: params.page,
+      limit: params.limit,
+      total,
+      totalPages: Math.ceil(total / params.limit),
+    };
+  }
+
+  async searchAdminUsers(
+    filters: AdminUserSearchFilters,
+    params: PageQuery<"createdAt" | "email" | "role">,
+  ): Promise<PageResult<User>> {
+    const qb = this.repo.createQueryBuilder("user");
+
+    if (filters.search?.trim()) {
+      const normalizedSearch = filters.search.trim();
+
+      const nameParts = normalizedSearch.split(/\s+/);
+
+      if (nameParts.length >= 2) {
+        const firstName = nameParts[0];
+        const lastName = nameParts.slice(1).join(" ");
+
+        qb.andWhere(
+          `
+        (
+          user.email ILIKE :exactEmail
+          OR user.userName ILIKE :prefix
+          OR user.firstName ILIKE :prefix
+          OR user.lastName ILIKE :prefix
+          OR (
+            user.firstName ILIKE :firstName
+            AND user.lastName ILIKE :lastName
+          )
+        )
+        `,
+          {
+            exactEmail: normalizedSearch,
+            prefix: `${normalizedSearch}%`,
+            firstName: `${firstName}%`,
+            lastName: `${lastName}%`,
+          },
+        );
+      } else {
+        qb.andWhere(
+          `
+        (
+          user.email ILIKE :exactEmail
+          OR user.userName ILIKE :prefix
+          OR user.firstName ILIKE :prefix
+          OR user.lastName ILIKE :prefix
+        )
+        `,
+          {
+            exactEmail: normalizedSearch,
+            prefix: `${normalizedSearch}%`,
+          },
+        );
+      }
+    }
+
+    if (filters.role) {
+      qb.andWhere("user.role = :role", {
+        role: filters.role,
+      });
+    }
+
+    if (filters.emailVerified !== undefined) {
+      qb.andWhere("user.emailVerified = :emailVerified", {
+        emailVerified: filters.emailVerified,
+      });
+    }
+
+    qb.orderBy(
+      `user.${params.sortBy ?? "createdAt"}`,
+      params.sortDirection ?? "DESC",
+    );
+
+    // Stable ordering when two users have the same primary sort value.
+    qb.addOrderBy("user.id", "ASC");
+
+    const [rows, total] = await qb
+      .skip((params.page - 1) * params.limit)
+      .take(params.limit)
+      .getManyAndCount();
+
+    return {
+      data: rows.map((row) => this.toDomain(row)),
       page: params.page,
       limit: params.limit,
       total,

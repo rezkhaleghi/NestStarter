@@ -8,6 +8,7 @@ import { DeleteAdminUserUseCase } from "../../application/use-cases/admin-users/
 import { GetUserUseCase } from "../../application/use-cases/admin-users/get-user.use-case";
 import { ListUsersUseCase } from "../../application/use-cases/admin-users/list-users.use-case";
 import { UpdateAdminUserUseCase } from "../../application/use-cases/admin-users/update-user.use-case";
+import { DeleteAdminUserAvatarUseCase } from "@application/use-cases/admin-users/delete-user-avatar.use-case";
 
 @Module({
   imports: [ApplicationModule, InfrastructureModule],
@@ -19,6 +20,7 @@ import { UpdateAdminUserUseCase } from "../../application/use-cases/admin-users/
     GetUserUseCase,
     ListUsersUseCase,
     UpdateAdminUserUseCase,
+    DeleteAdminUserAvatarUseCase,
   ],
 })
 export class AdminModule {}

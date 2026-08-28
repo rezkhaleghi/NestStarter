@@ -21,6 +21,7 @@ export interface UpdateAdminUserInput {
   lastName?: string | null;
   userName?: string | null;
   dateOfBirth?: Date | null;
+  bio?: string | null;
 }
 
 @Injectable()
@@ -67,7 +68,10 @@ export class UpdateAdminUserUseCase {
       input.dateOfBirth === undefined
         ? existing.dateOfBirth
         : input.dateOfBirth,
+      existing.avatar,
+      input.bio === undefined ? existing.bio : input.bio,
     );
+
     const saved = await this.userRepository.saveAdminMutation(
       updated,
       existing.role === UserRole.ADMIN,

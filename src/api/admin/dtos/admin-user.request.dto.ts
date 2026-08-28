@@ -16,14 +16,47 @@ import {
 import { UserRole } from "../../../domain/enums/user-role.enum";
 
 export class ListUsersQueryDto {
-  @ApiPropertyOptional({ default: 1, minimum: 1 })
+  @ApiPropertyOptional({
+    description:
+      "Search by email, username, first name, last name, or full name",
+    example: "john",
+  })
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @ApiPropertyOptional({
+    enum: UserRole,
+    description: "Filter users by role",
+  })
+  @IsOptional()
+  @IsEnum(UserRole)
+  role?: UserRole;
+
+  @ApiPropertyOptional({
+    description: "Filter users by email verification status",
+    example: true,
+  })
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  emailVerified?: boolean;
+
+  @ApiPropertyOptional({
+    default: 1,
+    minimum: 1,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
   page = 1;
 
-  @ApiPropertyOptional({ default: 20, minimum: 1, maximum: 100 })
+  @ApiPropertyOptional({
+    default: 20,
+    minimum: 1,
+    maximum: 100,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -39,82 +72,109 @@ export class ListUsersQueryDto {
   @IsEnum(["createdAt", "email", "role"])
   sortBy: "createdAt" | "email" | "role" = "createdAt";
 
-  @ApiPropertyOptional({ enum: ["ASC", "DESC"], default: "DESC" })
+  @ApiPropertyOptional({
+    enum: ["ASC", "DESC"],
+    default: "DESC",
+  })
   @IsOptional()
   @IsEnum(["ASC", "DESC"])
   sortDirection: "ASC" | "DESC" = "DESC";
 }
 
 export class CreateAdminUserRequestDto {
-  @ApiProperty({ example: "user@gmail.com" })
+  @ApiProperty({
+    example: "user@gmail.com",
+  })
   @IsEmail()
   email: string;
 
-  @ApiProperty({ example: "strongPassword123", minLength: 8 })
+  @ApiProperty({
+    example: "strongPassword123",
+    minLength: 8,
+  })
   @IsString()
   @MinLength(8)
   password: string;
 
-  @ApiPropertyOptional({ enum: UserRole, default: UserRole.USER })
+  @ApiPropertyOptional({
+    enum: UserRole,
+    default: UserRole.USER,
+  })
   @IsOptional()
   @IsEnum(UserRole)
   role: UserRole = UserRole.USER;
 }
 
 export class UpdateAdminUserRequestDto {
-  @ApiPropertyOptional({ example: "updated@gmail.com" })
+  @ApiPropertyOptional({
+    example: "updated@gmail.com",
+  })
   @IsOptional()
   @IsEmail()
   email?: string;
 
-  @ApiPropertyOptional({ example: "newStrongPassword123", minLength: 8 })
+  @ApiPropertyOptional({
+    example: "newStrongPassword123",
+    minLength: 8,
+  })
   @IsOptional()
   @IsString()
   @MinLength(8)
   password?: string;
 
-  @ApiPropertyOptional({ enum: UserRole })
+  @ApiPropertyOptional({
+    enum: UserRole,
+  })
   @IsOptional()
   @IsEnum(UserRole)
   role?: UserRole;
 
-  @ApiPropertyOptional({ description: "Whether the email address is verified" })
+  @ApiPropertyOptional({
+    description: "Whether the email address is verified",
+  })
   @IsOptional()
   @IsBoolean()
   emailVerified?: boolean;
 
-  @ApiPropertyOptional({ example: "Jane", nullable: true })
+  @ApiPropertyOptional({
+    example: "Jane",
+    nullable: true,
+  })
   @IsOptional()
   @IsString()
   @Length(1, 100)
   firstName?: string | null;
 
-  @ApiPropertyOptional({ example: "Doe", nullable: true })
+  @ApiPropertyOptional({
+    example: "Doe",
+    nullable: true,
+  })
   @IsOptional()
   @IsString()
   @Length(1, 100)
   lastName?: string | null;
 
-  @ApiPropertyOptional({ example: "jane_doe", nullable: true })
+  @ApiPropertyOptional({
+    example: "jane_doe",
+    nullable: true,
+  })
   @IsOptional()
   @IsString()
   @Length(3, 50)
   userName?: string | null;
 
-  @ApiPropertyOptional({ example: "1990-05-20", nullable: true })
+  @ApiPropertyOptional({
+    example: "1990-05-20",
+    nullable: true,
+  })
   @IsOptional()
   @IsDateString()
   dateOfBirth?: string | null;
 
   @ApiPropertyOptional({
-    example: "https://example.com/avatar.jpg",
+    example: "This is my bio.",
     nullable: true,
   })
-  @IsOptional()
-  @IsString()
-  avatar?: string | null;
-
-  @ApiPropertyOptional({ example: "This is my bio.", nullable: true })
   @IsOptional()
   @IsString()
   bio?: string | null;
