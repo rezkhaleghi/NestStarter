@@ -219,7 +219,7 @@ npm test -- --runInBand
 | ------ | ----------------------- | ---------------------------------------- |
 | POST   | `/auth/request-otp`     | Send an OTP to an email                  |
 | POST   | `/auth/sign-up`         | Verify OTP and create a user             |
-| POST   | `/auth/login-email`     | Login with email and password            |
+| POST   | `/auth/simple-login`    | Login with email and password            |
 | POST   | `/auth/login-otp`       | Login with email and OTP                 |
 | GET    | `/auth/google`          | Start Google OAuth                       |
 | GET    | `/auth/google/callback` | Complete Google OAuth                    |
@@ -259,7 +259,7 @@ an HTTP-only `connect.sid` cookie when a cookie-aware client is used.
 ### Email/password login
 
 ```bash
-curl -c cookies.txt -X POST http://localhost:3000/auth/login-email \
+curl -c cookies.txt -X POST http://localhost:3000/auth/simple-login \
    -H "Content-Type: application/json" \
    -d '{
       "email":"user@gmail.com",
@@ -341,7 +341,7 @@ application. The admin record remains in PostgreSQL.
 Login and save the session cookie:
 
 ```bash
-curl -c admin-cookies.txt -X POST http://localhost:3000/auth/login-email \
+curl -c admin-cookies.txt -X POST http://localhost:3000/auth/simple-login \
    -H "Content-Type: application/json" \
    -d '{
       "email":"admin@gmail.com",

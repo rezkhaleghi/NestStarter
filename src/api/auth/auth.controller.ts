@@ -120,7 +120,7 @@ export class AuthController {
     };
   }
 
-  @Post("login-email")
+  @Post("simple-login")
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Log in with email and password" })
