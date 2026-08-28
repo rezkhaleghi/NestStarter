@@ -9,6 +9,7 @@ import {
   PageQuery,
   PageResult,
 } from "../../../application/dtos/page-query.input";
+import { UserSearchResult } from "../../../application/dtos/user-search-result";
 
 /**
  * Concrete implementation of the domain's UserRepository contract.
@@ -110,6 +111,114 @@ export class UserRepositoryImpl implements UserRepository {
 
   async deleteById(id: string): Promise<void> {
     await this.repo.delete(id);
+  }
+
+  async search(
+    query: string,
+    params: PageQuery<"createdAt">,
+  ): Promise<PageResult<UserSearchResult>> {
+    const normalizedQuery = query.trim().toLowerCase();
+
+    const qb = this.repo
+      .createQueryBuilder("user")
+      .select([
+        "user.id",
+        "user.firstName",
+        "user.lastName",
+        "user.userName",
+        "user.avatar",
+        "user.bio",
+        "user.email",
+        "user.dateOfBirth",
+        "user.createdAt",
+      ]);
+
+    const nameParts = normalizedQuery.split(/\s+/);
+    const firstNameQuery = nameParts[0];
+    const lastNameQuery = nameParts.slice(1).join(" ");
+
+    qb.where(
+      `
+      user.email ILIKE :exactEmail
+      OR user.userName ILIKE :prefix
+      OR user.firstName ILIKE :prefix
+      OR user.lastName ILIKE :prefix
+    `,
+      {
+        exactEmail: normalizedQuery,
+        prefix: `${normalizedQuery}%`,
+      },
+    );
+
+    // Support full-name searches such as:
+    // "john doe" → firstName starts with "john" AND lastName starts with "doe"
+    if (nameParts.length >= 2) {
+      qb.orWhere(
+        `
+        user.firstName ILIKE :firstNamePrefix
+        AND user.lastName ILIKE :lastNamePrefix
+      `,
+        {
+          firstNamePrefix: `${firstNameQuery}%`,
+          lastNamePrefix: `${lastNameQuery}%`,
+        },
+      );
+    }
+
+    qb.addSelect(
+      `
+      CASE
+        WHEN user.email ILIKE :exactEmail THEN 1
+        WHEN user.userName ILIKE :exactUsername THEN 2
+        WHEN user.userName ILIKE :prefix THEN 3
+        WHEN user.firstName ILIKE :exactName THEN 4
+        WHEN user.lastName ILIKE :exactName THEN 5
+        WHEN user.firstName ILIKE :prefix THEN 6
+        WHEN user.lastName ILIKE :prefix THEN 7
+        WHEN (
+          user.firstName ILIKE :firstNamePrefix
+          AND user.lastName ILIKE :lastNamePrefix
+        ) THEN 8
+        ELSE 9
+      END
+    `,
+      "search_rank",
+    );
+
+    qb.setParameters({
+      exactEmail: normalizedQuery,
+      exactUsername: normalizedQuery,
+      exactName: normalizedQuery,
+      prefix: `${normalizedQuery}%`,
+      firstNamePrefix: `${firstNameQuery}%`,
+      lastNamePrefix: `${lastNameQuery}%`,
+    });
+
+    qb.orderBy("search_rank", "ASC");
+    qb.addOrderBy("user.createdAt", "DESC");
+
+    const [rows, total] = await qb
+      .skip((params.page - 1) * params.limit)
+      .take(params.limit)
+      .getManyAndCount();
+
+    return {
+      data: rows.map((row) => ({
+        id: row.id,
+        firstName: row.firstName,
+        lastName: row.lastName,
+        userName: row.userName,
+        avatar: row.avatar,
+        bio: row.bio,
+        email: row.email,
+        dateOfBirth: row.dateOfBirth,
+        createdAt: row.createdAt,
+      })),
+      page: params.page,
+      limit: params.limit,
+      total,
+      totalPages: Math.ceil(total / params.limit),
+    };
   }
 
   /**

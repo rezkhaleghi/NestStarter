@@ -1,5 +1,6 @@
 import { User } from "../entities/user.entity";
 import { PageQuery, PageResult } from "../../application/dtos/page-query.input";
+import { UserSearchResult } from "../../application/dtos/user-search-result";
 
 /**
  * Repository CONTRACT only — no implementation here.
@@ -11,9 +12,16 @@ export abstract class UserRepository {
   abstract findByEmail(email: string): Promise<User | null>;
   abstract findByGoogleId(googleId: string): Promise<User | null>;
   abstract findByUserName(userName: string): Promise<User | null>;
+
+  abstract search(
+    query: string,
+    params: PageQuery<"createdAt">,
+  ): Promise<PageResult<UserSearchResult>>;
+
   abstract findPage(
     params: PageQuery<"createdAt" | "email" | "role">,
   ): Promise<PageResult<User>>;
+
   abstract countByRole(role: string): Promise<number>;
   abstract save(user: User): Promise<User>;
   abstract saveAdminMutation(

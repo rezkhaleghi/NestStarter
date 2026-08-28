@@ -5,6 +5,7 @@ import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { APP_GUARD } from "@nestjs/core";
 import { HealthModule } from "./api/health/health.module";
 import { InfrastructureModule } from "./infrastructure/infrastructure.module";
+import { UsersModule } from "./api/users/users.module";
 
 /**
  * Root application module.
@@ -21,6 +22,7 @@ import { InfrastructureModule } from "./infrastructure/infrastructure.module";
     AuthModule,
     AdminModule,
     HealthModule,
+    UsersModule,
   ],
 
   // Register ThrottlerGuard as a global guard.
