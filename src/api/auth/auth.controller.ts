@@ -4,61 +4,41 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  Patch,
   Post,
   Req,
   Res,
-  UnauthorizedException,
   UseGuards,
-  UploadedFile,
-  UseInterceptors,
-  BadRequestException,
-  ParseFilePipe,
-  MaxFileSizeValidator,
-  FileTypeValidator,
-  Delete,
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { ConfigService } from "@nestjs/config";
 import { Throttle } from "@nestjs/throttler";
-import {
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-  ApiBody,
-  ApiConsumes,
-} from "@nestjs/swagger";
+import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import type { Request, Response } from "express";
-import { User } from "../../domain/entities/user.entity";
+
 import { CreateUserUseCase } from "../../application/use-cases/users/create-user.use-case";
 import { VerifyOtpUseCase } from "../../application/use-cases/auth/verify-otp.use-case";
 import { GoogleAuthUseCase } from "../../application/use-cases/auth/google-auth.use-case";
 import { LoginWithPasswordUseCase } from "../../application/use-cases/auth/login-with-password.use-case";
 import { LoginWithOtpUseCase } from "../../application/use-cases/auth/login-with-otp.use-case";
-import { GetCurrentUserUseCase } from "../../application/use-cases/users/get-current-user.use-case";
 import { OtpService } from "../../application/interfaces/otp.service.interface";
 import { ChangeUserPasswordUseCase } from "../../application/use-cases/users/change-user-password.use-case";
+
 import { AuthSessionGuard } from "./auth-session.guard";
-import { ChangePasswordRequestDto } from "./dtos/change-password.request.dto";
-import { UpdateProfileRequestDto } from "./dtos/update-profile.request.dto";
 import { AuthenticatedUserResponseDto } from "./dtos/authenticated-user.response.dto";
-import { UpdateUserAvatarUseCase } from "../../application/use-cases/users/update-user-avatar.use-case";
-import { UpdateCurrentUserUseCase } from "../../application/use-cases/users/update-current-user.use-case";
 import {
   SignUpRequestDto,
   RequestOtpDto,
   LoginPasswordRequestDto,
   LoginOtpRequestDto,
 } from "./dtos/auth.request.dto";
-import { FileInterceptor } from "@nestjs/platform-express";
-import { DeleteUserAvatarUseCase } from "@application/use-cases/users/delete-user-avatar.use-case";
+import { ChangePasswordRequestDto } from "./dtos/change-password.request.dto";
 
 /**
- * The controller ORCHESTRATES use cases — it contains no business logic
- * itself. For sign-up: verify OTP first, then create the user, as two
- * distinct use case calls. CreateUserUseCase never sees `otp`.
- * For Google: AuthGuard('google') handles the OAuth handshake, then the
- * callback route calls GoogleAuthUseCase and sets the session.
+ * Authentication controller.
+ *
+ * Responsible only for authentication and session-related HTTP endpoints.
+ *
+ * Profile and user-management operations belong to UsersController.
  */
 @ApiTags("auth")
 @Controller("auth")
@@ -70,26 +50,32 @@ export class AuthController {
     private readonly googleAuthUseCase: GoogleAuthUseCase,
     private readonly loginWithPasswordUseCase: LoginWithPasswordUseCase,
     private readonly loginWithOtpUseCase: LoginWithOtpUseCase,
-    private readonly getCurrentUserUseCase: GetCurrentUserUseCase,
     private readonly otpService: OtpService,
     private readonly changeUserPasswordUseCase: ChangeUserPasswordUseCase,
-    private readonly updateCurrentUserUseCase: UpdateCurrentUserUseCase,
-    private readonly updateUserAvatarUseCase: UpdateUserAvatarUseCase,
-    private readonly deleteUserAvatarUseCase: DeleteUserAvatarUseCase,
   ) {}
 
   @Post("request-otp")
   @Throttle({ default: { limit: 3, ttl: 60000 } })
-  @ApiOperation({ summary: "Send a one-time password to the given email" })
-  @ApiResponse({ status: 201, description: "OTP sent" })
+  @ApiOperation({
+    summary: "Send a one-time password to the given email",
+  })
+  @ApiResponse({
+    status: 201,
+    description: "OTP sent",
+  })
   async requestOtp(@Body() dto: RequestOtpDto) {
     await this.otpService.generateAndSend(dto.email);
-    return { message: "OTP sent" };
+
+    return {
+      message: "OTP sent",
+    };
   }
 
   @Post("sign-up")
   @Throttle({ default: { limit: 5, ttl: 60000 } })
-  @ApiOperation({ summary: "Verify OTP and create a new user" })
+  @ApiOperation({
+    summary: "Verify OTP and create a new user",
+  })
   @ApiResponse({
     status: 201,
     description: "User created",
@@ -100,13 +86,19 @@ export class AuthController {
     description: "Invalid OTP or user already exists",
   })
   async signUp(@Body() dto: SignUpRequestDto, @Req() req: Request) {
-    await this.verifyOtpUseCase.execute({ email: dto.email, otp: dto.otp });
+    // OTP verification and user creation are intentionally
+    // separate use cases.
+    await this.verifyOtpUseCase.execute({
+      email: dto.email,
+      otp: dto.otp,
+    });
 
     const user = await this.createUserUseCase.execute({
       email: dto.email,
       password: dto.password,
     });
 
+    // Create an authenticated session immediately after signup.
     await this.establishSession(req, user.id);
 
     return {
@@ -123,13 +115,18 @@ export class AuthController {
   @Post("simple-login")
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Log in with email and password" })
+  @ApiOperation({
+    summary: "Log in with email and password",
+  })
   @ApiResponse({
     status: 200,
     description: "Logged in",
     type: AuthenticatedUserResponseDto,
   })
-  @ApiResponse({ status: 401, description: "Invalid email or password" })
+  @ApiResponse({
+    status: 401,
+    description: "Invalid email or password",
+  })
   async loginPassword(
     @Body() dto: LoginPasswordRequestDto,
     @Req() req: Request,
@@ -140,6 +137,7 @@ export class AuthController {
     });
 
     await this.establishSession(req, user.id);
+
     return {
       id: user.id,
       email: user.email,
@@ -154,17 +152,23 @@ export class AuthController {
   @Post("login-otp")
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Log in with email and otp" })
+  @ApiOperation({
+    summary: "Log in with email and OTP",
+  })
   @ApiResponse({
     status: 200,
     description: "Logged in",
     type: AuthenticatedUserResponseDto,
   })
-  @ApiResponse({ status: 401, description: "Invalid otp" })
+  @ApiResponse({
+    status: 401,
+    description: "Invalid OTP",
+  })
   async loginOtp(@Body() dto: LoginOtpRequestDto, @Req() req: Request) {
     const user = await this.loginWithOtpUseCase.execute(dto.email, dto.otp);
 
     await this.establishSession(req, user.id);
+
     return {
       id: user.id,
       email: user.email,
@@ -177,20 +181,30 @@ export class AuthController {
   }
 
   @Get("google")
-  @ApiOperation({ summary: "Start Google OAuth login/signup flow" })
+  @ApiOperation({
+    summary: "Start Google OAuth login/signup flow",
+  })
   @UseGuards(AuthGuard("google"))
   googleAuth() {
-    // Passport redirects to Google. Nothing to do here.
+    // Passport redirects the user to Google.
   }
 
   @Get("google/callback")
-  @ApiOperation({ summary: "Google OAuth callback — sets session cookie" })
+  @ApiOperation({
+    summary: "Google OAuth callback — sets session cookie",
+  })
   @UseGuards(AuthGuard("google"))
   async googleAuthCallback(@Req() req: Request, @Res() res: Response) {
-    const { email, googleId } = req.user as { email: string; googleId: string };
-    const user = await this.googleAuthUseCase.execute({ email, googleId });
+    const { email, googleId } = req.user as {
+      email: string;
+      googleId: string;
+    };
 
-    // express-session: req.session persists across requests via cookie
+    const user = await this.googleAuthUseCase.execute({
+      email,
+      googleId,
+    });
+
     await this.establishSession(req, user.id);
 
     res.redirect(
@@ -198,42 +212,19 @@ export class AuthController {
     );
   }
 
-  @Get("profile")
-  @ApiOperation({ summary: "Get the profile of the currently logged-in user" })
-  @ApiResponse({
-    status: 200,
-    description: "Current user profile",
-    type: AuthenticatedUserResponseDto,
-  })
-  @ApiResponse({ status: 401, description: "Not authenticated" })
-  async profile(@Req() req: Request) {
-    const userId = req.session.userId;
-    if (!userId) {
-      throw new UnauthorizedException();
-    }
-
-    const user = await this.getCurrentUserUseCase.execute(userId);
-    return {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      emailVerified: user.emailVerified,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      userName: user.userName,
-      dateOfBirth: user.dateOfBirth,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-      avatar: user.avatar,
-      bio: user.bio,
-    };
-  }
-
   @Post("change-password")
   @UseGuards(AuthSessionGuard)
-  @ApiOperation({ summary: "Change the current user's password" })
-  @ApiResponse({ status: 200, description: "Password changed" })
-  @ApiResponse({ status: 401, description: "Not authenticated" })
+  @ApiOperation({
+    summary: "Change the current user's password",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Password changed",
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Not authenticated",
+  })
   async changePassword(
     @Body() dto: ChangePasswordRequestDto,
     @Req() req: Request,
@@ -242,114 +233,42 @@ export class AuthController {
       userId: req.session.userId!,
       password: dto.password,
     });
-    return { message: "Password changed" };
-  }
 
-  @Patch("profile")
-  @UseGuards(AuthSessionGuard)
-  @ApiOperation({ summary: "Update the current user's profile" })
-  @ApiResponse({
-    status: 200,
-    description: "Profile updated",
-    type: AuthenticatedUserResponseDto,
-  })
-  @ApiResponse({ status: 409, description: "Username already exists" })
-  async updateProfile(
-    @Body() dto: UpdateProfileRequestDto,
-    @Req() req: Request,
-  ) {
-    const user = await this.updateCurrentUserUseCase.execute(
-      req.session.userId!,
-      {
-        firstName: dto.firstName,
-        lastName: dto.lastName,
-        userName: dto.userName,
-        dateOfBirth:
-          dto.dateOfBirth === undefined || dto.dateOfBirth === null
-            ? dto.dateOfBirth
-            : new Date(dto.dateOfBirth),
-        bio: dto.bio,
-      },
-    );
-    return this.toUserResponse(user);
+    return {
+      message: "Password changed",
+    };
   }
 
   @Post("logout")
-  @ApiOperation({ summary: "Destroy the current session" })
+  @ApiOperation({
+    summary: "Destroy the current session",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Logged out",
+  })
   logout(@Req() req: Request, @Res() res: Response) {
     req.session.destroy((error) => {
       if (error) {
-        res.status(500).json({ message: "Could not log out" });
+        res.status(500).json({
+          message: "Could not log out",
+        });
         return;
       }
+
       res.clearCookie("connect.sid");
-      res.status(200).json({ message: "Logged out" });
+
+      res.status(200).json({
+        message: "Logged out",
+      });
     });
   }
 
-  @Post("profile/avatar")
-  @UseGuards(AuthSessionGuard)
-  @UseInterceptors(FileInterceptor("file"))
-  @ApiOperation({ summary: "Update the current user's avatar" })
-  @ApiConsumes("multipart/form-data")
-  @ApiBody({
-    schema: {
-      type: "object",
-      properties: {
-        file: {
-          type: "string",
-          format: "binary",
-        },
-      },
-      required: ["file"],
-    },
-  })
-  async updateAvatar(
-    @UploadedFile(
-      new ParseFilePipe({
-        validators: [
-          new MaxFileSizeValidator({
-            maxSize: 5 * 1024 * 1024,
-          }),
-          new FileTypeValidator({
-            fileType: /^image\/(jpeg|png|webp|gif)$/,
-          }),
-        ],
-      }),
-    )
-    file: {
-      buffer: Buffer;
-      mimetype: string;
-    },
-    @Req() req: Request,
-  ) {
-    const user = await this.updateUserAvatarUseCase.execute(
-      req.session.userId!,
-      {
-        buffer: file.buffer,
-        mimetype: file.mimetype,
-      },
-    );
-
-    return this.toUserResponse(user);
-  }
-
-  @Delete("profile/avatar")
-  @UseGuards(AuthSessionGuard)
-  @ApiOperation({ summary: "Delete the current user's avatar" })
-  @ApiResponse({
-    status: 200,
-    description: "Avatar deleted",
-    type: AuthenticatedUserResponseDto,
-  })
-  async deleteAvatar(@Req() req: Request) {
-    const user = await this.deleteUserAvatarUseCase.execute(
-      req.session.userId!,
-    );
-
-    return this.toUserResponse(user);
-  }
-
+  /**
+   * Creates a new session for the authenticated user.
+   *
+   * Regenerating the session ID prevents session fixation attacks.
+   */
   private establishSession(req: Request, userId: string): Promise<void> {
     return new Promise((resolve, reject) => {
       req.session.regenerate((error) => {
@@ -357,23 +276,11 @@ export class AuthController {
           reject(error);
           return;
         }
+
         req.session.userId = userId;
+
         resolve();
       });
     });
-  }
-
-  private toUserResponse(user: User) {
-    return {
-      id: user.id,
-      email: user.email,
-      emailVerified: user.emailVerified,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      userName: user.userName,
-      dateOfBirth: user.dateOfBirth,
-      avatar: user.avatar,
-      bio: user.bio,
-    };
   }
 }
