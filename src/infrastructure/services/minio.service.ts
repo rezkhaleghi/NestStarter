@@ -66,4 +66,8 @@ export class MinioService extends FileStorage implements OnModuleInit {
 
     return `http://${endpoint}:${port}/${this.bucket}/${objectName}`;
   }
+
+  async healthCheck(): Promise<void> {
+    await this.client.listBuckets();
+  }
 }

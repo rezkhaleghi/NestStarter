@@ -10,4 +10,6 @@ export abstract class FileStorage {
   abstract delete(objectName: string): Promise<void>;
 
   abstract getUrl(objectName: string): string;
+
+  abstract healthCheck(): Promise<void>;
 }

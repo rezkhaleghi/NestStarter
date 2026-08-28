@@ -5,12 +5,14 @@ import {
   TypeOrmHealthIndicator,
 } from "@nestjs/terminus";
 import type { RedisClientType } from "redis";
+import { FileStorage } from "../../application/interfaces/file-storage.interface";
 
 @Controller("health")
 export class HealthController {
   constructor(
     private readonly health: HealthCheckService,
     private readonly database: TypeOrmHealthIndicator,
+    private readonly fileStorage: FileStorage,
     @Inject("REDIS_CLIENT") private readonly redis: RedisClientType,
   ) {}
 
@@ -22,6 +24,10 @@ export class HealthController {
       async () => {
         await this.redis.ping();
         return { redis: { status: "up" } };
+      },
+      async () => {
+        await this.fileStorage.healthCheck();
+        return { minio: { status: "up" } };
       },
     ]);
   }
