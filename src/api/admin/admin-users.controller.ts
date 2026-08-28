@@ -35,6 +35,7 @@ import { ChangeUserPasswordRequestDto } from "./dtos/change-user-password.reques
 import { AdminUserResponseDto } from "./dtos/admin-user.response.dto";
 import { AdminUserListResponseDto } from "./dtos/admin-user-list.response.dto";
 import { DeleteAdminUserAvatarUseCase } from "../../application/use-cases/admin-users/delete-user-avatar.use-case";
+import { GetAdminStatisticsUseCase } from "../../application/use-cases/admin-users/get-statistics.use-case";
 
 @Controller("admin/users")
 @ApiTags("admin-users")
@@ -48,7 +49,18 @@ export class AdminUsersController {
     private readonly deleteUserUseCase: DeleteAdminUserUseCase,
     private readonly changeUserPasswordUseCase: ChangeUserPasswordUseCase,
     private readonly deleteAdminUserAvatarUseCase: DeleteAdminUserAvatarUseCase,
+    private readonly getAdminStatisticsUseCase: GetAdminStatisticsUseCase,
   ) {}
+
+  @Get("statistics")
+  @ApiOperation({ summary: "Get admin dashboard statistics" })
+  @ApiResponse({
+    status: 200,
+    description: "Admin statistics",
+  })
+  async statistics() {
+    return this.getAdminStatisticsUseCase.execute();
+  }
 
   @Get()
   @ApiOperation({
@@ -113,8 +125,21 @@ export class AdminUsersController {
     status: 409,
     description: "Email already exists",
   })
-  async create(@Body() dto: CreateAdminUserRequestDto) {
-    return this.toResponse(await this.createUserUseCase.execute(dto));
+  @Post()
+  @ApiOperation({ summary: "Create a user or administrator" })
+  @ApiResponse({
+    status: 201,
+    description: "User created",
+    type: AdminUserResponseDto,
+  })
+  @ApiResponse({ status: 409, description: "Email already exists" })
+  async create(
+    @Body() dto: CreateAdminUserRequestDto,
+    @Req() request: Request,
+  ) {
+    return this.toResponse(
+      await this.createUserUseCase.execute(dto, request.session.userId!),
+    );
   }
 
   @Patch(":id")

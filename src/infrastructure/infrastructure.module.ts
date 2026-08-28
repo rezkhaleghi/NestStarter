@@ -24,6 +24,10 @@ import { MinioService } from "./services/minio.service";
 import { FileStorage } from "../application/interfaces/file-storage.interface";
 import { ImageProcessingService } from "./services/image-processing.service";
 import { ImageProcessing } from "@application/interfaces/image-processing.interface";
+import { AdminStatisticsServiceImpl } from "./services/admin-statistics.service";
+import { AdminStatisticsService } from "../application/interfaces/admin-statistics.interface";
+import { AuditLogger } from "../application/interfaces/audit-logger.interface";
+import { AuditLoggerService } from "./services/audit-logger.service";
 /**
  * This module is the ONLY place where abstract tokens (interfaces) from
  * domain/application get bound to concrete infrastructure implementations.
@@ -123,6 +127,15 @@ import { ImageProcessing } from "@application/interfaces/image-processing.interf
       provide: ImageProcessing,
       useClass: ImageProcessingService,
     },
+    AdminStatisticsServiceImpl,
+    {
+      provide: AdminStatisticsService,
+      useExisting: AdminStatisticsServiceImpl,
+    },
+    {
+      provide: AuditLogger,
+      useClass: AuditLoggerService,
+    },
   ],
   exports: [
     UserRepository,
@@ -133,6 +146,8 @@ import { ImageProcessing } from "@application/interfaces/image-processing.interf
     "REDIS_CLIENT",
     FileStorage,
     ImageProcessing,
+    AdminStatisticsService,
+    AuditLogger,
   ],
 })
 export class InfrastructureModule {}
