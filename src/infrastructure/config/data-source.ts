@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { DataSource } from "typeorm";
 import { UserOrmEntity } from "../database/orm-entities/user.orm-entity";
 

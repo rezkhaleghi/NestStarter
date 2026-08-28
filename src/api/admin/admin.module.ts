@@ -10,6 +10,7 @@ import { ListUsersUseCase } from "../../application/use-cases/admin-users/list-u
 import { UpdateAdminUserUseCase } from "../../application/use-cases/admin-users/update-user.use-case";
 import { DeleteAdminUserAvatarUseCase } from "@application/use-cases/admin-users/delete-user-avatar.use-case";
 import { GetAdminStatisticsUseCase } from "../../application/use-cases/admin-users/get-statistics.use-case";
+import { GetAuditLogsUseCase } from "@application/use-cases/admin-users/get-audit-logs.use-case";
 
 @Module({
   imports: [ApplicationModule, InfrastructureModule],
@@ -23,6 +24,7 @@ import { GetAdminStatisticsUseCase } from "../../application/use-cases/admin-use
     UpdateAdminUserUseCase,
     DeleteAdminUserAvatarUseCase,
     GetAdminStatisticsUseCase,
+    GetAuditLogsUseCase,
   ],
 })
 export class AdminModule {}

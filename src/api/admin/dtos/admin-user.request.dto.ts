@@ -1,5 +1,4 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { Type } from "class-transformer";
 import {
   IsEmail,
   IsEnum,
@@ -14,7 +13,7 @@ import {
   Length,
 } from "class-validator";
 import { UserRole } from "../../../domain/enums/user-role.enum";
-
+import { Transform, Type } from "class-transformer";
 export class ListUsersQueryDto {
   @ApiPropertyOptional({
     description:
@@ -38,7 +37,11 @@ export class ListUsersQueryDto {
     example: true,
   })
   @IsOptional()
-  @Type(() => Boolean)
+  @Transform(({ value }) => {
+    if (value === "true" || value === true) return true;
+    if (value === "false" || value === false) return false;
+    return value;
+  })
   @IsBoolean()
   emailVerified?: boolean;
 

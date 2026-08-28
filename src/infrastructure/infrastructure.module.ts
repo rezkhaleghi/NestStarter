@@ -26,8 +26,12 @@ import { ImageProcessingService } from "./services/image-processing.service";
 import { ImageProcessing } from "@application/interfaces/image-processing.interface";
 import { AdminStatisticsServiceImpl } from "./services/admin-statistics.service";
 import { AdminStatisticsService } from "../application/interfaces/admin-statistics.interface";
+import { AuditLogOrmEntity } from "./database/orm-entities/audit-log.orm-entity";
+import { AuditLogRepositoryImpl } from "./database/repositories/audit-log.repository.impl";
+import { AuditLogRepository } from "../domain/repositories/audit-log.repository";
 import { AuditLogger } from "../application/interfaces/audit-logger.interface";
 import { AuditLoggerService } from "./services/audit-logger.service";
+
 /**
  * This module is the ONLY place where abstract tokens (interfaces) from
  * domain/application get bound to concrete infrastructure implementations.
@@ -87,7 +91,7 @@ import { AuditLoggerService } from "./services/audit-logger.service";
     TypeOrmModule.forRootAsync({
       useFactory: () => typeormConfig(),
     }),
-    TypeOrmModule.forFeature([UserOrmEntity]),
+    TypeOrmModule.forFeature([UserOrmEntity, AuditLogOrmEntity]),
   ],
   providers: [
     {
@@ -136,6 +140,10 @@ import { AuditLoggerService } from "./services/audit-logger.service";
       provide: AuditLogger,
       useClass: AuditLoggerService,
     },
+    {
+      provide: AuditLogRepository,
+      useClass: AuditLogRepositoryImpl,
+    },
   ],
   exports: [
     UserRepository,
@@ -148,6 +156,7 @@ import { AuditLoggerService } from "./services/audit-logger.service";
     ImageProcessing,
     AdminStatisticsService,
     AuditLogger,
+    AuditLogRepository,
   ],
 })
 export class InfrastructureModule {}

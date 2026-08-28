@@ -24,7 +24,9 @@ import { UpdateAdminUserUseCase } from "../../application/use-cases/admin-users/
 import { ChangeUserPasswordUseCase } from "../../application/use-cases/users/change-user-password.use-case";
 
 import { AdminAuthGuard } from "./admin-auth.guard";
+import { GetAuditLogsUseCase } from "../../application/use-cases/admin-users/get-audit-logs.use-case";
 
+import { GetAuditLogsQueryDto } from "./dtos/get-audit-logs-query.dto";
 import {
   CreateAdminUserRequestDto,
   ListUsersQueryDto,
@@ -50,6 +52,7 @@ export class AdminUsersController {
     private readonly changeUserPasswordUseCase: ChangeUserPasswordUseCase,
     private readonly deleteAdminUserAvatarUseCase: DeleteAdminUserAvatarUseCase,
     private readonly getAdminStatisticsUseCase: GetAdminStatisticsUseCase,
+    private readonly getAuditLogsUseCase: GetAuditLogsUseCase,
   ) {}
 
   @Get("statistics")
@@ -60,6 +63,39 @@ export class AdminUsersController {
   })
   async statistics() {
     return this.getAdminStatisticsUseCase.execute();
+  }
+
+  @Get("audit-logs")
+  @ApiOperation({
+    summary: "Get admin audit logs",
+    description:
+      "List audit logs with optional filtering by action, actor, target user, and date range.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Paginated audit log list",
+  })
+  async auditLogs(@Query() query: GetAuditLogsQueryDto) {
+    const result = await this.getAuditLogsUseCase.execute(
+      {
+        action: query.action,
+        actorUserId: query.actorUserId,
+        targetUserId: query.targetUserId,
+        from: query.from ? new Date(query.from) : undefined,
+        to: query.to ? new Date(query.to) : undefined,
+      },
+      {
+        page: query.page ?? 1,
+        limit: query.limit ?? 20,
+        sortBy: "createdAt",
+        sortDirection: query.sortDirection ?? "DESC",
+      },
+    );
+
+    return {
+      ...result,
+      data: result.data,
+    };
   }
 
   @Get()

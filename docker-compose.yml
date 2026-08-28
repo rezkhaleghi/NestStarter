@@ -64,4 +64,4 @@ services:
 volumes:
   postgres-data:
   redis-data:
-  minio_data:/data
+  minio_data:
