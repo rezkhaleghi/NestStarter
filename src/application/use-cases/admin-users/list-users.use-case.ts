@@ -3,6 +3,7 @@ import { UserRepository } from "../../../domain/repositories/user.repository";
 import { PageQuery, PageResult } from "../../dtos/page-query.input";
 import { User } from "../../../domain/entities/user.entity";
 import { UserRole } from "../../../domain/enums/user-role.enum";
+import { UserStatus } from "../../../domain/enums/user-status.enum";
 import { AdminUserSearchFilters } from "../../dtos/admin-user-search-filters";
 
 export interface ListUsersInput extends PageQuery<
@@ -10,6 +11,7 @@ export interface ListUsersInput extends PageQuery<
 > {
   search?: string;
   role?: UserRole;
+  status?: UserStatus;
   emailVerified?: boolean;
 }
 
@@ -21,6 +23,7 @@ export class ListUsersUseCase {
     const filters: AdminUserSearchFilters = {
       search: input.search,
       role: input.role,
+      status: input.status,
       emailVerified: input.emailVerified,
     };
 

@@ -14,6 +14,7 @@ import {
 } from "../../interfaces/audit-logger.interface";
 import { PasswordHasher } from "../../interfaces/password-hasher.interface";
 import { normalizeEmail } from "../../utils/normalize-email";
+import { UserStatus } from "@domain/enums/user-status.enum";
 
 export interface UpdateAdminUserInput {
   id: string;
@@ -26,6 +27,7 @@ export interface UpdateAdminUserInput {
   userName?: string | null;
   dateOfBirth?: Date | null;
   bio?: string | null;
+  status?: UserStatus;
 }
 
 @Injectable()
@@ -81,6 +83,7 @@ export class UpdateAdminUserUseCase {
         : input.dateOfBirth,
       existing.avatar,
       input.bio === undefined ? existing.bio : input.bio,
+      input.status ?? existing.status,
     );
 
     const saved = await this.userRepository.saveAdminMutation(
@@ -152,6 +155,13 @@ export class UpdateAdminUserUseCase {
 
     if (input.password !== undefined) {
       changes.password = "changed";
+    }
+
+    if (existing.status !== saved.status) {
+      changes.status = {
+        from: existing.status,
+        to: saved.status,
+      };
     }
 
     await this.auditLogger.log({

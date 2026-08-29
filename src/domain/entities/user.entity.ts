@@ -1,3 +1,4 @@
+import { UserStatus } from "@domain/enums/user-status.enum";
 import { UserRole } from "../enums/user-role.enum";
 import { GoogleAccountConflictException } from "../exceptions/domain.exception";
 
@@ -25,6 +26,7 @@ export class User {
     public readonly dateOfBirth: Date | null = null,
     public readonly avatar: string | null = null,
     public readonly bio: string | null = null,
+    public readonly status: UserStatus = UserStatus.ACTIVE,
   ) {
     this._emailVerified = emailVerified;
     this._googleId = googleId;

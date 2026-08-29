@@ -6,6 +6,7 @@ import { LoginUserInput } from "../../dtos/login-user.input";
 import { User } from "../../../domain/entities/user.entity";
 import { LoginProtection } from "../../interfaces/login-protection.interface";
 import { normalizeEmail } from "../../utils/normalize-email";
+import { UserStatus } from "@domain/enums/user-status.enum";
 
 @Injectable()
 export class LoginWithPasswordUseCase {
@@ -22,7 +23,7 @@ export class LoginWithPasswordUseCase {
     }
 
     const user = await this.userRepository.findByEmail(email);
-    if (!user?.hashedPassword) {
+    if (!user?.hashedPassword || user.status !== UserStatus.ACTIVE) {
       await this.loginProtection.recordFailure(email);
       throw new InvalidCredentialsException();
     }

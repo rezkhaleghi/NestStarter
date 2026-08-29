@@ -14,6 +14,7 @@ import {
 } from "class-validator";
 import { UserRole } from "../../../domain/enums/user-role.enum";
 import { Transform, Type } from "class-transformer";
+import { UserStatus } from "@domain/enums/user-status.enum";
 export class ListUsersQueryDto {
   @ApiPropertyOptional({
     description:
@@ -82,6 +83,14 @@ export class ListUsersQueryDto {
   @IsOptional()
   @IsEnum(["ASC", "DESC"])
   sortDirection: "ASC" | "DESC" = "DESC";
+
+  @ApiPropertyOptional({
+    enum: UserStatus,
+    description: "Filter users by account status",
+  })
+  @IsOptional()
+  @IsEnum(UserStatus)
+  status?: UserStatus;
 }
 
 export class CreateAdminUserRequestDto {
@@ -181,4 +190,12 @@ export class UpdateAdminUserRequestDto {
   @IsOptional()
   @IsString()
   bio?: string | null;
+
+  @ApiPropertyOptional({
+    enum: UserStatus,
+    description: "Account status",
+  })
+  @IsOptional()
+  @IsEnum(UserStatus)
+  status?: UserStatus;
 }

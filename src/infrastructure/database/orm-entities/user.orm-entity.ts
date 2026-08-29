@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
 } from "typeorm";
 import { UserRole } from "../../../domain/enums/user-role.enum";
+import { UserStatus } from "@domain/enums/user-status.enum";
 
 /**
  * ORM entity — TypeORM-specific shape of a user row.
@@ -55,4 +56,11 @@ export class UserOrmEntity {
 
   @Column({ nullable: true, type: "varchar" })
   bio: string | null;
+
+  @Column({
+    type: "enum",
+    enum: UserStatus,
+    default: UserStatus.ACTIVE,
+  })
+  status: UserStatus;
 }

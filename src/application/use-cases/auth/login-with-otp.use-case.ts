@@ -7,6 +7,7 @@ import {
 import { OtpService } from "../../interfaces/otp.service.interface";
 import { User } from "../../../domain/entities/user.entity";
 import { normalizeEmail } from "../../utils/normalize-email";
+import { UserStatus } from "@domain/enums/user-status.enum";
 
 @Injectable()
 export class LoginWithOtpUseCase {
@@ -17,8 +18,10 @@ export class LoginWithOtpUseCase {
 
   async execute(email: string, otp: string): Promise<User> {
     const normalizedEmail = normalizeEmail(email);
+
     const user = await this.userRepository.findByEmail(normalizedEmail);
-    if (!user) {
+
+    if (!user || user.status !== UserStatus.ACTIVE) {
       throw new InvalidCredentialsException();
     }
 

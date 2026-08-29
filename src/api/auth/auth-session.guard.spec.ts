@@ -3,7 +3,11 @@ import { describe, expect, it } from "@jest/globals";
 import { AuthSessionGuard } from "./auth-session.guard";
 
 describe("AuthSessionGuard", () => {
-  const guard = new AuthSessionGuard();
+  const userRepository = {
+    findById: jest.fn(),
+  };
+
+  const guard = new AuthSessionGuard(userRepository as any);
   const context = (session: object): ExecutionContext =>
     ({
       switchToHttp: () => ({ getRequest: () => ({ session }) }),

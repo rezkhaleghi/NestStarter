@@ -4,6 +4,8 @@ import { UserRepository } from "../../../domain/repositories/user.repository";
 import { User } from "../../../domain/entities/user.entity";
 import { GoogleAuthInput } from "../../dtos/google-auth.input";
 import { normalizeEmail } from "../../utils/normalize-email";
+import { UserStatus } from "@domain/enums/user-status.enum";
+import { InvalidCredentialsException } from "@domain/exceptions/domain.exception";
 
 @Injectable()
 export class GoogleAuthUseCase {
@@ -17,11 +19,18 @@ export class GoogleAuthUseCase {
     }
 
     const existing = await this.userRepository.findByEmail(email);
+
     if (existing) {
+      if (existing.status !== UserStatus.ACTIVE) {
+        throw new InvalidCredentialsException();
+      }
+
       existing.linkGoogleAccount(input.googleId);
+
       if (!existing.emailVerified) {
         existing.verifyEmail();
       }
+
       return this.userRepository.save(existing);
     }
 

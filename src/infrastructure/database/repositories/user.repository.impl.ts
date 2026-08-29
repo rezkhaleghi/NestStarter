@@ -333,6 +333,7 @@ export class UserRepositoryImpl implements UserRepository {
       row.dateOfBirth,
       row.avatar,
       row.bio,
+      row.status,
     );
   }
 
@@ -363,6 +364,7 @@ export class UserRepositoryImpl implements UserRepository {
     row.updatedAt = user.updatedAt;
     row.avatar = user.avatar;
     row.bio = user.bio;
+    row.status = user.status;
     return row;
   }
 }

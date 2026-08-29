@@ -38,6 +38,7 @@ import { AdminUserResponseDto } from "./dtos/admin-user.response.dto";
 import { AdminUserListResponseDto } from "./dtos/admin-user-list.response.dto";
 import { DeleteAdminUserAvatarUseCase } from "../../application/use-cases/admin-users/delete-user-avatar.use-case";
 import { GetAdminStatisticsUseCase } from "../../application/use-cases/admin-users/get-statistics.use-case";
+import { UserStatus } from "@domain/enums/user-status.enum";
 
 @Controller("admin/users")
 @ApiTags("admin-users")
@@ -320,6 +321,7 @@ export class AdminUsersController {
     bio: string | null;
     createdAt: Date;
     updatedAt: Date;
+    status: UserStatus;
   }): AdminUserResponseDto {
     return {
       id: user.id,
@@ -334,6 +336,7 @@ export class AdminUsersController {
       bio: user.bio,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
+      status: user.status,
     };
   }
 }
