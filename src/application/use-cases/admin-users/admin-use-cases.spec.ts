@@ -62,9 +62,7 @@ describe("admin user use cases", () => {
     expect(result.hashedPassword).toBe("hashed");
 
     expect(repository.findByEmail).toHaveBeenCalledWith("admin@example.com");
-
     expect(hash).toHaveBeenCalledWith("password123");
-
     expect(repository.save).toHaveBeenCalled();
 
     expect(auditLogger.log).toHaveBeenCalled();
@@ -138,17 +136,58 @@ describe("admin user use cases", () => {
       new User("id", "admin@example.com", "hashed", UserRole.ADMIN),
     );
 
-    const useCase = new DeleteAdminUserUseCase(repository as any);
+    const useCase = new DeleteAdminUserUseCase(
+      repository as any,
+      auditLogger as any,
+    );
 
     await expect(useCase.execute("id", "id")).rejects.toBeInstanceOf(
       CannotDeleteSelfException,
     );
+
+    expect(repository.deleteAdminUser).not.toHaveBeenCalled();
+    expect(auditLogger.log).not.toHaveBeenCalled();
 
     repository.deleteAdminUser.mockResolvedValue(false);
 
     await expect(useCase.execute("id", "other")).rejects.toBeInstanceOf(
       CannotRemoveLastAdminException,
     );
+
+    expect(auditLogger.log).not.toHaveBeenCalled();
+  });
+
+  it("deletes a user and creates an audit log", async () => {
+    const user = new User(
+      "user-id",
+      "user@example.com",
+      "hashed",
+      UserRole.USER,
+    );
+
+    repository.findById.mockResolvedValue(user);
+    repository.deleteAdminUser.mockResolvedValue(true);
+
+    const useCase = new DeleteAdminUserUseCase(
+      repository as any,
+      auditLogger as any,
+    );
+
+    await expect(
+      useCase.execute("user-id", "admin-id"),
+    ).resolves.toBeUndefined();
+
+    expect(repository.deleteAdminUser).toHaveBeenCalledWith("user-id");
+
+    expect(auditLogger.log).toHaveBeenCalledWith({
+      actorUserId: "admin-id",
+      targetUserId: "user-id",
+      action: expect.anything(),
+      metadata: {
+        email: "user@example.com",
+        role: UserRole.USER,
+      },
+    });
   });
 
   it("updates profile data and protects duplicate usernames", async () => {
@@ -164,13 +203,17 @@ describe("admin user use cases", () => {
     const useCase = new UpdateAdminUserUseCase(
       repository as any,
       { hash } as any,
+      auditLogger as any,
     );
 
-    const result = await useCase.execute({
-      id: "id",
-      firstName: "Jane",
-      userName: "jane",
-    });
+    const result = await useCase.execute(
+      {
+        id: "id",
+        firstName: "Jane",
+        userName: "jane",
+      },
+      "admin-id",
+    );
 
     expect(result.firstName).toBe("Jane");
     expect(result.userName).toBe("jane");
@@ -180,10 +223,13 @@ describe("admin user use cases", () => {
     );
 
     await expect(
-      useCase.execute({
-        id: "id",
-        userName: "taken",
-      }),
+      useCase.execute(
+        {
+          id: "id",
+          userName: "taken",
+        },
+        "admin-id",
+      ),
     ).rejects.toBeInstanceOf(UsernameAlreadyExistsException);
   });
 });

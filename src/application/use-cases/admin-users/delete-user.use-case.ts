@@ -1,5 +1,8 @@
 import { Injectable } from "@nestjs/common";
-import { UserRole } from "../../../domain/enums/user-role.enum";
+import {
+  AuditAction,
+  AuditLogger,
+} from "../../interfaces/audit-logger.interface";
 import {
   CannotDeleteSelfException,
   CannotRemoveLastAdminException,
@@ -9,19 +12,36 @@ import { UserRepository } from "../../../domain/repositories/user.repository";
 
 @Injectable()
 export class DeleteAdminUserUseCase {
-  constructor(private readonly userRepository: UserRepository) {}
+  constructor(
+    private readonly userRepository: UserRepository,
+    private readonly auditLogger: AuditLogger,
+  ) {}
 
   async execute(id: string, requesterId: string): Promise<void> {
     const user = await this.userRepository.findById(id);
+
     if (!user) {
       throw new UserNotFoundException();
     }
+
     if (id === requesterId) {
       throw new CannotDeleteSelfException();
     }
+
     const deleted = await this.userRepository.deleteAdminUser(id);
+
     if (!deleted) {
       throw new CannotRemoveLastAdminException();
     }
+
+    await this.auditLogger.log({
+      actorUserId: requesterId,
+      targetUserId: id,
+      action: AuditAction.USER_DELETED,
+      metadata: {
+        email: user.email,
+        role: user.role,
+      },
+    });
   }
 }

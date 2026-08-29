@@ -8,6 +8,10 @@ import {
   UsernameAlreadyExistsException,
 } from "../../../domain/exceptions/domain.exception";
 import { UserRepository } from "../../../domain/repositories/user.repository";
+import {
+  AuditAction,
+  AuditLogger,
+} from "../../interfaces/audit-logger.interface";
 import { PasswordHasher } from "../../interfaces/password-hasher.interface";
 import { normalizeEmail } from "../../utils/normalize-email";
 
@@ -29,20 +33,27 @@ export class UpdateAdminUserUseCase {
   constructor(
     private readonly userRepository: UserRepository,
     private readonly passwordHasher: PasswordHasher,
+    private readonly auditLogger: AuditLogger,
   ) {}
 
-  async execute(input: UpdateAdminUserInput): Promise<User> {
+  async execute(
+    input: UpdateAdminUserInput,
+    actorUserId: string,
+  ): Promise<User> {
     const existing = await this.userRepository.findById(input.id);
+
     if (!existing) {
       throw new UserNotFoundException();
     }
 
     const email = input.email ? normalizeEmail(input.email) : existing.email;
+
     if (email !== existing.email) {
       if (await this.userRepository.findByEmail(email)) {
         throw new UserAlreadyExistsException(email);
       }
     }
+
     if (
       input.userName &&
       input.userName !== existing.userName &&
@@ -76,9 +87,82 @@ export class UpdateAdminUserUseCase {
       updated,
       existing.role === UserRole.ADMIN,
     );
+
     if (!saved) {
       throw new CannotRemoveLastAdminException();
     }
+
+    const changes: Record<string, unknown> = {};
+
+    if (existing.email !== saved.email) {
+      changes.email = {
+        from: existing.email,
+        to: saved.email,
+      };
+    }
+
+    if (existing.role !== saved.role) {
+      changes.role = {
+        from: existing.role,
+        to: saved.role,
+      };
+    }
+
+    if (existing.emailVerified !== saved.emailVerified) {
+      changes.emailVerified = {
+        from: existing.emailVerified,
+        to: saved.emailVerified,
+      };
+    }
+
+    if (existing.firstName !== saved.firstName) {
+      changes.firstName = {
+        from: existing.firstName,
+        to: saved.firstName,
+      };
+    }
+
+    if (existing.lastName !== saved.lastName) {
+      changes.lastName = {
+        from: existing.lastName,
+        to: saved.lastName,
+      };
+    }
+
+    if (existing.userName !== saved.userName) {
+      changes.userName = {
+        from: existing.userName,
+        to: saved.userName,
+      };
+    }
+
+    if (existing.dateOfBirth?.getTime() !== saved.dateOfBirth?.getTime()) {
+      changes.dateOfBirth = {
+        from: existing.dateOfBirth,
+        to: saved.dateOfBirth,
+      };
+    }
+
+    if (existing.bio !== saved.bio) {
+      changes.bio = {
+        from: existing.bio,
+        to: saved.bio,
+      };
+    }
+
+    if (input.password !== undefined) {
+      changes.password = "changed";
+    }
+
+    await this.auditLogger.log({
+      actorUserId,
+      targetUserId: saved.id,
+      action: AuditAction.USER_UPDATED,
+      metadata: {
+        changes,
+      },
+    });
+
     return saved;
   }
 }

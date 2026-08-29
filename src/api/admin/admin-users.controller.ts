@@ -203,16 +203,20 @@ export class AdminUsersController {
   async update(
     @Param("id", ParseUUIDPipe) id: string,
     @Body() dto: UpdateAdminUserRequestDto,
+    @Req() request: Request,
   ) {
     return this.toResponse(
-      await this.updateUserUseCase.execute({
-        id,
-        ...dto,
-        dateOfBirth:
-          dto.dateOfBirth === undefined || dto.dateOfBirth === null
-            ? dto.dateOfBirth
-            : new Date(dto.dateOfBirth),
-      }),
+      await this.updateUserUseCase.execute(
+        {
+          id,
+          ...dto,
+          dateOfBirth:
+            dto.dateOfBirth === undefined || dto.dateOfBirth === null
+              ? dto.dateOfBirth
+              : new Date(dto.dateOfBirth),
+        },
+        request.session.userId!,
+      ),
     );
   }
 
