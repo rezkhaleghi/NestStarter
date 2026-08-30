@@ -4,12 +4,10 @@ import { User } from "../../../domain/entities/user.entity";
 import { UserRole } from "../../../domain/enums/user-role.enum";
 import { UserAlreadyExistsException } from "../../../domain/exceptions/domain.exception";
 import { UserRepository } from "../../../domain/repositories/user.repository";
-import {
-  AuditAction,
-  AuditLogger,
-} from "../../interfaces/audit-logger.interface";
+import { AuditLogger } from "../../interfaces/audit-logger.interface";
 import { PasswordHasher } from "../../interfaces/password-hasher.interface";
 import { normalizeEmail } from "../../utils/normalize-email";
+import { AuditAction } from "@domain/enums/audit-action.enum";
 
 export interface CreateAdminUserInput {
   email: string;

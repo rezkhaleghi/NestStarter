@@ -9,22 +9,11 @@ import {
   UsernameAlreadyExistsException,
 } from "../../../domain/exceptions/domain.exception";
 import { UserRepository } from "../../../domain/repositories/user.repository";
-import {
-  AuditAction,
-  AuditLogger,
-} from "../../interfaces/audit-logger.interface";
+import { AuditLogger } from "../../interfaces/audit-logger.interface";
 import { PasswordHasher } from "../../interfaces/password-hasher.interface";
 import { normalizeEmail } from "../../utils/normalize-email";
+import { AuditAction } from "@domain/enums/audit-action.enum";
 
-/**
- * Input used by administrators to update a user.
- *
- * `undefined` means the field was not provided and should remain unchanged.
- * `null` means the field was explicitly cleared.
- *
- * Admins can modify both ordinary profile fields and
- * domain-specific account fields.
- */
 export interface UpdateAdminUserInput {
   id: string;
 
@@ -43,20 +32,6 @@ export interface UpdateAdminUserInput {
   bio?: string | null;
 }
 
-/**
- * Updates an existing user using administrator privileges.
- *
- * The use case coordinates the operation:
- * - loads the user
- * - validates data that requires repository access
- * - hashes passwords
- * - invokes domain operations
- * - persists the entity
- * - records the audit log
- *
- * The User entity owns the user's state and domain behavior.
- * The repository owns persistence and database-level concurrency rules.
- */
 @Injectable()
 export class UpdateAdminUserUseCase {
   constructor(
@@ -65,14 +40,10 @@ export class UpdateAdminUserUseCase {
     private readonly auditLogger: AuditLogger,
   ) {}
 
-  /**
-   * Executes an administrator update against an existing user.
-   */
   async execute(
     input: UpdateAdminUserInput,
     actorUserId: string,
   ): Promise<User> {
-    // Load the target user before applying any changes.
     const user = await this.userRepository.findById(input.id);
 
     if (!user) {
@@ -80,18 +51,43 @@ export class UpdateAdminUserUseCase {
     }
 
     /**
-     * Normalize the email before comparing it with the existing value.
+     * Capture the original state before mutating the entity.
      *
-     * If no new email was provided, keep the existing email.
+     * This is required for:
+     * - audit logging
+     * - detecting actual changes
+     * - determining whether the user was an admin before the mutation
      */
+    const before = {
+      email: user.email,
+      role: user.role,
+      emailVerified: user.emailVerified,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      userName: user.userName,
+      dateOfBirth: user.dateOfBirth,
+      avatar: user.avatar,
+      bio: user.bio,
+      status: user.status,
+    };
+
+    /**
+     * Must be captured before changing the role.
+     *
+     * The repository uses this value to protect against
+     * removing the last administrator.
+     */
+    const wasAdmin = user.role === UserRole.ADMIN;
+
+    // Normalize the email before comparing it.
     const email =
       input.email !== undefined ? normalizeEmail(input.email) : user.email;
 
     /**
      * Email addresses must be unique.
      *
-     * The repository is used here because checking another user's
-     * existence is a persistence/application concern, not an entity concern.
+     * This requires repository access and therefore does not
+     * belong inside the domain entity.
      */
     if (email !== user.email) {
       const existingEmailUser = await this.userRepository.findByEmail(email);
@@ -104,8 +100,7 @@ export class UpdateAdminUserUseCase {
     /**
      * Usernames must also be unique.
      *
-     * `null` means the administrator wants to remove the username,
-     * so no uniqueness lookup is required.
+     * null explicitly removes the username.
      */
     if (
       input.userName !== undefined &&
@@ -122,11 +117,10 @@ export class UpdateAdminUserUseCase {
     }
 
     /**
-     * Update ordinary profile fields through the domain entity.
+     * Ordinary profile fields are changed through the domain entity.
      *
-     * The entity handles the distinction between:
-     * - undefined → leave the field unchanged
-     * - null      → explicitly clear the field
+     * undefined → leave unchanged
+     * null      → explicitly clear
      */
     user.update({
       firstName: input.firstName,
@@ -136,84 +130,50 @@ export class UpdateAdminUserUseCase {
       bio: input.bio,
     });
 
-    /**
-     * Email is a domain-specific operation rather than an ordinary
-     * profile update.
-     *
-     * Email normalization and uniqueness validation were already
-     * performed above.
-     */
+    // Email is changed through its dedicated domain operation.
     if (email !== user.email) {
-      // Business operation with rules/invariants.
       user.changeEmail(email);
     }
 
     /**
-     * Passwords must be hashed before entering the domain entity.
-     *
-     * The domain receives only the resulting password hash.
+     * Passwords are hashed outside the domain.
+     * The domain only receives the resulting hash.
      */
     if (input.password !== undefined) {
       const hashedPassword = await this.passwordHasher.hash(input.password);
 
-      // Business operation with rules/invariants.
       user.changePassword(hashedPassword);
     }
 
-    /**
-     * Email verification is a domain-specific state change.
-     *
-     * We use the domain operation rather than directly modifying
-     * the entity's internal verification state.
-     */
+    // Email verification is a dedicated domain operation.
     if (
       input.emailVerified !== undefined &&
       input.emailVerified !== user.emailVerified
     ) {
-      // Business operation with rules/invariants.
       user.setEmailVerified(input.emailVerified);
     }
 
-    /**
-     * Role changes are domain-specific.
-     *
-     * The entity changes its own role, while the repository later
-     * protects the last-administrator invariant transactionally.
-     */
+    // Role changes are handled through the domain operation.
     if (input.role !== undefined && input.role !== user.role) {
-      // Business operation with rules/invariants.
       user.changeRole(input.role);
     }
 
     /**
      * Account status changes use explicit domain operations.
-     *
-     * This keeps ACTIVE and RESTRICTED as meaningful business states
-     * instead of treating status as an ordinary editable property.
      */
     if (input.status !== undefined && input.status !== user.status) {
       if (input.status === UserStatus.ACTIVE) {
-        // Business operation with rules/invariants.
         user.activate();
       } else if (input.status === UserStatus.RESTRICTED) {
-        // Business operation with rules/invariants.
         user.restrict();
       }
     }
 
     /**
-     * Remember whether the user was an administrator BEFORE the mutation.
+     * Persist the mutated domain entity.
      *
-     * This is important because the repository needs to know whether
-     * the role change could potentially remove the last administrator.
-     */
-    const wasAdmin = user.role === UserRole.ADMIN;
-
-    /**
-     * Persist the already-mutated domain entity.
-     *
-     * saveAdminMutation() handles the administrator-specific database
-     * transaction and protects against concurrent last-admin removal.
+     * The repository handles the transaction required when
+     * an administrator is demoted.
      */
     const saved = await this.userRepository.saveAdminMutation(user, wasAdmin);
 
@@ -222,98 +182,121 @@ export class UpdateAdminUserUseCase {
     }
 
     /**
-     * Build an audit record containing only fields that actually changed.
+     * Build a record containing only ordinary fields that changed.
      *
-     * Never store the actual password or password hash in the audit log.
+     * Compare against `before`, not `user`, because `user` has
+     * already been mutated at this point.
      */
     const changes: Record<string, unknown> = {};
 
-    if (user.email !== saved.email) {
+    if (before.email !== saved.email) {
       changes.email = {
-        from: user.email,
+        from: before.email,
         to: saved.email,
       };
     }
 
-    if (user.role !== saved.role) {
-      changes.role = {
-        from: user.role,
-        to: saved.role,
-      };
-    }
-
-    if (user.emailVerified !== saved.emailVerified) {
+    if (before.emailVerified !== saved.emailVerified) {
       changes.emailVerified = {
-        from: user.emailVerified,
+        from: before.emailVerified,
         to: saved.emailVerified,
       };
     }
 
-    if (user.firstName !== saved.firstName) {
+    if (before.firstName !== saved.firstName) {
       changes.firstName = {
-        from: user.firstName,
+        from: before.firstName,
         to: saved.firstName,
       };
     }
 
-    if (user.lastName !== saved.lastName) {
+    if (before.lastName !== saved.lastName) {
       changes.lastName = {
-        from: user.lastName,
+        from: before.lastName,
         to: saved.lastName,
       };
     }
 
-    if (user.userName !== saved.userName) {
+    if (before.userName !== saved.userName) {
       changes.userName = {
-        from: user.userName,
+        from: before.userName,
         to: saved.userName,
       };
     }
 
-    if (user.dateOfBirth?.getTime() !== saved.dateOfBirth?.getTime()) {
+    if (before.dateOfBirth?.getTime() !== saved.dateOfBirth?.getTime()) {
       changes.dateOfBirth = {
-        from: user.dateOfBirth,
+        from: before.dateOfBirth,
         to: saved.dateOfBirth,
       };
     }
 
-    if (user.avatar !== saved.avatar) {
+    if (before.avatar !== saved.avatar) {
       changes.avatar = {
-        from: user.avatar,
+        from: before.avatar,
         to: saved.avatar,
       };
     }
 
-    if (user.bio !== saved.bio) {
+    if (before.bio !== saved.bio) {
       changes.bio = {
-        from: user.bio,
+        from: before.bio,
         to: saved.bio,
       };
     }
 
-    if (input.password !== undefined) {
-      changes.password = "changed";
-    }
-
-    if (user.status !== saved.status) {
+    if (before.status !== saved.status) {
       changes.status = {
-        from: user.status,
+        from: before.status,
         to: saved.status,
       };
     }
 
     /**
-     * Record the administrative operation only after persistence
-     * has completed successfully.
+     * Record ordinary account/profile changes.
      */
-    await this.auditLogger.log({
-      actorUserId,
-      targetUserId: saved.id,
-      action: AuditAction.USER_UPDATED,
-      metadata: {
-        changes,
-      },
-    });
+    if (Object.keys(changes).length > 0) {
+      await this.auditLogger.log({
+        actorUserId,
+        targetUserId: saved.id,
+        action: AuditAction.USER_UPDATED,
+        metadata: {
+          changes,
+        },
+      });
+    }
+
+    /**
+     * Password changes get their own audit action.
+     *
+     * Never store the password or password hash.
+     */
+    if (input.password !== undefined) {
+      await this.auditLogger.log({
+        actorUserId,
+        targetUserId: saved.id,
+        action: AuditAction.USER_PASSWORD_CHANGED,
+        metadata: {
+          email: saved.email,
+        },
+      });
+    }
+
+    /**
+     * Role changes get their own audit action because they are
+     * security-sensitive administrative operations.
+     */
+    if (before.role !== saved.role) {
+      await this.auditLogger.log({
+        actorUserId,
+        targetUserId: saved.id,
+        action: AuditAction.USER_ROLE_CHANGED,
+        metadata: {
+          from: before.role,
+          to: saved.role,
+        },
+      });
+    }
 
     return saved;
   }

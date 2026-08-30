@@ -1,5 +1,3 @@
-import { Injectable } from "@nestjs/common";
-
 export abstract class FileStorage {
   abstract upload(
     objectName: string,

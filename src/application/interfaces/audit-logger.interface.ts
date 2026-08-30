@@ -1,7 +1,5 @@
 import { AuditAction } from "../../domain/enums/audit-action.enum";
 
-export { AuditAction };
-
 export interface AuditLogInput {
   actorUserId: string;
   action: AuditAction;

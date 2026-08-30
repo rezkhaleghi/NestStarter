@@ -3,10 +3,8 @@ import { User } from "../../../domain/entities/user.entity";
 import { UserNotFoundException } from "../../../domain/exceptions/domain.exception";
 import { UserRepository } from "../../../domain/repositories/user.repository";
 import { FileStorage } from "../../interfaces/file-storage.interface";
-import {
-  AuditAction,
-  AuditLogger,
-} from "../../interfaces/audit-logger.interface";
+import { AuditLogger } from "../../interfaces/audit-logger.interface";
+import { AuditAction } from "@domain/enums/audit-action.enum";
 
 /**
  * Application use case for deleting another user's avatar as an administrator.

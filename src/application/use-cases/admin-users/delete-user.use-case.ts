@@ -1,14 +1,12 @@
 import { Injectable } from "@nestjs/common";
-import {
-  AuditAction,
-  AuditLogger,
-} from "../../interfaces/audit-logger.interface";
+import { AuditLogger } from "../../interfaces/audit-logger.interface";
 import {
   CannotDeleteSelfException,
   CannotRemoveLastAdminException,
   UserNotFoundException,
 } from "../../../domain/exceptions/domain.exception";
 import { UserRepository } from "../../../domain/repositories/user.repository";
+import { AuditAction } from "@domain/enums/audit-action.enum";
 
 @Injectable()
 export class DeleteAdminUserUseCase {
