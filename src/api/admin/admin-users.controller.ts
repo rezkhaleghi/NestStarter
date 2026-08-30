@@ -11,9 +11,7 @@ import {
   Req,
   UseGuards,
 } from "@nestjs/common";
-
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from "@nestjs/swagger";
-
 import type { Request } from "express";
 
 import { CreateAdminUserUseCase } from "../../application/use-cases/admin-users/create-user.use-case";
@@ -21,10 +19,13 @@ import { DeleteAdminUserUseCase } from "../../application/use-cases/admin-users/
 import { GetUserUseCase } from "../../application/use-cases/admin-users/get-user.use-case";
 import { ListUsersUseCase } from "../../application/use-cases/admin-users/list-users.use-case";
 import { UpdateAdminUserUseCase } from "../../application/use-cases/admin-users/update-user.use-case";
+import { GetAuditLogsUseCase } from "../../application/use-cases/admin-users/get-audit-logs.use-case";
+import { DeleteAdminUserAvatarUseCase } from "../../application/use-cases/admin-users/delete-user-avatar.use-case";
+import { GetAdminStatisticsUseCase } from "../../application/use-cases/admin-users/get-statistics.use-case";
+
 import { ChangeUserPasswordUseCase } from "../../application/use-cases/users/change-user-password.use-case";
 
 import { AdminAuthGuard } from "./admin-auth.guard";
-import { GetAuditLogsUseCase } from "../../application/use-cases/admin-users/get-audit-logs.use-case";
 
 import { GetAuditLogsQueryDto } from "./dtos/get-audit-logs-query.dto";
 import {
@@ -32,14 +33,24 @@ import {
   ListUsersQueryDto,
   UpdateAdminUserRequestDto,
 } from "./dtos/admin-user.request.dto";
-
 import { ChangeUserPasswordRequestDto } from "./dtos/change-user-password.request.dto";
 import { AdminUserResponseDto } from "./dtos/admin-user.response.dto";
 import { AdminUserListResponseDto } from "./dtos/admin-user-list.response.dto";
-import { DeleteAdminUserAvatarUseCase } from "../../application/use-cases/admin-users/delete-user-avatar.use-case";
-import { GetAdminStatisticsUseCase } from "../../application/use-cases/admin-users/get-statistics.use-case";
+
 import { UserStatus } from "@domain/enums/user-status.enum";
 
+/**
+ * HTTP controller for administrator user management.
+ *
+ * Responsibilities:
+ * - Receive and validate HTTP requests through DTOs.
+ * - Extract route/query/body/session data.
+ * - Delegate business operations to application use cases.
+ * - Convert domain users into API response DTOs.
+ *
+ * The controller does not contain domain business rules.
+ * Domain behavior is handled by User and application use cases.
+ */
 @Controller("admin/users")
 @ApiTags("admin-users")
 @UseGuards(AdminAuthGuard)
@@ -56,8 +67,13 @@ export class AdminUsersController {
     private readonly getAuditLogsUseCase: GetAuditLogsUseCase,
   ) {}
 
+  /**
+   * Returns statistics for the administrator dashboard.
+   */
   @Get("statistics")
-  @ApiOperation({ summary: "Get admin dashboard statistics" })
+  @ApiOperation({
+    summary: "Get admin dashboard statistics",
+  })
   @ApiResponse({
     status: 200,
     description: "Admin statistics",
@@ -66,6 +82,9 @@ export class AdminUsersController {
     return this.getAdminStatisticsUseCase.execute();
   }
 
+  /**
+   * Returns paginated audit logs with optional filters.
+   */
   @Get("audit-logs")
   @ApiOperation({
     summary: "Get admin audit logs",
@@ -99,6 +118,9 @@ export class AdminUsersController {
     };
   }
 
+  /**
+   * Lists and searches users with pagination, sorting, and filtering.
+   */
   @Get()
   @ApiOperation({
     summary: "List and search users",
@@ -127,6 +149,9 @@ export class AdminUsersController {
     };
   }
 
+  /**
+   * Returns one user by UUID.
+   */
   @Get(":id")
   @ApiOperation({
     summary: "Get one user by ID",
@@ -149,6 +174,12 @@ export class AdminUsersController {
     return this.toResponse(await this.getUserUseCase.execute(id));
   }
 
+  /**
+   * Creates a new regular user or administrator account.
+   *
+   * The current administrator is passed to the use case so the
+   * creation can be recorded in the audit log.
+   */
   @Post()
   @ApiOperation({
     summary: "Create a user or administrator",
@@ -162,14 +193,6 @@ export class AdminUsersController {
     status: 409,
     description: "Email already exists",
   })
-  @Post()
-  @ApiOperation({ summary: "Create a user or administrator" })
-  @ApiResponse({
-    status: 201,
-    description: "User created",
-    type: AdminUserResponseDto,
-  })
-  @ApiResponse({ status: 409, description: "Email already exists" })
   async create(
     @Body() dto: CreateAdminUserRequestDto,
     @Req() request: Request,
@@ -179,6 +202,13 @@ export class AdminUsersController {
     );
   }
 
+  /**
+   * Updates a user's account and profile.
+   *
+   * The DTO contains only fields provided by the administrator.
+   * The application use case decides which domain operations
+   * are required for those changes.
+   */
   @Patch(":id")
   @ApiOperation({
     summary: "Update a user's account and profile",
@@ -211,6 +241,9 @@ export class AdminUsersController {
         {
           id,
           ...dto,
+
+          // Convert the API date string into the domain Date type.
+          // Undefined means "do not change"; null means "clear the value".
           dateOfBirth:
             dto.dateOfBirth === undefined || dto.dateOfBirth === null
               ? dto.dateOfBirth
@@ -221,6 +254,12 @@ export class AdminUsersController {
     );
   }
 
+  /**
+   * Deletes a user account.
+   *
+   * The current administrator's ID is passed to the use case
+   * so the deletion can be audited.
+   */
   @Delete(":id")
   @ApiOperation({
     summary: "Delete a user",
@@ -253,6 +292,9 @@ export class AdminUsersController {
     };
   }
 
+  /**
+   * Allows an administrator to reset another user's password.
+   */
   @Patch(":id/password")
   @ApiOperation({
     summary: "Reset a user's password",
@@ -284,6 +326,12 @@ export class AdminUsersController {
     };
   }
 
+  /**
+   * Deletes another user's avatar.
+   *
+   * The current administrator's ID is passed to the use case
+   * so the avatar deletion can be recorded in the audit log.
+   */
   @Delete(":id/avatar")
   @ApiOperation({
     summary: "Delete a user's avatar",
@@ -302,12 +350,24 @@ export class AdminUsersController {
     status: 404,
     description: "User not found",
   })
-  async deleteAvatar(@Param("id", ParseUUIDPipe) id: string) {
-    const user = await this.deleteAdminUserAvatarUseCase.execute(id);
+  async deleteAvatar(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Req() request: Request,
+  ) {
+    const user = await this.deleteAdminUserAvatarUseCase.execute(
+      id,
+      request.session.userId!,
+    );
 
     return this.toResponse(user);
   }
 
+  /**
+   * Maps the domain User entity to the API response shape.
+   *
+   * Keeping this mapping here prevents internal domain properties
+   * from being exposed directly through the HTTP API.
+   */
   private toResponse(user: {
     id: string;
     email: string;

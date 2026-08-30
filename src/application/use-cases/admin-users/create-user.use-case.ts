@@ -40,6 +40,8 @@ export class CreateAdminUserUseCase {
       email,
       await this.passwordHasher.hash(input.password),
       input.role,
+
+      // Admin-created accounts are considered email-verified.
       true,
     );
 

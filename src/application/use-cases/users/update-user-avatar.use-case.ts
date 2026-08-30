@@ -20,49 +20,48 @@ export class UpdateUserAvatarUseCase {
       mimetype: string;
     },
   ): Promise<User> {
-    const existing = await this.userRepository.findById(userId);
+    const user = await this.userRepository.findById(userId);
 
-    if (!existing) {
+    if (!user) {
       throw new UserNotFoundException();
     }
 
-    // Process the uploaded image:
-    // - fixes EXIF orientation
-    // - resizes to 512x512
-    // - converts it to WebP
-    // - compresses it with quality 85
+    /**
+     * Process the uploaded image before storing it.
+     *
+     * The image-processing service:
+     * - fixes EXIF orientation
+     * - resizes the image to 512x512
+     * - converts it to WebP
+     * - compresses it with quality 85
+     */
     const processedImage = await this.imageProcessing.processAvatar(
       file.buffer,
     );
 
-    // All avatars are stored as WebP after processing.
+    // Every user's avatar uses the same deterministic object path.
     const objectName = `avatars/${userId}/avatar.webp`;
 
-    // Upload the processed image, not the original file.
+    // Store the processed image rather than the original upload.
     await this.fileStorage.upload(objectName, processedImage, "image/webp");
 
-    const oldAvatar = existing.avatar;
+    const oldAvatar = user.avatar;
 
-    const updated = new User(
-      existing.id,
-      existing.email,
-      existing.hashedPassword,
-      existing.role,
-      existing.emailVerified,
-      existing.createdAt,
-      existing.updatedAt,
-      existing.googleId,
-      existing.firstName,
-      existing.lastName,
-      existing.userName,
-      existing.dateOfBirth,
-      objectName,
-      existing.bio,
-    );
+    /**
+     * Update the existing domain entity instead of constructing
+     * a completely new User object just to change the avatar.
+     */
+    user.update({
+      avatar: objectName,
+    });
 
-    const saved = await this.userRepository.save(updated);
+    const saved = await this.userRepository.save(user);
 
-    // Delete the previous avatar after the database update succeeds.
+    /**
+     * Delete the old file only after the database update succeeds.
+     *
+     * This avoids deleting the previous avatar if saving the user fails.
+     */
     if (oldAvatar && oldAvatar !== objectName) {
       await this.fileStorage.delete(oldAvatar);
     }

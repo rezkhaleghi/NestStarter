@@ -12,33 +12,28 @@ export class DeleteUserAvatarUseCase {
   ) {}
 
   async execute(userId: string): Promise<User> {
-    const existing = await this.userRepository.findById(userId);
+    const user = await this.userRepository.findById(userId);
 
-    if (!existing) {
+    if (!user) {
       throw new UserNotFoundException();
     }
 
-    if (existing.avatar) {
-      await this.fileStorage.delete(existing.avatar);
+    /**
+     * Remove the physical avatar file from storage first.
+     */
+    if (user.avatar) {
+      await this.fileStorage.delete(user.avatar);
     }
 
-    const updated = new User(
-      existing.id,
-      existing.email,
-      existing.hashedPassword,
-      existing.role,
-      existing.emailVerified,
-      existing.createdAt,
-      existing.updatedAt,
-      existing.googleId,
-      existing.firstName,
-      existing.lastName,
-      existing.userName,
-      existing.dateOfBirth,
-      null,
-      existing.bio,
-    );
+    /**
+     * Clear the avatar reference on the existing domain entity.
+     *
+     * `null` means "explicitly clear this field".
+     */
+    user.update({
+      avatar: null,
+    });
 
-    return this.userRepository.save(updated);
+    return this.userRepository.save(user);
   }
 }
