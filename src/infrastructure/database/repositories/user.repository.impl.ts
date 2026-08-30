@@ -281,6 +281,12 @@ export class UserRepositoryImpl implements UserRepository {
       });
     }
 
+    if (filters.status) {
+      qb.andWhere("user.status = :status", {
+        status: filters.status,
+      });
+    }
+
     if (filters.emailVerified !== undefined) {
       qb.andWhere("user.emailVerified = :emailVerified", {
         emailVerified: filters.emailVerified,
