@@ -1,6 +1,6 @@
+import { PageQuery, PageResult } from "src/shared/pagination/page-query";
 import { AuditLog } from "../entities/audit-log.entity";
 import { AuditAction } from "../enums/audit-action.enum";
-import { PageQuery, PageResult } from "../../application/dtos/page-query.input";
 
 export interface AuditLogFilters {
   action?: AuditAction;

@@ -8,12 +8,9 @@ import {
   AuditLogFilters,
   AuditLogRepository,
 } from "../../../domain/repositories/audit-log.repository";
-import { AuditAction } from "../../../domain/enums/audit-action.enum";
-import {
-  PageQuery,
-  PageResult,
-} from "../../../application/dtos/page-query.input";
+
 import { AuditLogOrmEntity } from "../orm-entities/audit-log.orm-entity";
+import { PageQuery, PageResult } from "src/shared/pagination/page-query";
 
 @Injectable()
 export class AuditLogRepositoryImpl implements AuditLogRepository {

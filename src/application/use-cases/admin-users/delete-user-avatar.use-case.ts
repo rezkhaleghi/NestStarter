@@ -63,7 +63,7 @@ export class DeleteAdminUserAvatarUseCase {
       await this.auditLogger.log({
         actorUserId,
         targetUserId: userId,
-        action: AuditAction.AVATAR_DELETED,
+        action: AuditAction.USER_AVATAR_DELETED,
         metadata: {
           email: user.email,
         },

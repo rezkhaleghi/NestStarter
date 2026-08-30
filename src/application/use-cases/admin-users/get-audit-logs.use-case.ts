@@ -6,7 +6,7 @@ import {
   AuditLogRepository,
 } from "../../../domain/repositories/audit-log.repository";
 import { AuditLog } from "../../../domain/entities/audit-log.entity";
-import { PageQuery, PageResult } from "../../dtos/page-query.input";
+import { PageQuery, PageResult } from "src/shared/pagination/page-query";
 
 export interface GetAuditLogsInput {
   action?: AuditAction;

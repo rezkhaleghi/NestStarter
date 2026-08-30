@@ -1,7 +1,7 @@
 import { User } from "../entities/user.entity";
-import { PageQuery, PageResult } from "../../application/dtos/page-query.input";
-import { UserSearchResult } from "../../application/dtos/user-search-result";
-import { AdminUserSearchFilters } from "../../application/dtos/admin-user-search-filters";
+import { UserSearchResult } from "./user-search-result";
+import { AdminUserSearchFilters } from "./admin-user-search-filters";
+import { PageQuery, PageResult } from "src/shared/pagination/page-query";
 
 export abstract class UserRepository {
   abstract findById(id: string): Promise<User | null>;

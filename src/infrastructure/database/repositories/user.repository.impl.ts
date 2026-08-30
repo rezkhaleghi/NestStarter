@@ -4,13 +4,11 @@ import { Repository } from "typeorm";
 import { User } from "../../../domain/entities/user.entity";
 import { UserOrmEntity } from "../orm-entities/user.orm-entity";
 import { UserRole } from "../../../domain/enums/user-role.enum";
-import {
-  PageQuery,
-  PageResult,
-} from "../../../application/dtos/page-query.input";
-import { UserSearchResult } from "../../../application/dtos/user-search-result";
+
+import { UserSearchResult } from "../../../domain/repositories/user-search-result";
 import { UserRepository } from "../../../domain/repositories/user.repository";
-import { AdminUserSearchFilters } from "../../../application/dtos/admin-user-search-filters";
+import { AdminUserSearchFilters } from "../../../domain/repositories/admin-user-search-filters";
+import { PageQuery, PageResult } from "src/shared/pagination/page-query";
 
 /**
  * Concrete implementation of the domain's UserRepository contract.
