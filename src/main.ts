@@ -43,9 +43,9 @@ async function bootstrap() {
   // Helmet helps setting appropriate security-related response headers.
   app.use(helmet());
 
-  // Adds Colleration ID to each request and response for tracing.
+  // Adds a correlation ID to each request and response for tracing.
   app.use((request: Request, response: Response, next: () => void) => {
-    const requestId = request.header("X-Request-Id") ?? randomUUID();
+    const requestId = randomUUID();
 
     response.setHeader("X-Request-Id", requestId);
 
