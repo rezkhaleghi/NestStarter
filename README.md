@@ -1,163 +1,665 @@
-# NestJS Clean Architecture API
+# NestStarter
 
-A NestJS authentication and user-management API using Clean Architecture,
-PostgreSQL, Redis, SMTP email, cookie-based sessions, and Google OAuth.
+A production-oriented **NestJS backend boilerplate built around Clean Architecture**.
 
-## Features
+NestStarter provides the infrastructure and application foundations that most backend projects repeatedly need: authentication, authorization, user management, sessions, Redis, PostgreSQL, object storage, email/OTP, validation, rate limiting, health checks, auditing, Swagger, Docker, migrations, and testing.
 
-- Email/password signup and login.
-- Email verification state is persisted and can be managed by administrators.
-- Email OTP signup and passwordless login.
-- OTP hashes stored in Redis with expiration and attempt limits.
-- OTP delivery through SMTP, including Gmail App Password support.
-- Sessions stored in Redis and identified by an HTTP-only cookie.
-- Google OAuth login and signup.
-- Google account linking through a unique provider ID.
-- Safe current-user profile endpoint.
-- Self-service profile updates for optional name, username, and birth-date fields.
-- Admin-only user CRUD with pagination.
-- Admin profile and password management.
-- Password hashing with bcrypt.
-- Request validation with `class-validator`.
-- Global throttling for abuse-sensitive endpoints.
-- Redis-backed account lockout after repeated failed password logins.
-- OTP expiration, maximum attempts, and resend cooldown.
-- Database and Redis health checks at `/health`.
-- Environment validation with Joi.
-- Secure HTTP headers with Helmet and credentialed CORS.
-- Stable error responses with request IDs.
-- Swagger documentation.
-- Docker Compose development and production profiles.
-- TypeORM migrations for production schema changes.
+The goal is simple:
 
-## Requirements
+> **Start with a solid backend foundation, keep business logic independent from frameworks and infrastructure, and spend your time building the actual product.**
 
-- Node.js 20 or newer.
-- npm.
-- Docker Desktop, or locally installed PostgreSQL and Redis.
-- An SMTP account for real OTP email delivery. Gmail is free for this use with
-  a Google App Password.
+[Repository](https://github.com/rezkhaleghi/NestStarter)
 
-## Architecture
+---
+
+## Why NestStarter?
+
+Most NestJS projects start with a collection of modules, controllers, services, and database entities. That works initially, but as the application grows, business logic tends to become coupled to NestJS, TypeORM, Redis, HTTP, and other infrastructure concerns.
+
+NestStarter takes a different approach.
+
+The application is organized around **business rules and use cases**, while frameworks and external services are treated as replaceable implementation details.
+
+This gives the project:
+
+- Clear separation of responsibilities
+- Testable business logic
+- Explicit dependencies
+- Replaceable infrastructure
+- Framework-independent domain logic
+- Focused use cases instead of large generic services
+- A predictable structure for adding new features
+- Production-oriented authentication and security foundations
+
+NestStarter is intentionally **not a complete application**. It provides the foundation on which an application can be built.
+
+---
+
+# Core Goals
+
+## 1. Clean Architecture
+
+Business rules should not depend on PostgreSQL, Redis, MinIO, Express, or NestJS.
+
+The dependency direction is:
+
+```text
+API
+ │
+ ▼
+Application
+ │
+ ▼
+Domain
+
+Infrastructure ───────► Application / Domain
+```
+
+The important rule is that dependencies point **toward the domain**.
+
+For example:
+
+```text
+Controller
+   │
+   ▼
+Use Case
+   │
+   ▼
+UserRepository
+   ▲
+   │
+TypeORM Repository
+```
+
+The use case knows about `UserRepository`.
+
+It does not know that the repository happens to use TypeORM or PostgreSQL.
+
+This makes infrastructure replaceable without rewriting business logic.
+
+---
+
+# Architecture
 
 ```text
 src/
-   domain/
-      entities/       Framework-free business entities
-      enums/          Domain enums
-      exceptions/     Domain errors
-      repositories/   Persistence contracts
-   application/
-      dtos/           Use-case input models
-      interfaces/     Ports implemented by infrastructure
-      use-cases/
-         auth/        Login, OTP, and Google authentication
-         users/       User account operations
-         admin-users/ Administrator operations
-   infrastructure/
-      auth/           Passport and session adapters
-      config/         TypeORM configuration and migration data source
-      database/       Migrations, entities, repositories, and bootstrap
-      services/       SMTP, Redis, and password adapters
-   api/
-      auth/           Authentication controller and DTOs
-      admin/          Admin guard, controller, module, and DTOs
+│
+├── api/
+│   ├── auth/
+│   ├── users/
+│   ├── admin/
+│   └── health/
+│
+├── application/
+│   ├── dtos/
+│   ├── interfaces/
+│   └── use-cases/
+│       ├── auth/
+│       ├── users/
+│       └── admin-users/
+│
+├── domain/
+│   ├── entities/
+│   ├── enums/
+│   ├── exceptions/
+│   └── repositories/
+│
+├── infrastructure/
+│   ├── auth/
+│   ├── config/
+│   ├── database/
+│   └── services/
+│
+└── types/
 ```
 
-Dependency direction:
+## Domain
+
+The domain contains business concepts and rules.
 
 ```text
-API -> application -> domain
-Infrastructure -> application and domain
+domain/
+├── entities/
+├── enums/
+├── exceptions/
+└── repositories/
 ```
 
-Controllers call use cases. Use cases depend on domain contracts such as
-`UserRepository`, `PasswordHasher`, and `OtpService`. Infrastructure binds
-those contracts to TypeORM, bcrypt, Redis, and SMTP implementations.
+### Entities
 
-## Local setup
+Domain entities represent business objects without depending on TypeORM or NestJS.
 
-Install dependencies and create the environment file:
+For example:
 
-```bash
-npm install
-cp .env.example .env
+```text
+User
+AuditLog
 ```
 
-## Docker setup
+### Enums
 
-Make sure `.env` contains the required application settings, then start the
-API, PostgreSQL, and Redis together:
+Domain-specific enumerations such as:
 
-```bash
-docker compose up --build
+```text
+UserRole
+UserStatus
+AuditAction
 ```
 
-The API runs at `http://localhost:3000` and Swagger is available at
-`http://localhost:3000/api/docs`. Stop the containers with:
+### Exceptions
 
-```bash
-docker compose down
+Business errors live in the domain instead of the HTTP layer.
+
+Examples:
+
+```text
+UserNotFoundException
+UserAlreadyExistsException
+InvalidCredentialsException
+InvalidOtpException
+UsernameAlreadyExistsException
+CannotDeleteSelfException
+CannotRemoveLastAdminException
 ```
 
-Database and Redis data are kept in named Docker volumes. To remove the data
-as well as the containers, use `docker compose down -v`.
+The API layer translates these domain exceptions into HTTP responses.
 
-For a production-like Compose deployment, create `.env.production` from
-`.env.production.example`, replace every placeholder with real production
-values, and run:
+This keeps the domain independent from HTTP.
 
-```bash
-docker compose --env-file .env.production -f docker-compose.production.yml up --build -d
+### Repository contracts
+
+Repositories are defined as interfaces/contracts in the domain.
+
+For example:
+
+```ts
+UserRepository;
 ```
 
-The migration CLI reads variables from the environment supplied by Compose;
-the application container is the only service that receives the full
-`.env.production` file.
+The domain knows what persistence operations it needs, but not how those operations are implemented.
 
-The production Compose file runs migrations before starting the API and does
-not publish PostgreSQL or Redis ports. Stop it with:
+---
 
-```bash
-docker compose --env-file .env.production -f docker-compose.production.yml down
+# Application Layer
+
+The application layer contains **use cases**.
+
+A use case represents an action the system can perform.
+
+Examples:
+
+```text
+CreateUser
+ChangeUserPassword
+UpdateCurrentUser
+UpdateUserAvatar
+DeleteUserAvatar
+LoginWithPassword
+LoginWithOtp
+VerifyOtp
+GoogleAuth
+GetCurrentUser
+SearchUsers
 ```
 
-Start PostgreSQL and Redis with Docker:
+Administrative operations are separated into their own group:
 
-```bash
-docker run --name nest-postgres \
-   -e POSTGRES_USER=postgres \
-   -e POSTGRES_PASSWORD=postgres \
-   -e POSTGRES_DB=nest_clean_arch \
-   -p 5432:5432 \
-   -v nest-postgres-data:/var/lib/postgresql/data \
-   -d postgres:16
-
-docker run --name nest-redis \
-   -p 6379:6379 \
-   -v nest-redis-data:/data \
-   -d redis:7-alpine
+```text
+admin-users/
+├── create-user
+├── delete-user
+├── get-user
+├── list-users
+├── update-user
+├── get-audit-logs
+├── list-audit-logs
+├── get-statistics
+└── avatar operations
 ```
 
-If the containers already exist, start them instead:
+This structure keeps authorization and business rules explicit.
 
-```bash
-docker start nest-postgres
-docker start nest-redis
+Instead of creating a large:
+
+```text
+UserService
 ```
 
-Check both services:
+with dozens of unrelated responsibilities, each important operation has a focused use case.
 
-```bash
-docker ps
-docker exec nest-redis redis-cli ping
+---
+
+# Application Interfaces
+
+External capabilities are represented through application-level interfaces.
+
+Examples include:
+
+```text
+PasswordHasher
+OtpService
+LoginProtection
+SessionManager
+StorageService
+EmailService
 ```
 
-Redis should respond with `PONG`.
+The application depends on these abstractions.
 
-## Environment configuration
+Infrastructure provides their implementations.
 
-`.env.example` contains every supported variable. At minimum, configure:
+For example:
+
+```text
+Application
+    │
+    ▼
+PasswordHasher
+    ▲
+    │
+BcryptPasswordHasherService
+```
+
+This makes services such as bcrypt, Redis, SMTP, or MinIO replaceable.
+
+---
+
+# Infrastructure Layer
+
+Infrastructure contains implementations of external concerns.
+
+```text
+infrastructure/
+├── auth/
+├── config/
+├── database/
+└── services/
+```
+
+## Database
+
+PostgreSQL is accessed through TypeORM.
+
+The infrastructure layer contains:
+
+- ORM entities
+- Repository implementations
+- Database configuration
+- Migrations
+- Database bootstrap logic
+
+The ORM entities are intentionally separate from domain entities.
+
+```text
+Domain User
+     ▲
+     │ mapping
+     ▼
+UserOrmEntity
+     │
+     ▼
+PostgreSQL
+```
+
+This prevents TypeORM decorators and persistence concerns from leaking into the domain.
+
+## Redis
+
+Redis is used for short-lived and distributed state such as:
+
+- Sessions
+- OTP hashes
+- OTP expiration
+- OTP attempt counters
+- Login protection / failed-login tracking
+
+Sessions are stored server-side.
+
+The browser receives only the session identifier through an HTTP-only cookie.
+
+## SMTP
+
+SMTP is used for OTP delivery.
+
+The application does not directly depend on Nodemailer.
+
+Instead:
+
+```text
+OtpService
+    ▲
+    │
+OtpServiceImpl
+    │
+    ▼
+SMTP / Nodemailer
+```
+
+## Password hashing
+
+Passwords are hashed using bcrypt through an application abstraction.
+
+Plaintext passwords are never persisted.
+
+## Object storage
+
+Avatar files are handled separately from ordinary user profile updates.
+
+MinIO provides S3-compatible object storage.
+
+Avatar-related operations therefore have their own use cases rather than being mixed into the normal profile update flow.
+
+The application stores the avatar reference while the actual file is handled by the storage infrastructure.
+
+Image processing is supported through Sharp.
+
+---
+
+# Authentication
+
+NestStarter supports multiple authentication flows.
+
+## Email + password
+
+```text
+POST /auth/simple-login
+```
+
+Passwords are hashed using bcrypt.
+
+Repeated failed password attempts are tracked through Redis-backed login protection.
+
+## OTP authentication
+
+OTP can be used for:
+
+- Signup
+- Passwordless login
+
+OTP security includes:
+
+- Hashing before storage
+- Expiration
+- Maximum verification attempts
+- Resend cooldown
+- Rate limiting
+- Single-use verification
+
+OTP data is stored in Redis rather than PostgreSQL.
+
+## Google OAuth
+
+Google OAuth is implemented using Passport.
+
+The application supports:
+
+- Google login
+- Google signup
+- Linking Google accounts
+- Existing local accounts
+- Provider ID uniqueness
+
+Authentication decisions remain in application use cases rather than being embedded inside the Passport strategy.
+
+---
+
+# Sessions
+
+NestStarter uses **cookie-based server-side sessions**.
+
+```text
+Browser
+   │
+   │ HTTP-only session cookie
+   ▼
+NestJS
+   │
+   ▼
+Redis
+   │
+   └── userId
+```
+
+The browser does not contain the authenticated user's identity or authorization state.
+
+The session identifier is stored in the cookie while session data lives in Redis.
+
+This also allows multiple application instances to share session state.
+
+---
+
+# Authorization
+
+Authorization is based on the user's domain role.
+
+Currently:
+
+```text
+USER
+ADMIN
+```
+
+Authenticated routes use the session guard.
+
+Administrative routes additionally use the admin guard.
+
+```text
+Request
+   │
+   ▼
+Session Guard
+   │
+   ▼
+Authenticated User
+   │
+   ▼
+Admin Guard
+   │
+   ▼
+ADMIN role?
+```
+
+The domain user remains the source of truth for authorization.
+
+---
+
+# User Management
+
+The boilerplate provides a complete foundation for user management.
+
+Supported operations include:
+
+- Create user
+- Get current user
+- Update current user
+- Change password
+- Search users
+- Update avatar
+- Delete avatar
+
+Profile data is deliberately separated from avatar storage.
+
+A normal profile update can modify fields such as:
+
+```text
+firstName
+lastName
+username
+dateOfBirth
+bio
+```
+
+Avatar operations use dedicated use cases because they involve external object storage.
+
+---
+
+# Admin Management
+
+Administrators can manage users through dedicated application use cases.
+
+Supported operations include:
+
+- Create users
+- Update users
+- Delete users
+- Get individual users
+- List users
+- Reset passwords
+- Manage roles
+- Manage profiles
+- Manage avatars
+- View audit logs
+- View audit-log lists
+- View user statistics
+
+Administrative operations are protected by the admin authorization guard.
+
+Sensitive fields such as password hashes are never exposed through API responses.
+
+---
+
+# Audit Logging
+
+Administrative actions are audit logged.
+
+The audit system provides a record of important administrative activity without coupling the business logic to a particular logging implementation.
+
+This makes it possible to answer questions such as:
+
+```text
+Who performed the action?
+What action was performed?
+Which user/resource was affected?
+When did it happen?
+```
+
+Audit logging is treated as an application/infrastructure concern rather than putting audit persistence directly into controllers.
+
+---
+
+# API Layer
+
+The API layer is responsible for HTTP concerns.
+
+```text
+api/
+├── auth/
+├── users/
+├── admin/
+└── health/
+```
+
+Controllers should remain thin.
+
+Their job is primarily to:
+
+1. Receive the HTTP request
+2. Validate/transform input
+3. Call the appropriate use case
+4. Return the result
+
+Business rules belong in the application/domain layers.
+
+---
+
+# Validation
+
+Global request validation is enabled using:
+
+- `class-validator`
+- `class-transformer`
+- NestJS `ValidationPipe`
+
+DTOs define the API contract.
+
+Validation therefore happens at the API boundary before data reaches application logic.
+
+This keeps invalid HTTP input away from the application and domain layers.
+
+---
+
+# Error Handling
+
+Domain exceptions do not know about HTTP.
+
+For example:
+
+```ts
+throw new UserNotFoundException();
+```
+
+The global exception filter maps that domain error to an HTTP response.
+
+Example:
+
+```json
+{
+  "statusCode": 404,
+  "message": "User not found.",
+  "error": "UserNotFoundException",
+  "requestId": "..."
+}
+```
+
+The response format is intentionally stable and includes a request ID for tracing.
+
+HTTP exceptions are also handled consistently.
+
+---
+
+# Security
+
+NestStarter includes several security foundations:
+
+- HTTP-only session cookies
+- Server-side Redis sessions
+- Bcrypt password hashing
+- OTP hashing
+- OTP expiration
+- OTP attempt limits
+- OTP resend cooldown
+- Redis-backed login protection
+- Global throttling
+- Helmet
+- Credential-aware CORS
+- Request validation
+- Role-based authorization
+- Sensitive response filtering
+- Environment validation
+
+Security-sensitive configuration is provided through environment variables.
+
+Secrets should never be committed to the repository.
+
+---
+
+# Health Checks
+
+The application exposes:
+
+```text
+GET /health
+```
+
+The health endpoint verifies essential infrastructure, including:
+
+- PostgreSQL
+- Redis
+
+An unhealthy dependency causes the health check to report an unhealthy state.
+
+This makes the endpoint suitable for container/orchestrator health checks.
+
+---
+
+# Configuration
+
+Configuration is environment-based.
+
+Joi validates the application's environment variables during startup.
+
+Example:
 
 ```env
 DB_HOST=localhost
@@ -168,273 +670,372 @@ DB_NAME=nest_clean_arch
 
 REDIS_HOST=localhost
 REDIS_PORT=6379
-REDIS_PASSWORD=
+
+SESSION_SECRET=your-long-random-secret
 
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=your-gmail-address@gmail.com
-SMTP_PASSWORD=your-google-app-password
-SMTP_FROM=your-gmail-address@gmail.com
-
-SESSION_SECRET=at-least-32-random-characters
+SMTP_USER=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
+SMTP_FROM=your-email@gmail.com
 ```
 
-Never use a normal Gmail password. Create a Google App Password after enabling
-two-step verification. Never commit `.env`, passwords, or App Passwords.
+See:
 
-For local development, SMTP failure can optionally leave the OTP in Redis and
-print it to the terminal:
-
-```env
-OTP_LOG_CODE=true
-NODE_ENV=development
+```text
+.env.example
+.env.production.example
 ```
 
-Keep this disabled in production. OTP logging is automatically disabled when
-`NODE_ENV=production`.
+for the supported configuration.
 
-## Start the API
+---
+
+# Database Migrations
+
+TypeORM migrations are used for schema changes.
+
+Available commands:
 
 ```bash
+npm run migration:generate
+npm run migration:run
+npm run migration:revert
+npm run migration:run:prod
+```
+
+Production deployments should use migrations rather than relying on TypeORM schema synchronization.
+
+---
+
+# Docker
+
+Development infrastructure can be started with Docker Compose.
+
+```bash
+docker compose up --build
+```
+
+This provides the application's supporting infrastructure and API environment.
+
+A production-oriented Compose configuration is also included:
+
+```bash
+docker compose \
+  --env-file .env.production \
+  -f docker-compose.production.yml \
+  up --build -d
+```
+
+The production configuration is designed so PostgreSQL and Redis are not unnecessarily exposed to the host.
+
+---
+
+# Swagger
+
+Swagger/OpenAPI documentation is available during development.
+
+```text
+http://localhost:3000/api/docs
+```
+
+Swagger provides an interactive description of the API endpoints, request DTOs, and response contracts.
+
+---
+
+# Testing
+
+Jest is used for unit testing.
+
+Run the test suite:
+
+```bash
+npm test
+```
+
+Run with coverage:
+
+```bash
+npm test -- --coverage
+```
+
+Run tests sequentially:
+
+```bash
+npm test -- --runInBand
+```
+
+Build the application:
+
+```bash
+npm run build
+```
+
+The application layer is designed to be highly unit-testable because use cases depend on abstractions rather than concrete infrastructure implementations.
+
+---
+
+# Project Principles
+
+NestStarter follows several principles.
+
+### Business logic first
+
+The domain and application layers define the behavior of the system.
+
+### Infrastructure is replaceable
+
+PostgreSQL, Redis, SMTP, MinIO, and bcrypt are implementation details.
+
+### Controllers stay thin
+
+Controllers should coordinate HTTP and application use cases, not contain business rules.
+
+### Use cases stay focused
+
+One use case should represent one meaningful operation.
+
+### Domain stays framework-independent
+
+The domain should not require NestJS, TypeORM, Express, Redis, or other infrastructure libraries.
+
+### Explicit dependencies
+
+Dependencies should be visible through constructors and interfaces rather than hidden global state.
+
+### Security by default
+
+Authentication, authorization, password hashing, session storage, validation, rate limiting, and error handling are provided as foundations rather than being left for every project to implement independently.
+
+---
+
+# Adding a New Feature
+
+A typical feature follows this flow:
+
+```text
+1. Domain
+   └── Entity / Enum / Exception / Repository contract
+
+2. Application
+   └── Use case / Input model / Interface
+
+3. Infrastructure
+   └── Repository or external-service implementation
+
+4. API
+   └── DTO / Controller / Guard / Module
+
+5. Tests
+   └── Unit / Integration / E2E
+```
+
+For example, adding a new business feature should generally look like:
+
+```text
+Controller
+    │
+    ▼
+UseCase
+    │
+    ├── Domain Entity
+    │
+    ├── Repository Interface
+    │
+    └── Application Interface
+             ▲
+             │
+       Infrastructure
+```
+
+This structure keeps the feature understandable and prevents infrastructure details from spreading throughout the application.
+
+---
+
+# Technology Stack
+
+| Area              | Technology                      |
+| ----------------- | ------------------------------- |
+| Runtime           | Node.js                         |
+| Framework         | NestJS                          |
+| Language          | TypeScript                      |
+| Architecture      | Clean Architecture              |
+| Database          | PostgreSQL                      |
+| ORM               | TypeORM                         |
+| Cache / State     | Redis                           |
+| Sessions          | express-session + connect-redis |
+| Authentication    | Password, OTP, Google OAuth     |
+| OAuth             | Passport + Google OAuth 2.0     |
+| Password hashing  | bcrypt                          |
+| Email             | Nodemailer / SMTP               |
+| Object storage    | MinIO                           |
+| Image processing  | Sharp                           |
+| Validation        | class-validator / Joi           |
+| Security headers  | Helmet                          |
+| Rate limiting     | NestJS Throttler                |
+| API documentation | Swagger / OpenAPI               |
+| Testing           | Jest / ts-jest                  |
+| Containers        | Docker / Docker Compose         |
+
+---
+
+# Getting Started
+
+## Requirements
+
+- Node.js 20+
+- npm
+- Docker Desktop
+
+For a local setup without Docker, PostgreSQL and Redis can also be installed separately.
+
+For real OTP delivery, an SMTP account is required.
+
+---
+
+## Installation
+
+```bash
+git clone https://github.com/rezkhaleghi/NestStarter.git
+
+cd NestStarter
+
+npm install
+```
+
+Create the environment file:
+
+```bash
+cp .env.example .env
+```
+
+Configure the required values.
+
+---
+
+## Start with Docker
+
+```bash
+docker compose up --build
+```
+
+The API will be available at:
+
+```text
+http://localhost:3000
+```
+
+Swagger:
+
+```text
+http://localhost:3000/api/docs
+```
+
+Stop the stack:
+
+```bash
+docker compose down
+```
+
+Remove containers and persisted Docker volumes:
+
+```bash
+docker compose down -v
+```
+
+---
+
+## Start locally
+
+After PostgreSQL and Redis are running:
+
+```bash
+npm run migration:run
+
 npm run start:dev
 ```
 
-The API runs at `http://localhost:3000` by default. Swagger is available at:
+---
 
-`http://localhost:3000/api/docs`
-
-Useful npm scripts:
+# Common Commands
 
 ```bash
+# Development
+npm run start:dev
+
+# Build
 npm run build
-npm run start
+
+# Production
 npm run start:prod
+
+# Tests
+npm test
+
+# Tests with coverage
+npm test -- --coverage
+
+# Tests sequentially
 npm test -- --runInBand
+
+# Generate migration
+npm run migration:generate
+
+# Run migrations
+npm run migration:run
+
+# Revert migration
+npm run migration:revert
 ```
 
-## Authentication API
+---
 
-| Method | Route                   | Purpose                                  |
-| ------ | ----------------------- | ---------------------------------------- |
-| POST   | `/auth/request-otp`     | Send an OTP to an email                  |
-| POST   | `/auth/sign-up`         | Verify OTP and create a user             |
-| POST   | `/auth/simple-login`    | Login with email and password            |
-| POST   | `/auth/login-otp`       | Login with email and OTP                 |
-| GET    | `/auth/google`          | Start Google OAuth                       |
-| GET    | `/auth/google/callback` | Complete Google OAuth                    |
-| GET    | `/auth/profile`         | Return the authenticated user's profile  |
-| POST   | `/auth/logout`          | Destroy the current session              |
-| POST   | `/auth/change-password` | Change the authenticated user's password |
+# Production Considerations
 
-### Request an OTP
+Before deploying a project built from NestStarter:
 
-```bash
-curl -X POST http://localhost:3000/auth/request-otp \
-   -H "Content-Type: application/json" \
-   -d '{"email":"user@gmail.com"}'
-```
+- Generate a strong unique `SESSION_SECRET`
+- Use HTTPS
+- Enable secure production cookies
+- Keep secrets outside version control
+- Use production SMTP credentials
+- Keep OTP logging disabled
+- Use database migrations
+- Secure Redis with authentication/network controls
+- Configure MinIO/object storage securely
+- Review CORS configuration
+- Review throttling configuration for your deployment topology
+- Review dependency versions
+- Configure application logging and monitoring
+- Run integration/E2E tests against real infrastructure
+- Review database transaction boundaries for concurrent administrative operations
 
-The OTP is sent by SMTP. With `OTP_LOG_CODE=true` in development, a failed
-SMTP delivery logs the code and leaves its Redis record available for testing.
-OTP requests are throttled globally and per email through the configured resend
-cooldown. Invalid OTPs are limited by `OTP_MAX_ATTEMPTS` and expire after
-`OTP_EXPIRY_SECONDS`.
+NestStarter provides the foundation, but production configuration remains application and deployment specific.
 
-### Signup
+---
 
-```bash
-curl -c cookies.txt -X POST http://localhost:3000/auth/sign-up \
-   -H "Content-Type: application/json" \
-   -d '{
-      "email":"user@gmail.com",
-      "password":"strongPassword123",
-      "otp":"123456"
-   }'
-```
+# What NestStarter Is — and Isn't
 
-Successful signup creates the user and logs the user in. The response includes
-an HTTP-only `connect.sid` cookie when a cookie-aware client is used.
+NestStarter **is**:
 
-### Email/password login
+- A reusable NestJS backend foundation
+- A Clean Architecture reference implementation
+- An authentication and user-management starting point
+- A production-oriented infrastructure template
+- A foundation for building APIs without repeatedly solving the same backend problems
 
-```bash
-curl -c cookies.txt -X POST http://localhost:3000/auth/simple-login \
-   -H "Content-Type: application/json" \
-   -d '{
-      "email":"user@gmail.com",
-      "password":"strongPassword123"
-   }'
-```
+NestStarter **isn't**:
 
-### OTP login
+- A framework
+- A complete SaaS application
+- A domain-specific business solution
+- A replacement for application-specific security review
+- A promise that every deployment is production-ready without configuration
 
-```bash
-curl -c cookies.txt -X POST http://localhost:3000/auth/login-otp \
-   -H "Content-Type: application/json" \
-   -d '{
-      "email":"user@gmail.com",
-      "otp":"123456"
-   }'
-```
+The intention is to provide a strong starting point while leaving the actual business domain to the project that uses it.
 
-OTP verification is single-use. A valid OTP is deleted atomically from Redis.
+---
 
-### Profile and logout
+# License
 
-Send the saved cookie with subsequent requests:
-
-```bash
-curl -b cookies.txt http://localhost:3000/auth/profile
-curl -b cookies.txt -X POST http://localhost:3000/auth/logout
-```
-
-The profile response contains `id`, `email`, `role`, and `createdAt`. It never
-contains `password` or `hashedPassword`.
-
-### Admin list sorting and pagination
-
-`GET /admin/users` accepts `page`, `limit`, `sortBy` (`createdAt`, `email`, or
-`role`), and `sortDirection` (`ASC` or `DESC`). The response includes `data`,
-`total`, and `totalPages`. The shared `PageQuery` and `PageResult` contracts can
-be reused by repository implementations for other models.
-
-### Health
-
-`GET /health` checks PostgreSQL and Redis and returns an unhealthy response when
-either essential service cannot be reached.
-
-Sessions use Redis, not process memory. The cookie contains only a session ID;
-the authenticated user ID is stored server-side.
-
-## Admin user management
-
-Every admin route requires a valid session whose user has the `admin` role.
-
-| Method | Route                          | Purpose                         |
-| ------ | ------------------------------ | ------------------------------- |
-| GET    | `/admin/users?page=1&limit=20` | List users                      |
-| GET    | `/admin/users/:id`             | Get one user                    |
-| POST   | `/admin/users`                 | Create a user or admin          |
-| PATCH  | `/admin/users/:id`             | Update email, password, or role |
-| DELETE | `/admin/users/:id`             | Delete a user                   |
-| PATCH  | `/admin/users/:id/password`    | Reset a user's password         |
-
-Responses never include password hashes. Pagination accepts `page` from 1 and
-`limit` from 1 through 100.
-
-### Create the first admin
-
-For a new database, temporarily set these values in `.env`:
-
-```env
-INITIAL_ADMIN_EMAIL=admin@gmail.com
-INITIAL_ADMIN_PASSWORD=a-strong-password-at-least-12-chars
-```
-
-Start the API once. The startup bootstrap creates the admin only when the email
-does not already exist. Then remove or clear both variables and restart the
-application. The admin record remains in PostgreSQL.
-
-### Use the admin API
-
-Login and save the session cookie:
-
-```bash
-curl -c admin-cookies.txt -X POST http://localhost:3000/auth/simple-login \
-   -H "Content-Type: application/json" \
-   -d '{
-      "email":"admin@gmail.com",
-      "password":"a-strong-password-at-least-12-chars"
-   }'
-```
-
-List users:
-
-```bash
-curl -b admin-cookies.txt \
-   "http://localhost:3000/admin/users?page=1&limit=20"
-```
-
-Create another admin:
-
-```bash
-curl -b admin-cookies.txt -X POST http://localhost:3000/admin/users \
-   -H "Content-Type: application/json" \
-   -d '{
-      "email":"another-admin@gmail.com",
-      "password":"another-strong-password",
-      "role":"admin"
-   }'
-```
-
-## Data ownership
-
-```text
-PostgreSQL -> users, password hashes, roles, creation dates
-Redis      -> OTP hashes, OTP expiration, OTP attempt counters, sessions
-SMTP       -> delivery of the plain OTP email
-Browser    -> HTTP-only connect.sid session cookie
-```
-
-OTP values are not stored in plaintext. Passwords are not stored in plaintext.
-
-## Error responses
-
-The API validates request bodies and query parameters globally. Common status
-codes are:
-
-| Status | Meaning                                                    |
-| ------ | ---------------------------------------------------------- |
-| 400    | Invalid request, expired OTP, or protected admin operation |
-| 401    | Missing session or invalid credentials/OTP                 |
-| 403    | Authenticated user is not an administrator                 |
-| 404    | User does not exist                                        |
-| 409    | Duplicate email or unsafe admin state change               |
-| 429    | Request throttled                                          |
-
-Infrastructure failures such as database, Redis, or SMTP outages are not
-silently converted into invalid-credential responses.
-
-## Testing and quality checks
-
-Run the current checks with:
-
-```bash
-npm test -- --runInBand
-npm run build
-```
-
-The existing unit tests cover password login, OTP login, email normalization,
-invalid credentials, and invalid OTP behavior. Integration tests should be
-added before production for PostgreSQL, Redis, SMTP failure, session persistence,
-admin authorization, and concurrent last-admin changes.
-
-## Production checklist
-
-- Use a new random `SESSION_SECRET` with at least 32 characters.
-- Revoke any SMTP App Password that was exposed and generate a new one.
-- Keep `OTP_LOG_CODE=false`.
-- Use HTTPS so production cookies can use `secure=true`.
-- Keep `.env` outside version control.
-- Use PostgreSQL migrations instead of TypeORM `synchronize`.
-- Run Redis with authentication and a network policy.
-- Move throttler storage to Redis when running multiple API instances.
-- Add transaction/locking protection around last-admin changes.
-- Review and upgrade dependencies before deployment.
-- Add audit logging for administrator actions.
-
-## Adding a feature
-
-1. Add domain entities, enums, exceptions, or repository contracts when needed.
-2. Add focused application use cases and application input models.
-3. Implement infrastructure adapters without leaking them into application code.
-4. Add API DTOs, controllers, guards, and a feature module.
-5. Register providers in the appropriate module.
-6. Add unit and integration tests for the behavior.
-
-Avoid large generic services that combine unrelated authentication, user, and
-administration workflows. Focused use cases keep permissions and business
-rules explicit and independently testable.
-
-# NestStarter
+MIT
