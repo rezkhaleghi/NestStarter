@@ -131,4 +131,25 @@ describe("LoginWithPasswordUseCase", () => {
       "user@example.com",
     );
   });
+
+  it("clears previous login failures after successful authentication", async () => {
+    const user = new User(
+      "user-id",
+      "user@example.com",
+      "hashed-password",
+      undefined,
+      true,
+    );
+
+    findByEmail.mockResolvedValue(user);
+    compare.mockResolvedValue(true);
+
+    await useCase.execute({
+      email: " USER@example.com ",
+      password: "password",
+    });
+
+    expect(loginProtection.clear).toHaveBeenCalledTimes(1);
+    expect(loginProtection.clear).toHaveBeenCalledWith("user@example.com");
+  });
 });

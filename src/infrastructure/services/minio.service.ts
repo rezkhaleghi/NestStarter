@@ -15,14 +15,8 @@ export class MinioService extends FileStorage implements OnModuleInit {
       endPoint: this.configService.get<string>("MINIO_ENDPOINT", "localhost"),
       port: Number(this.configService.get<string>("MINIO_PORT", "9000")),
       useSSL: false,
-      accessKey: this.configService.get<string>(
-        "MINIO_ACCESS_KEY",
-        "minioadmin",
-      ),
-      secretKey: this.configService.get<string>(
-        "MINIO_SECRET_KEY",
-        "minioadmin",
-      ),
+      accessKey: this.configService.getOrThrow<string>("MINIO_ACCESS_KEY"),
+      secretKey: this.configService.getOrThrow<string>("MINIO_SECRET_KEY"),
     });
 
     this.bucket = this.configService.get<string>("MINIO_BUCKET", "app");
