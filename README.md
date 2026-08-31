@@ -1490,3 +1490,17 @@ The intention is to provide a strong starting point while leaving the actual bus
 # License
 
 MIT
+
+---
+
+# Built with ❤️ by PocketJack
+
+**Reza Khaleghi** — software engineer
+
+- GitHub: github.com/rezkhaleghi
+- LinkedIn: linkedin.com/in/rezaxkhaleghi
+- Email: `rezaxkhaleghi@gmail.com`
+
+---
+
+**NestStarter** — built to save time, reduce boilerplate, and keep your architecture clean.
