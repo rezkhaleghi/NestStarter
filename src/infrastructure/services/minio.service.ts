@@ -32,7 +32,7 @@ export class MinioService extends FileStorage implements OnModuleInit {
   }
 
   async get(objectName: string): Promise<{
-    buffer: Buffer;
+    stream: Readable;
     contentType: string;
     size: number;
   }> {
@@ -40,21 +40,12 @@ export class MinioService extends FileStorage implements OnModuleInit {
 
     const stream = await this.client.getObject(this.bucket, objectName);
 
-    const chunks: Buffer[] = [];
-
-    for await (const chunk of stream) {
-      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-    }
-
-    const buffer = Buffer.concat(chunks);
-
     return {
-      buffer,
+      stream,
       contentType: stat.metaData["content-type"] ?? "application/octet-stream",
-      size: buffer.length,
+      size: stat.size,
     };
   }
-
   async upload(
     objectName: string,
     buffer: Buffer,

@@ -1,4 +1,4 @@
-import { Controller, Get, Req, Res, StreamableFile } from "@nestjs/common";
+import { Controller, Get, Param, Res, StreamableFile } from "@nestjs/common";
 import {
   ApiOperation,
   ApiParam,
@@ -6,7 +6,7 @@ import {
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
-import type { Request, Response } from "express";
+import type { Response } from "express";
 import { FileStorage } from "../../application/interfaces/file-storage.interface";
 
 @ApiTags("Files")
@@ -14,7 +14,7 @@ import { FileStorage } from "../../application/interfaces/file-storage.interface
 export class FilesController {
   constructor(private readonly fileStorage: FileStorage) {}
 
-  @Get("/*")
+  @Get("*")
   @ApiOperation({
     summary: "Get a public file",
     description:
@@ -40,23 +40,20 @@ export class FilesController {
     status: 404,
     description: "File not found.",
   })
-  @Get("/*")
   async getFile(
-    @Req() request: Request,
-    @Res() response: Response,
-  ): Promise<void> {
-    const objectName = request.path.replace(/^\/files\//, "");
-
-    console.log("objectName:", objectName);
+    @Param() params: Record<string, string | string[]>,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<StreamableFile> {
+    const objectName = String(params["0"]);
 
     const file = await this.fileStorage.get(objectName);
 
     response.setHeader("Content-Type", file.contentType);
     response.setHeader("Content-Length", file.size);
 
-    // Allow public files to be embedded by other origins.
+    // Public files may be loaded by another origin.
     response.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
 
-    response.end(file.buffer);
+    return new StreamableFile(file.stream);
   }
 }
