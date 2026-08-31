@@ -14,7 +14,7 @@ import { FileStorage } from "../../application/interfaces/file-storage.interface
 export class FilesController {
   constructor(private readonly fileStorage: FileStorage) {}
 
-  @Get("*")
+  @Get("/*")
   @ApiOperation({
     summary: "Get a public file",
     description:
@@ -22,8 +22,7 @@ export class FilesController {
   })
   @ApiParam({
     name: "path",
-    required: true,
-    description: "Path of the file in object storage.",
+    description: "Storage object path",
     example: "avatars/da953d8a-9ee6-4c29-bf20-027bc65fad41/avatar.webp",
   })
   @ApiProduces(
@@ -45,9 +44,10 @@ export class FilesController {
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ): Promise<StreamableFile> {
-    const objectName = request.originalUrl
-      .replace(/^\/files\//, "")
-      .split("?")[0];
+    const objectName = request.path.replace(/^\/files\//, "");
+
+    console.log("request.path:", request.path);
+    console.log("objectName:", objectName);
 
     const file = await this.fileStorage.get(objectName);
 
