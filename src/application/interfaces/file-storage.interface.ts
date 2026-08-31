@@ -10,7 +10,7 @@ export abstract class FileStorage {
   abstract delete(objectName: string): Promise<void>;
 
   abstract get(objectName: string): Promise<{
-    stream: Readable;
+    buffer: Buffer;
     contentType: string;
     size: number;
   }>;

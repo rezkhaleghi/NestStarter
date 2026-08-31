@@ -40,13 +40,13 @@ export class FilesController {
     status: 404,
     description: "File not found.",
   })
+  @Get("/*")
   async getFile(
     @Req() request: Request,
-    @Res({ passthrough: true }) response: Response,
-  ): Promise<StreamableFile> {
+    @Res() response: Response,
+  ): Promise<void> {
     const objectName = request.path.replace(/^\/files\//, "");
 
-    console.log("request.path:", request.path);
     console.log("objectName:", objectName);
 
     const file = await this.fileStorage.get(objectName);
@@ -54,6 +54,9 @@ export class FilesController {
     response.setHeader("Content-Type", file.contentType);
     response.setHeader("Content-Length", file.size);
 
-    return new StreamableFile(file.stream);
+    // Allow public files to be embedded by other origins.
+    response.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+
+    response.end(file.buffer);
   }
 }

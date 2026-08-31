@@ -2,8 +2,7 @@ import { Injectable, OnModuleInit } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Client } from "minio";
 import { FileStorage } from "../../application/interfaces/file-storage.interface";
-import type { Readable } from "stream";
-import { FileNotFoundException } from "@domain/exceptions/domain.exception";
+import { Readable } from "stream";
 
 @Injectable()
 export class MinioService extends FileStorage implements OnModuleInit {
@@ -33,33 +32,27 @@ export class MinioService extends FileStorage implements OnModuleInit {
   }
 
   async get(objectName: string): Promise<{
-    stream: Readable;
+    buffer: Buffer;
     contentType: string;
     size: number;
   }> {
-    try {
-      const stat = await this.client.statObject(this.bucket, objectName);
+    const stat = await this.client.statObject(this.bucket, objectName);
 
-      const stream = await this.client.getObject(this.bucket, objectName);
+    const stream = await this.client.getObject(this.bucket, objectName);
 
-      return {
-        stream,
-        contentType:
-          stat.metaData["content-type"] ?? "application/octet-stream",
-        size: stat.size,
-      };
-    } catch (error) {
-      if (
-        error instanceof Error &&
-        "code" in error &&
-        (error as { code?: string }).code === "NoSuchKey"
-      ) {
-        throw new FileNotFoundException();
-      }
-      console.error("Error retrieving file from MinIO:", error);
+    const chunks: Buffer[] = [];
 
-      throw error;
+    for await (const chunk of stream) {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
     }
+
+    const buffer = Buffer.concat(chunks);
+
+    return {
+      buffer,
+      contentType: stat.metaData["content-type"] ?? "application/octet-stream",
+      size: buffer.length,
+    };
   }
 
   async upload(
