@@ -2,6 +2,8 @@ import { Injectable, OnModuleInit } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Client } from "minio";
 import { FileStorage } from "../../application/interfaces/file-storage.interface";
+import type { Readable } from "stream";
+import { FileNotFoundException } from "@domain/exceptions/domain.exception";
 
 @Injectable()
 export class MinioService extends FileStorage implements OnModuleInit {
@@ -27,6 +29,36 @@ export class MinioService extends FileStorage implements OnModuleInit {
 
     if (!exists) {
       await this.client.makeBucket(this.bucket);
+    }
+  }
+
+  async get(objectName: string): Promise<{
+    stream: Readable;
+    contentType: string;
+    size: number;
+  }> {
+    try {
+      const stat = await this.client.statObject(this.bucket, objectName);
+
+      const stream = await this.client.getObject(this.bucket, objectName);
+
+      return {
+        stream,
+        contentType:
+          stat.metaData["content-type"] ?? "application/octet-stream",
+        size: stat.size,
+      };
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        "code" in error &&
+        (error as { code?: string }).code === "NoSuchKey"
+      ) {
+        throw new FileNotFoundException();
+      }
+      console.error("Error retrieving file from MinIO:", error);
+
+      throw error;
     }
   }
 

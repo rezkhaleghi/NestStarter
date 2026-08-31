@@ -63,3 +63,9 @@ export class CannotDeleteSelfException extends DomainException {
     super("An administrator cannot delete their own account.");
   }
 }
+
+export class FileNotFoundException extends DomainException {
+  constructor() {
+    super("File not found.");
+  }
+}
