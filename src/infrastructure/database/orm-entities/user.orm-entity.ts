@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   PrimaryColumn,
   UpdateDateColumn,
 } from "typeorm";
@@ -14,6 +15,10 @@ import { UserStatus } from "@domain/enums/user-status.enum";
  * The domain never imports this file.
  */
 @Entity("users")
+@Index(["createdAt"])
+@Index(["role"])
+@Index(["status"])
+@Index(["emailVerified"])
 export class UserOrmEntity {
   @PrimaryColumn("uuid")
   id: string;

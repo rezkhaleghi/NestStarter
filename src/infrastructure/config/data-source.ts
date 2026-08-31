@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { DataSource } from "typeorm";
 import { UserOrmEntity } from "../database/orm-entities/user.orm-entity";
+import { AuditLogOrmEntity } from "../database/orm-entities/audit-log.orm-entity";
 
 /**
  * TypeORM CLI data source configuration.
@@ -18,7 +19,7 @@ export default new DataSource({
   username: process.env.DB_USERNAME,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  entities: [UserOrmEntity],
+  entities: [UserOrmEntity, AuditLogOrmEntity],
   migrations: [__dirname + "/../database/migrations/*.{js,ts}"],
   synchronize: false,
 });
