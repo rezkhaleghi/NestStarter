@@ -30,9 +30,10 @@ async function bootstrap() {
 
   // Tell Express to trust the first proxy When running behind a reverse proxy/load balancer in prod.
   // (eg. detecting HTTPS correctly, secure cookies, client IP handling)
-  if (configService.get<string>("NODE_ENV") === "production") {
-    app.getHttpAdapter().getInstance().set("trust proxy", 1);
-  }
+  app
+    .getHttpAdapter()
+    .getInstance()
+    .set("trust proxy", configService.get<number>("TRUST_PROXY", 1));
 
   // Enabls CORS.
   app.enableCors({
