@@ -14,7 +14,12 @@ export class GoogleAuthUseCase {
   async execute(input: GoogleAuthInput): Promise<User> {
     const email = normalizeEmail(input.email);
     const linkedUser = await this.userRepository.findByGoogleId(input.googleId);
+
     if (linkedUser) {
+      if (linkedUser.status !== UserStatus.ACTIVE) {
+        throw new InvalidCredentialsException();
+      }
+
       return linkedUser;
     }
 

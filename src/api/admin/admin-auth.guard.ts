@@ -7,6 +7,7 @@ import {
 } from "@nestjs/common";
 import { UserRole } from "../../domain/enums/user-role.enum";
 import { UserRepository } from "../../domain/repositories/user.repository";
+import { UserStatus } from "../../domain/enums/user-status.enum";
 
 @Injectable()
 export class AdminAuthGuard implements CanActivate {
@@ -20,9 +21,11 @@ export class AdminAuthGuard implements CanActivate {
     }
 
     const user = await this.userRepository.findById(userId);
-    if (!user) {
+
+    if (!user || user.status !== UserStatus.ACTIVE) {
       throw new UnauthorizedException();
     }
+
     if (user.role !== UserRole.ADMIN) {
       throw new ForbiddenException("Administrator access required.");
     }
