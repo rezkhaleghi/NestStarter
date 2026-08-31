@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Res, StreamableFile } from "@nestjs/common";
+import { Controller, Get, Req, Res, StreamableFile } from "@nestjs/common";
 import {
   ApiOperation,
   ApiParam,
@@ -6,7 +6,7 @@ import {
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
-import type { Response } from "express";
+import type { Request, Response } from "express";
 import { FileStorage } from "../../application/interfaces/file-storage.interface";
 
 @ApiTags("Files")
@@ -22,7 +22,8 @@ export class FilesController {
   })
   @ApiParam({
     name: "path",
-    description: "Storage object path",
+    required: true,
+    description: "Path of the file in object storage.",
     example: "avatars/da953d8a-9ee6-4c29-bf20-027bc65fad41/avatar.webp",
   })
   @ApiProduces(
@@ -35,24 +36,20 @@ export class FilesController {
   @ApiResponse({
     status: 200,
     description: "The requested file.",
-    content: {
-      "application/octet-stream": {
-        schema: {
-          type: "string",
-          format: "binary",
-        },
-      },
-    },
   })
   @ApiResponse({
     status: 404,
     description: "File not found.",
   })
   async getFile(
-    @Param("path") path: string,
+    @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ): Promise<StreamableFile> {
-    const file = await this.fileStorage.get(path);
+    const objectName = request.originalUrl
+      .replace(/^\/files\//, "")
+      .split("?")[0];
+
+    const file = await this.fileStorage.get(objectName);
 
     response.setHeader("Content-Type", file.contentType);
     response.setHeader("Content-Length", file.size);
