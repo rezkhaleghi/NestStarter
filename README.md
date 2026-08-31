@@ -2,17 +2,15 @@
 
 A production-oriented **NestJS backend boilerplate built around Clean Architecture**.
 
-NestStarter provides the infrastructure and application foundations that most backend projects repeatedly need: authentication, authorization, user management, sessions, Redis, PostgreSQL, object storage, email/OTP, validation, rate limiting, health checks, auditing, Swagger, Docker, migrations, and testing.
+NestStarter provides the infrastructure and application foundations that most backend projects repeatedly need: authentication, authorization, user management, sessions, Redis, PostgreSQL, object storage, image processing, email/OTP, validation, rate limiting, health checks, auditing, Swagger/OpenAPI, Docker, migrations, and testing.
 
 The goal is simple:
 
 > **Start with a solid backend foundation, keep business logic independent from frameworks and infrastructure, and spend your time building the actual product.**
 
-[Repository](https://github.com/rezkhaleghi/NestStarter)
-
 ---
 
-## Why NestStarter?
+# Why NestStarter?
 
 Most NestJS projects start with a collection of modules, controllers, services, and database entities. That works initially, but as the application grows, business logic tends to become coupled to NestJS, TypeORM, Redis, HTTP, and other infrastructure concerns.
 
@@ -30,6 +28,11 @@ This gives the project:
 - Focused use cases instead of large generic services
 - A predictable structure for adding new features
 - Production-oriented authentication and security foundations
+- Dedicated abstractions for external services
+- Dedicated file-storage and image-processing capabilities
+- Centralized error handling
+- Global request validation
+- Administrative auditing
 
 NestStarter is intentionally **not a complete application**. It provides the foundation on which an application can be built.
 
@@ -86,18 +89,19 @@ This makes infrastructure replaceable without rewriting business logic.
 src/
 │
 ├── api/
-│   ├── auth/
-│   ├── users/
 │   ├── admin/
-│   └── health/
+│   ├── auth/
+│   ├── files/
+│   ├── health/
+│   └── users/
 │
 ├── application/
 │   ├── dtos/
 │   ├── interfaces/
 │   └── use-cases/
+│       ├── admin-users/
 │       ├── auth/
-│       ├── users/
-│       └── admin-users/
+│       └── users/
 │
 ├── domain/
 │   ├── entities/
@@ -111,35 +115,63 @@ src/
 │   ├── database/
 │   └── services/
 │
+├── shared/
+│   └── pagination/
+│
 └── types/
 ```
 
-## Domain
+---
+
+# Domain Layer
 
 The domain contains business concepts and rules.
 
 ```text
 domain/
+
 ├── entities/
 ├── enums/
 ├── exceptions/
 └── repositories/
 ```
 
-### Entities
+## Entities
 
 Domain entities represent business objects without depending on TypeORM or NestJS.
 
-For example:
+Current entities include:
 
 ```text
 User
 AuditLog
 ```
 
-### Enums
+The `User` domain entity contains user-related business state such as:
 
-Domain-specific enumerations such as:
+```text
+id
+firstName
+lastName
+userName
+email
+password
+dateOfBirth
+hideYear
+avatar
+bio
+role
+status
+createdAt
+```
+
+The domain entity remains independent from the database ORM.
+
+---
+
+## Enums
+
+Current domain enumerations include:
 
 ```text
 UserRole
@@ -147,37 +179,71 @@ UserStatus
 AuditAction
 ```
 
-### Exceptions
+For example:
+
+```text
+UserRole
+
+USER
+ADMIN
+```
+
+User lifecycle/state is represented separately through `UserStatus`.
+
+---
+
+## Exceptions
 
 Business errors live in the domain instead of the HTTP layer.
 
-Examples:
+Current domain exceptions include:
 
 ```text
-UserNotFoundException
-UserAlreadyExistsException
-InvalidCredentialsException
 InvalidOtpException
+OtpCooldownException
+UserAlreadyExistsException
 UsernameAlreadyExistsException
-CannotDeleteSelfException
+InvalidCredentialsException
+GoogleAccountConflictException
+UserNotFoundException
 CannotRemoveLastAdminException
+CannotDeleteSelfException
 ```
 
-The API layer translates these domain exceptions into HTTP responses.
+All domain exceptions inherit from:
 
-This keeps the domain independent from HTTP.
-
-### Repository contracts
-
-Repositories are defined as interfaces/contracts in the domain.
+```text
+DomainException
+```
 
 For example:
 
 ```ts
-UserRepository;
+throw new UserNotFoundException();
 ```
 
-The domain knows what persistence operations it needs, but not how those operations are implemented.
+The domain does not know anything about HTTP status codes, Express, or NestJS exception classes.
+
+The API layer is responsible for translating domain exceptions into HTTP responses.
+
+---
+
+## Repository Contracts
+
+Repositories are defined as contracts in the domain.
+
+For example:
+
+```text
+UserRepository
+AuditLogRepository
+```
+
+The domain defines the persistence operations required by the application.
+
+The infrastructure layer provides the actual implementations.
+
+This keeps persistence technology out of the domain.
 
 ---
 
@@ -187,62 +253,92 @@ The application layer contains **use cases**.
 
 A use case represents an action the system can perform.
 
-Examples:
+Current user-related use cases include:
 
 ```text
 CreateUser
-ChangeUserPassword
+GetCurrentUser
 UpdateCurrentUser
+ChangeUserPassword
+SearchUsers
 UpdateUserAvatar
 DeleteUserAvatar
+```
+
+Authentication use cases include:
+
+```text
 LoginWithPassword
 LoginWithOtp
 VerifyOtp
 GoogleAuth
-GetCurrentUser
-SearchUsers
 ```
 
-Administrative operations are separated into their own group:
+Administrative use cases include:
 
 ```text
-admin-users/
-├── create-user
-├── delete-user
-├── get-user
-├── list-users
-├── update-user
-├── get-audit-logs
-├── list-audit-logs
-├── get-statistics
-└── avatar operations
+CreateUser
+DeleteUser
+GetUser
+ListUsers
+UpdateUser
+GetAuditLogs
+ListAuditLogs
+GetStatistics
+DeleteUserAvatar
 ```
 
-This structure keeps authorization and business rules explicit.
+The same business operation can therefore have different application entry points depending on its context.
 
-Instead of creating a large:
+The application layer contains the business workflow rather than HTTP-specific logic.
+
+---
+
+# Use-Case-Oriented Design
+
+Instead of creating a large generic:
 
 ```text
 UserService
 ```
 
-with dozens of unrelated responsibilities, each important operation has a focused use case.
+with dozens of unrelated responsibilities, important operations are represented by focused use cases.
+
+For example:
+
+```text
+UpdateCurrentUserUseCase
+UpdateUserAvatarUseCase
+DeleteUserAvatarUseCase
+ChangeUserPasswordUseCase
+SearchUsersUseCase
+```
+
+This makes each operation:
+
+- Easier to understand
+- Easier to test
+- Easier to authorize
+- Easier to audit
+- Easier to replace or extend
 
 ---
 
 # Application Interfaces
 
-External capabilities are represented through application-level interfaces.
+External capabilities are represented through application-level abstractions.
 
-Examples include:
+Current interfaces include:
 
 ```text
-PasswordHasher
-OtpService
+AdminStatistics
+AuditLogger
+FileStorage
+ImageProcessing
 LoginProtection
-SessionManager
-StorageService
-EmailService
+NotificationService
+OtpService
+PasswordHasher
 ```
 
 The application depends on these abstractions.
@@ -261,7 +357,19 @@ PasswordHasher
 BcryptPasswordHasherService
 ```
 
-This makes services such as bcrypt, Redis, SMTP, or MinIO replaceable.
+Another example:
+
+```text
+Application
+    │
+    ▼
+FileStorage
+    ▲
+    │
+MinioService
+```
+
+This allows infrastructure technologies to be replaced without changing business logic.
 
 ---
 
@@ -271,13 +379,18 @@ Infrastructure contains implementations of external concerns.
 
 ```text
 infrastructure/
+
 ├── auth/
 ├── config/
 ├── database/
 └── services/
 ```
 
-## Database
+Infrastructure is where NestJS, TypeORM, PostgreSQL, Redis, MinIO, SMTP, bcrypt, Sharp, and other external technologies are integrated.
+
+---
+
+# Database
 
 PostgreSQL is accessed through TypeORM.
 
@@ -286,8 +399,8 @@ The infrastructure layer contains:
 - ORM entities
 - Repository implementations
 - Database configuration
-- Migrations
-- Database bootstrap logic
+- TypeORM migrations
+- Database seed/bootstrap logic
 
 The ORM entities are intentionally separate from domain entities.
 
@@ -304,103 +417,56 @@ PostgreSQL
 
 This prevents TypeORM decorators and persistence concerns from leaking into the domain.
 
-## Redis
-
-Redis is used for short-lived and distributed state such as:
-
-- Sessions
-- OTP hashes
-- OTP expiration
-- OTP attempt counters
-- Login protection / failed-login tracking
-
-Sessions are stored server-side.
-
-The browser receives only the session identifier through an HTTP-only cookie.
-
-## SMTP
-
-SMTP is used for OTP delivery.
-
-The application does not directly depend on Nodemailer.
-
-Instead:
+Current database ORM entities include:
 
 ```text
-OtpService
-    ▲
-    │
-OtpServiceImpl
-    │
-    ▼
-SMTP / Nodemailer
+UserOrmEntity
+AuditLogOrmEntity
 ```
-
-## Password hashing
-
-Passwords are hashed using bcrypt through an application abstraction.
-
-Plaintext passwords are never persisted.
-
-## Object storage
-
-Avatar files are handled separately from ordinary user profile updates.
-
-MinIO provides S3-compatible object storage.
-
-Avatar-related operations therefore have their own use cases rather than being mixed into the normal profile update flow.
-
-The application stores the avatar reference while the actual file is handled by the storage infrastructure.
-
-Image processing is supported through Sharp.
 
 ---
 
-# Authentication
+# Database Migrations
 
-NestStarter supports multiple authentication flows.
+The project uses TypeORM migrations for schema changes.
 
-## Email + password
+Current migrations include:
 
 ```text
-POST /auth/simple-login
+InitialUsers
+CreateAuditLogs
+AddUserProfileFields
+AddUserStatus
 ```
 
-Passwords are hashed using bcrypt.
+Production deployments should use migrations rather than relying on TypeORM schema synchronization.
 
-Repeated failed password attempts are tracked through Redis-backed login protection.
+Available commands:
 
-## OTP authentication
+```bash
+npm run migration:generate
+npm run migration:run
+npm run migration:revert
+npm run migration:run:prod
+```
 
-OTP can be used for:
+---
 
-- Signup
-- Passwordless login
+# Redis
 
-OTP security includes:
+Redis is used for short-lived and distributed application state.
 
-- Hashing before storage
-- Expiration
-- Maximum verification attempts
-- Resend cooldown
-- Rate limiting
-- Single-use verification
+Current uses include:
 
-OTP data is stored in Redis rather than PostgreSQL.
+- Server-side sessions
+- OTP storage
+- OTP expiration
+- OTP attempt tracking
+- OTP resend cooldowns
+- Login protection
+- Failed-login tracking
 
-## Google OAuth
-
-Google OAuth is implemented using Passport.
-
-The application supports:
-
-- Google login
-- Google signup
-- Linking Google accounts
-- Existing local accounts
-- Provider ID uniqueness
-
-Authentication decisions remain in application use cases rather than being embedded inside the Passport strategy.
+The application interacts with Redis through abstractions where appropriate rather than coupling business logic directly to the Redis client.
 
 ---
 
@@ -418,14 +484,66 @@ NestJS
    ▼
 Redis
    │
-   └── userId
+   └── session data / userId
 ```
 
-The browser does not contain the authenticated user's identity or authorization state.
+The browser receives the session identifier through an HTTP-only cookie.
 
-The session identifier is stored in the cookie while session data lives in Redis.
+Session state is stored server-side.
 
-This also allows multiple application instances to share session state.
+This allows multiple application instances to share session state when they use the same Redis infrastructure.
+
+---
+
+# Authentication
+
+NestStarter supports multiple authentication flows.
+
+## Email + Password
+
+Password authentication is handled through an application use case.
+
+Passwords are hashed using bcrypt.
+
+Repeated failed password attempts are protected through Redis-backed login protection.
+
+---
+
+## OTP Authentication
+
+OTP authentication is supported for authentication flows such as:
+
+- Signup
+- Passwordless login
+
+OTP security includes:
+
+- Hashing before storage
+- Expiration
+- Maximum verification attempts
+- Resend cooldown
+- Single-use verification
+- Rate limiting
+
+OTP data is stored in Redis rather than PostgreSQL.
+
+The application uses an `OtpService` abstraction so OTP implementation details remain outside the domain.
+
+---
+
+## Google OAuth
+
+Google OAuth is implemented using Passport.
+
+The application supports:
+
+- Google login
+- Google signup
+- Linking Google accounts
+- Existing local accounts
+- Provider ID uniqueness
+
+Authentication decisions remain in application use cases rather than being embedded inside the Passport strategy.
 
 ---
 
@@ -440,9 +558,9 @@ USER
 ADMIN
 ```
 
-Authenticated routes use the session guard.
+Authenticated routes use the session authentication guard.
 
-Administrative routes additionally use the admin guard.
+Administrative routes additionally use the admin authorization guard.
 
 ```text
 Request
@@ -485,12 +603,198 @@ A normal profile update can modify fields such as:
 ```text
 firstName
 lastName
-username
+userName
 dateOfBirth
 bio
 ```
 
-Avatar operations use dedicated use cases because they involve external object storage.
+Avatar operations use dedicated use cases because they involve external object storage and image processing.
+
+---
+
+# User Search
+
+Users can be searched through the user API.
+
+Search functionality is represented through a dedicated application use case and request/response DTOs.
+
+The search layer is separated from the general user retrieval flow so that search-specific filtering and pagination can evolve independently.
+
+---
+
+# File Storage
+
+NestStarter provides an abstraction for object/file storage:
+
+```text
+FileStorage
+```
+
+The application layer does not depend directly on MinIO.
+
+The abstraction provides:
+
+```ts
+upload(
+  objectName: string,
+  buffer: Buffer,
+  contentType: string,
+): Promise<void>;
+
+delete(objectName: string): Promise<void>;
+
+get(objectName: string): Promise<{
+  stream: Readable;
+  contentType: string;
+  size: number;
+}>;
+
+getUrl(objectName: string): string;
+
+healthCheck(): Promise<void>;
+```
+
+The current infrastructure implementation is:
+
+```text
+MinioService
+```
+
+This means MinIO can be replaced with another object-storage implementation without changing application use cases.
+
+---
+
+# MinIO
+
+MinIO provides S3-compatible object storage.
+
+Files are stored outside PostgreSQL.
+
+For example, an avatar can be stored using an object path such as:
+
+```text
+avatars/<user-id>/avatar.webp
+```
+
+The application stores the avatar reference while the actual binary file remains in object storage.
+
+The file API streams stored objects rather than loading the entire file into the HTTP response layer.
+
+```text
+Client
+  │
+  ▼
+FilesController
+  │
+  ▼
+FileStorage
+  │
+  ▼
+MinioService
+  │
+  ▼
+MinIO
+```
+
+---
+
+# File API
+
+Files are exposed through:
+
+```text
+GET /files/*
+```
+
+For example:
+
+```text
+GET /files/avatars/<user-id>/avatar.webp
+```
+
+The Files API:
+
+- Resolves the object path
+- Retrieves the object from storage
+- Preserves the stored content type
+- Preserves the object size
+- Streams the object to the client
+
+The file endpoint is documented through Swagger/OpenAPI.
+
+---
+
+# Image Processing
+
+Image processing is represented by an application-level abstraction:
+
+```text
+ImageProcessing
+```
+
+The infrastructure implementation uses:
+
+```text
+Sharp
+```
+
+Image processing is kept separate from file storage.
+
+This gives the architecture a clear distinction between:
+
+```text
+Image transformation
+```
+
+and:
+
+```text
+Object storage
+```
+
+For example:
+
+```text
+Avatar Upload
+     │
+     ▼
+Image Processing
+     │
+     ▼
+Processed Image
+     │
+     ▼
+File Storage
+     │
+     ▼
+MinIO
+```
+
+---
+
+# Avatar Management
+
+Avatars are treated as a separate concern from ordinary profile updates.
+
+User avatar operations include:
+
+```text
+UpdateUserAvatar
+DeleteUserAvatar
+```
+
+Administrative avatar operations are also supported.
+
+This prevents object-storage concerns from leaking into normal profile-management logic.
+
+The avatar flow can therefore independently handle:
+
+- Image validation
+- Image processing
+- Object storage
+- Existing-avatar replacement
+- Avatar deletion
+- Avatar references
 
 ---
 
@@ -505,17 +809,18 @@ Supported operations include:
 - Delete users
 - Get individual users
 - List users
-- Reset passwords
+- Change/reset passwords
 - Manage roles
-- Manage profiles
+- Manage user profiles
+- Manage user status
 - Manage avatars
 - View audit logs
-- View audit-log lists
+- List audit logs
 - View user statistics
 
 Administrative operations are protected by the admin authorization guard.
 
-Sensitive fields such as password hashes are never exposed through API responses.
+Sensitive fields such as password hashes are never exposed through API response DTOs.
 
 ---
 
@@ -523,18 +828,52 @@ Sensitive fields such as password hashes are never exposed through API responses
 
 Administrative actions are audit logged.
 
-The audit system provides a record of important administrative activity without coupling the business logic to a particular logging implementation.
+Audit logging is implemented through an application-level abstraction:
 
-This makes it possible to answer questions such as:
+```text
+AuditLogger
+```
+
+with an infrastructure implementation responsible for persistence.
+
+Administrative use cases can therefore record important actions without directly depending on the database implementation.
+
+The audit system records information such as:
 
 ```text
 Who performed the action?
+
 What action was performed?
+
 Which user/resource was affected?
+
 When did it happen?
 ```
 
-Audit logging is treated as an application/infrastructure concern rather than putting audit persistence directly into controllers.
+Audit logs have their own domain entity, repository contract, ORM entity, and application use cases.
+
+Available audit operations include:
+
+```text
+GetAuditLogs
+ListAuditLogs
+```
+
+This keeps audit functionality separate from the HTTP controllers and database implementation.
+
+---
+
+# Admin Statistics
+
+Administrative statistics are exposed through an application abstraction:
+
+```text
+AdminStatistics
+```
+
+The infrastructure implementation provides the actual statistics.
+
+This allows statistics to be calculated without coupling the administrative application layer directly to TypeORM queries.
 
 ---
 
@@ -544,10 +883,12 @@ The API layer is responsible for HTTP concerns.
 
 ```text
 api/
-├── auth/
-├── users/
+
 ├── admin/
-└── health/
+├── auth/
+├── files/
+├── health/
+└── users/
 ```
 
 Controllers should remain thin.
@@ -556,10 +897,64 @@ Their job is primarily to:
 
 1. Receive the HTTP request
 2. Validate/transform input
-3. Call the appropriate use case
+3. Call the appropriate use case or application abstraction
 4. Return the result
 
 Business rules belong in the application/domain layers.
+
+---
+
+# DTOs
+
+API request and response contracts are represented through dedicated DTOs.
+
+Examples include:
+
+```text
+AuthRequestDto
+AuthenticatedUserResponseDto
+ChangePasswordRequestDto
+UpdateProfileRequestDto
+SearchUsersRequestDto
+UserSearchResponseDto
+AdminUserRequestDto
+AdminUserResponseDto
+AdminUserListResponseDto
+AuditLogRequestDto
+AuditLogResponseDto
+GetAuditLogsQueryDto
+ChangeUserPasswordRequestDto
+```
+
+DTOs belong to the API layer and should not be used as domain entities.
+
+This keeps HTTP-specific validation and serialization concerns at the API boundary.
+
+---
+
+# Swagger / OpenAPI
+
+Swagger/OpenAPI documentation is available during development.
+
+```text
+http://localhost:3000/api/docs
+```
+
+Controllers are documented using NestJS Swagger decorators.
+
+The API documentation includes:
+
+- Endpoint descriptions
+- Operation summaries
+- Request parameters
+- Request bodies
+- Response types
+- HTTP response codes
+- Authentication-related responses
+- Multipart file-upload documentation
+- File endpoint documentation
+
+The goal is for **all API controllers and endpoints to be explicitly documented**, rather than relying only on generated route information.
 
 ---
 
@@ -575,7 +970,9 @@ DTOs define the API contract.
 
 Validation therefore happens at the API boundary before data reaches application logic.
 
-This keeps invalid HTTP input away from the application and domain layers.
+This keeps invalid HTTP input away from application and domain logic.
+
+Global validation is configured centrally rather than repeatedly implemented inside individual controllers.
 
 ---
 
@@ -589,7 +986,7 @@ For example:
 throw new UserNotFoundException();
 ```
 
-The global exception filter maps that domain error to an HTTP response.
+The API layer translates the exception into an appropriate HTTP response.
 
 Example:
 
@@ -602,9 +999,11 @@ Example:
 }
 ```
 
-The response format is intentionally stable and includes a request ID for tracing.
-
 HTTP exceptions are also handled consistently.
+
+The API includes centralized exception handling so controllers and use cases do not need repetitive HTTP error formatting.
+
+A request ID is included in error responses for tracing.
 
 ---
 
@@ -623,7 +1022,7 @@ NestStarter includes several security foundations:
 - Global throttling
 - Helmet
 - Credential-aware CORS
-- Request validation
+- Global request validation
 - Role-based authorization
 - Sensitive response filtering
 - Environment validation
@@ -642,14 +1041,9 @@ The application exposes:
 GET /health
 ```
 
-The health endpoint verifies essential infrastructure, including:
+The health module provides a centralized health-check endpoint for the application and its required infrastructure.
 
-- PostgreSQL
-- Redis
-
-An unhealthy dependency causes the health check to report an unhealthy state.
-
-This makes the endpoint suitable for container/orchestrator health checks.
+This endpoint can be used by Docker, container orchestrators, monitoring systems, or deployment infrastructure to determine whether the application is healthy.
 
 ---
 
@@ -678,6 +1072,12 @@ SMTP_PORT=587
 SMTP_USER=your-email@gmail.com
 SMTP_PASSWORD=your-app-password
 SMTP_FROM=your-email@gmail.com
+
+MINIO_ENDPOINT=localhost
+MINIO_PORT=9000
+MINIO_ACCESS_KEY=your-access-key
+MINIO_SECRET_KEY=your-secret-key
+MINIO_BUCKET=app
 ```
 
 See:
@@ -691,23 +1091,6 @@ for the supported configuration.
 
 ---
 
-# Database Migrations
-
-TypeORM migrations are used for schema changes.
-
-Available commands:
-
-```bash
-npm run migration:generate
-npm run migration:run
-npm run migration:revert
-npm run migration:run:prod
-```
-
-Production deployments should use migrations rather than relying on TypeORM schema synchronization.
-
----
-
 # Docker
 
 Development infrastructure can be started with Docker Compose.
@@ -715,8 +1098,6 @@ Development infrastructure can be started with Docker Compose.
 ```bash
 docker compose up --build
 ```
-
-This provides the application's supporting infrastructure and API environment.
 
 A production-oriented Compose configuration is also included:
 
@@ -731,21 +1112,21 @@ The production configuration is designed so PostgreSQL and Redis are not unneces
 
 ---
 
-# Swagger
-
-Swagger/OpenAPI documentation is available during development.
-
-```text
-http://localhost:3000/api/docs
-```
-
-Swagger provides an interactive description of the API endpoints, request DTOs, and response contracts.
-
----
-
 # Testing
 
 Jest is used for unit testing.
+
+Tests currently cover important parts of the application and infrastructure layers, including:
+
+- Authentication use cases
+- User use cases
+- Administrative use cases
+- Guards
+- Session serialization
+- Password hashing
+- OTP services
+- Login protection
+- Redis-backed services
 
 Run the test suite:
 
@@ -775,62 +1156,33 @@ The application layer is designed to be highly unit-testable because use cases d
 
 ---
 
-# Project Principles
-
-NestStarter follows several principles.
-
-### Business logic first
-
-The domain and application layers define the behavior of the system.
-
-### Infrastructure is replaceable
-
-PostgreSQL, Redis, SMTP, MinIO, and bcrypt are implementation details.
-
-### Controllers stay thin
-
-Controllers should coordinate HTTP and application use cases, not contain business rules.
-
-### Use cases stay focused
-
-One use case should represent one meaningful operation.
-
-### Domain stays framework-independent
-
-The domain should not require NestJS, TypeORM, Express, Redis, or other infrastructure libraries.
-
-### Explicit dependencies
-
-Dependencies should be visible through constructors and interfaces rather than hidden global state.
-
-### Security by default
-
-Authentication, authorization, password hashing, session storage, validation, rate limiting, and error handling are provided as foundations rather than being left for every project to implement independently.
-
----
-
 # Adding a New Feature
 
 A typical feature follows this flow:
 
 ```text
 1. Domain
+
    └── Entity / Enum / Exception / Repository contract
 
 2. Application
+
    └── Use case / Input model / Interface
 
 3. Infrastructure
+
    └── Repository or external-service implementation
 
 4. API
+
    └── DTO / Controller / Guard / Module
 
 5. Tests
+
    └── Unit / Integration / E2E
 ```
 
-For example, adding a new business feature should generally look like:
+For example:
 
 ```text
 Controller
@@ -852,30 +1204,117 @@ This structure keeps the feature understandable and prevents infrastructure deta
 
 ---
 
+# Current Project Structure
+
+The current project is organized into the following major areas:
+
+```text
+src/
+
+├── api/
+│   ├── admin/
+│   ├── auth/
+│   ├── files/
+│   ├── health/
+│   └── users/
+│
+├── application/
+│   ├── dtos/
+│   ├── interfaces/
+│   └── use-cases/
+│       ├── admin-users/
+│       ├── auth/
+│       └── users/
+│
+├── domain/
+│   ├── entities/
+│   ├── enums/
+│   ├── exceptions/
+│   └── repositories/
+│
+├── infrastructure/
+│   ├── auth/
+│   ├── config/
+│   ├── database/
+│   │   ├── migrations/
+│   │   ├── orm-entities/
+│   │   └── repositories/
+│   └── services/
+│
+├── shared/
+│   └── pagination/
+│
+└── types/
+```
+
+---
+
+# Project Principles
+
+NestStarter follows several principles.
+
+### Business logic first
+
+The domain and application layers define the behavior of the system.
+
+### Infrastructure is replaceable
+
+PostgreSQL, Redis, SMTP, MinIO, Sharp, and bcrypt are implementation details.
+
+### Controllers stay thin
+
+Controllers coordinate HTTP and application operations. They should not contain business rules.
+
+### Use cases stay focused
+
+One use case should represent one meaningful operation.
+
+### Domain stays framework-independent
+
+The domain should not require NestJS, TypeORM, Express, Redis, MinIO, or other infrastructure libraries.
+
+### Explicit dependencies
+
+Dependencies should be visible through constructors and interfaces rather than hidden global state.
+
+### Separate external capabilities
+
+File storage, image processing, password hashing, OTP, login protection, notifications, auditing, and statistics are represented through abstractions.
+
+### Security by default
+
+Authentication, authorization, password hashing, session storage, validation, rate limiting, and centralized error handling are provided as foundations rather than being left for every project to implement independently.
+
+### Audit important administrative operations
+
+Administrative actions should be traceable without coupling business logic directly to the persistence mechanism.
+
+---
+
 # Technology Stack
 
-| Area              | Technology                      |
-| ----------------- | ------------------------------- |
-| Runtime           | Node.js                         |
-| Framework         | NestJS                          |
-| Language          | TypeScript                      |
-| Architecture      | Clean Architecture              |
-| Database          | PostgreSQL                      |
-| ORM               | TypeORM                         |
-| Cache / State     | Redis                           |
-| Sessions          | express-session + connect-redis |
-| Authentication    | Password, OTP, Google OAuth     |
-| OAuth             | Passport + Google OAuth 2.0     |
-| Password hashing  | bcrypt                          |
-| Email             | Nodemailer / SMTP               |
-| Object storage    | MinIO                           |
-| Image processing  | Sharp                           |
-| Validation        | class-validator / Joi           |
-| Security headers  | Helmet                          |
-| Rate limiting     | NestJS Throttler                |
-| API documentation | Swagger / OpenAPI               |
-| Testing           | Jest / ts-jest                  |
-| Containers        | Docker / Docker Compose         |
+| Area              | Technology                                |
+| ----------------- | ----------------------------------------- |
+| Runtime           | Node.js                                   |
+| Framework         | NestJS                                    |
+| Language          | TypeScript                                |
+| Architecture      | Clean Architecture                        |
+| Database          | PostgreSQL                                |
+| ORM               | TypeORM                                   |
+| Cache / State     | Redis                                     |
+| Sessions          | express-session + connect-redis           |
+| Authentication    | Password, OTP, Google OAuth               |
+| OAuth             | Passport + Google OAuth 2.0               |
+| Password hashing  | bcrypt                                    |
+| Email             | Nodemailer / SMTP                         |
+| Object storage    | MinIO                                     |
+| Image processing  | Sharp                                     |
+| Validation        | class-validator / class-transformer / Joi |
+| Security headers  | Helmet                                    |
+| Rate limiting     | NestJS Throttler                          |
+| API documentation | Swagger / OpenAPI                         |
+| Testing           | Jest / ts-jest                            |
+| Containers        | Docker / Docker Compose                   |
 
 ---
 
@@ -890,6 +1329,8 @@ This structure keeps the feature understandable and prevents infrastructure deta
 For a local setup without Docker, PostgreSQL and Redis can also be installed separately.
 
 For real OTP delivery, an SMTP account is required.
+
+MinIO is required when using the file/avatar functionality unless another `FileStorage` implementation is provided.
 
 ---
 
@@ -945,9 +1386,9 @@ docker compose down -v
 
 ---
 
-## Start locally
+## Start Locally
 
-After PostgreSQL and Redis are running:
+After PostgreSQL, Redis, and the required external infrastructure are running:
 
 ```bash
 npm run migration:run
@@ -986,6 +1427,9 @@ npm run migration:run
 
 # Revert migration
 npm run migration:revert
+
+# Run production migrations
+npm run migration:run:prod
 ```
 
 ---
@@ -1009,6 +1453,10 @@ Before deploying a project built from NestStarter:
 - Configure application logging and monitoring
 - Run integration/E2E tests against real infrastructure
 - Review database transaction boundaries for concurrent administrative operations
+- Configure object-storage access policies appropriately
+- Review uploaded-file validation and image-processing limits
+- Ensure publicly accessible file URLs are intentional
+- Monitor storage usage and orphaned files
 
 NestStarter provides the foundation, but production configuration remains application and deployment specific.
 
@@ -1023,6 +1471,9 @@ NestStarter **is**:
 - An authentication and user-management starting point
 - A production-oriented infrastructure template
 - A foundation for building APIs without repeatedly solving the same backend problems
+- An example of use-case-oriented application design
+- A foundation for object storage and image-processing workflows
+- A foundation for administrative auditing
 
 NestStarter **isn't**:
 
