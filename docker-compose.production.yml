@@ -3,20 +3,26 @@ services:
     build:
       context: .
       target: runner
+
     env_file:
       - ${APP_ENV_FILE:-.env.production}
+
     environment:
       NODE_ENV: production
       DB_HOST: postgres
       REDIS_HOST: redis
-    command: ["sh", "-c", "npm run migration:run:prod && node dist/main.js"]
+
     ports:
       - "${PORT:-3000}:3000"
+
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+
+    command: ["sh", "-c", "npm run migration:run:prod && node dist/main.js"]
+
     healthcheck:
       test:
         [
@@ -28,40 +34,51 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
+
     restart: unless-stopped
 
   postgres:
     image: postgres:16-alpine
+
     environment:
       POSTGRES_USER: ${DB_USERNAME:?DB_USERNAME is required}
       POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
       POSTGRES_DB: ${DB_NAME:?DB_NAME is required}
+
     volumes:
       - postgres-data-production:/var/lib/postgresql/data
+
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 10
+
     restart: unless-stopped
 
   redis:
     image: redis:7-alpine
+
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+
     command:
       [
         "sh",
         "-c",
         'redis-server --requirepass "$${REDIS_PASSWORD}" --appendonly yes',
       ]
+
     volumes:
       - redis-data-production:/data
+
     healthcheck:
       test: ["CMD-SHELL", 'redis-cli -a "$${REDIS_PASSWORD}" ping']
       interval: 5s
       timeout: 3s
       retries: 10
+
     restart: unless-stopped
 
 volumes:
