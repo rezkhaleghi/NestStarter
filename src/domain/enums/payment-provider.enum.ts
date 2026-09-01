@@ -1,0 +1,10 @@
+export enum PaymentProvider {
+  ZARINPAL = "ZARINPAL",
+  IDPAY = "IDPAY",
+  ZIBAL = "ZIBAL",
+  NEXT_PAY = "NEXT_PAY",
+  STRIPE = "STRIPE",
+  PAYPAL = "PAYPAL",
+  NOWPAYMENTS = "NOWPAYMENTS",
+  COINBASE = "COINBASE",
+}
