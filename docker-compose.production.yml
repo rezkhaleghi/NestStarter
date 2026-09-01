@@ -11,6 +11,10 @@ services:
       NODE_ENV: production
       DB_HOST: postgres
       REDIS_HOST: redis
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+
+    command: ["sh", "-c", "npm run migration:run:prod && node dist/main.js"]
 
     ports:
       - "${PORT:-3000}:3000"
@@ -20,8 +24,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-
-    command: ["sh", "-c", "npm run migration:run:prod && node dist/main.js"]
+      minio:
+        condition: service_healthy
 
     healthcheck:
       test:
@@ -34,7 +38,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 20s
 
     restart: unless-stopped
 
@@ -81,6 +85,27 @@ services:
 
     restart: unless-stopped
 
+  minio:
+    image: minio/minio:latest
+
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:?MINIO_ACCESS_KEY is required}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:?MINIO_SECRET_KEY is required}
+
+    volumes:
+      - minio-data-production:/data
+
+    command: ["server", "/data", "--console-address", ":9001"]
+
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+    restart: unless-stopped
+
 volumes:
   postgres-data-production:
   redis-data-production:
+  minio-data-production:
