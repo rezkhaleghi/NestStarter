@@ -1,12 +1,12 @@
 import { PaymentProvider } from "../../domain/enums/payment-provider.enum";
-import { PaymentType } from "../../domain/enums/payment-type.enum";
+import { PaymentCurrency } from "../../domain/enums/payment-currency.enum";
 
 /**
  * Input required to create a payment with an external provider.
  *
  * This interface is provider-agnostic. The application layer does not
- * care whether the payment is processed by ZarinPal, Stripe, a crypto
- * provider, or another payment gateway.
+ * care whether the payment is processed by an Iranian payment gateway,
+ * an international payment provider, or a crypto payment provider.
  */
 export interface CreatePaymentInput {
   /**
@@ -27,14 +27,7 @@ export interface CreatePaymentInput {
    * - USDT
    * - BTC
    */
-  currency: string;
-
-  /**
-   * Type of payment.
-   *
-   * Used to distinguish between fiat and cryptocurrency payments.
-   */
-  type: PaymentType;
+  currency: PaymentCurrency;
 
   /**
    * Provider that should process the payment.
@@ -91,7 +84,7 @@ export interface CreatePaymentResult {
   /**
    * URL where the user should be redirected to complete the payment.
    *
-   * Some payment methods may not require a checkout URL.
+   * Some payment providers may not require a checkout URL.
    */
   paymentUrl?: string;
 }
@@ -122,7 +115,7 @@ export interface VerifyPaymentInput {
   /**
    * Expected payment currency or asset.
    */
-  currency: string;
+  currency: PaymentCurrency;
 }
 
 /**
@@ -147,7 +140,7 @@ export interface VerifyPaymentResult {
   /**
    * Currency or asset confirmed by the provider.
    */
-  currency: string;
+  currency: PaymentCurrency;
 }
 
 /**
@@ -160,20 +153,30 @@ export interface VerifyPaymentResult {
  * - StripePaymentProvider
  * - CryptoPaymentProvider
  *
+ * Each provider declares which currencies it supports, allowing the
+ * application to validate a payment before attempting to create it.
+ *
  * The application layer depends on this abstraction instead of
  * depending directly on any payment provider or SDK.
  */
 export interface PaymentProviderInterface {
   /**
-   * Creates a payment with the selected external provider.
+   * Provider identifier.
+   */
+  readonly name: PaymentProvider;
+
+  /**
+   * Currencies or crypto assets supported by this provider.
+   */
+  readonly supportedCurrencies: PaymentCurrency[];
+
+  /**
+   * Creates a payment with the external provider.
    */
   createPayment(input: CreatePaymentInput): Promise<CreatePaymentResult>;
 
   /**
    * Verifies the payment with the external provider.
-   *
-   * A callback from a payment provider should not be trusted by itself;
-   * the provider should be queried to confirm the actual payment.
    */
   verifyPayment(input: VerifyPaymentInput): Promise<VerifyPaymentResult>;
 }
