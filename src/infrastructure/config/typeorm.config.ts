@@ -21,6 +21,9 @@ export default registerAs(
     entities: [UserOrmEntity, AuditLogOrmEntity],
     // synchronize: process.env.NODE_ENV === "development",
     synchronize: false,
+    extra: {
+      max: 10,
+    },
   }),
 );
 
