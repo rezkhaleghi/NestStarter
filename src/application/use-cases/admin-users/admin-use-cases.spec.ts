@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
+
 import { User } from "../../../domain/entities/user.entity";
 import { UserRole } from "../../../domain/enums/user-role.enum";
 import { UserStatus } from "../../../domain/enums/user-status.enum";
+import { AuditAction } from "../../../domain/enums/audit-action.enum";
+
 import {
   CannotDeleteSelfException,
   CannotRemoveLastAdminException,
@@ -9,7 +12,6 @@ import {
   UserNotFoundException,
   UsernameAlreadyExistsException,
 } from "../../../domain/exceptions/domain.exception";
-import { AuditAction } from "../../../domain/enums/audit-action.enum";
 
 import { CreateAdminUserUseCase } from "./create-user.use-case";
 import { DeleteAdminUserUseCase } from "./delete-user.use-case";
@@ -30,9 +32,20 @@ describe("admin user use cases", () => {
     deleteAdminUser: jest.fn<(id: string) => Promise<boolean>>(),
   };
 
-  const userBalanceRepository = {} as any;
+  const userBalanceRepository = {
+    create: jest.fn(),
+    findByUserIdAndCurrency: jest.fn(),
+  };
+
+  const auditLogRepository = {
+    create: jest.fn(),
+  };
 
   const hash = jest.fn<(password: string) => Promise<string>>();
+
+  const unitOfWork = {
+    execute: jest.fn(),
+  };
 
   const auditLogger = {
     log: jest.fn(),
@@ -40,6 +53,23 @@ describe("admin user use cases", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+
+    unitOfWork.execute.mockImplementation(
+      async (work: (repositories: any) => Promise<unknown>) =>
+        work({
+          userRepository: repository,
+          userBalanceRepository,
+          auditLogRepository,
+        }),
+    );
+
+    userBalanceRepository.create.mockImplementation(
+      async (balance: unknown) => balance,
+    );
+
+    auditLogRepository.create.mockImplementation(
+      async (auditLog: unknown) => auditLog,
+    );
   });
 
   describe("CreateAdminUserUseCase", () => {
@@ -50,10 +80,8 @@ describe("admin user use cases", () => {
       repository.save.mockImplementation(async (user) => user);
 
       const useCase = new CreateAdminUserUseCase(
-        repository as any,
         { hash } as any,
-        auditLogger as any,
-        userBalanceRepository,
+        unitOfWork as any,
       );
 
       const result = await useCase.execute(
@@ -71,30 +99,55 @@ describe("admin user use cases", () => {
       expect(result.emailVerified).toBe(true);
 
       expect(repository.findByEmail).toHaveBeenCalledWith("admin@example.com");
-      expect(hash).toHaveBeenCalledWith("password123");
-      expect(repository.save).toHaveBeenCalled();
 
-      expect(auditLogger.log).toHaveBeenCalledWith({
-        actorUserId: "admin-user-id",
-        targetUserId: result.id,
-        action: AuditAction.USER_CREATED,
-        metadata: {
+      expect(hash).toHaveBeenCalledWith("password123");
+
+      expect(repository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
           email: "admin@example.com",
+          hashedPassword: "hashed",
           role: UserRole.ADMIN,
-        },
-      });
+          emailVerified: true,
+        }),
+      );
+
+      expect(userBalanceRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: result.id,
+          currency: expect.anything(),
+          amount: "0",
+        }),
+      );
+
+      expect(auditLogRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          actorUserId: "admin-user-id",
+          targetUserId: result.id,
+          action: AuditAction.USER_CREATED,
+          metadata: {
+            email: "admin@example.com",
+            role: UserRole.ADMIN,
+          },
+        }),
+      );
+
+      expect(unitOfWork.execute).toHaveBeenCalled();
     });
 
     it("rejects duplicate admin email", async () => {
       repository.findByEmail.mockResolvedValue(
-        new User("id", "admin@example.com", "hashed", UserRole.ADMIN),
+        User.create({
+          id: "id",
+          email: "admin@example.com",
+          hashedPassword: "hashed",
+          role: UserRole.ADMIN,
+          emailVerified: true,
+        }),
       );
 
       const useCase = new CreateAdminUserUseCase(
-        repository as any,
         { hash } as any,
-        auditLogger as any,
-        userBalanceRepository,
+        unitOfWork as any,
       );
 
       await expect(
@@ -109,13 +162,18 @@ describe("admin user use cases", () => {
       ).rejects.toBeInstanceOf(UserAlreadyExistsException);
 
       expect(repository.save).not.toHaveBeenCalled();
-      expect(auditLogger.log).not.toHaveBeenCalled();
+      expect(userBalanceRepository.create).not.toHaveBeenCalled();
+      expect(auditLogRepository.create).not.toHaveBeenCalled();
     });
   });
 
   describe("GetUserUseCase / ListUsersUseCase", () => {
     it("gets and lists users through the repository", async () => {
-      const user = new User("id", "user@example.com", "hashed");
+      const user = User.create({
+        id: "id",
+        email: "user@example.com",
+        hashedPassword: "hashed",
+      });
 
       repository.findById.mockResolvedValue(user);
 

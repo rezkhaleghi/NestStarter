@@ -81,25 +81,23 @@ export class AuditLogRepositoryImpl implements AuditLogRepository {
   }
 
   private toDomain(row: AuditLogOrmEntity): AuditLog {
-    return new AuditLog(
-      row.id,
-      row.actorUserId,
-      row.action,
-      row.targetUserId,
-      row.metadata,
-      row.createdAt,
-    );
+    return AuditLog.create({
+      id: row.id,
+      actorUserId: row.actorUserId,
+      action: row.action,
+      targetUserId: row.targetUserId,
+      metadata: row.metadata,
+    });
   }
 
   private toOrm(log: AuditLog): AuditLogOrmEntity {
     const row = new AuditLogOrmEntity();
 
-    row.id = log.id || randomUUID();
+    row.id = log.id;
     row.actorUserId = log.actorUserId;
     row.action = log.action;
     row.targetUserId = log.targetUserId;
     row.metadata = log.metadata;
-    row.createdAt = log.createdAt;
 
     return row;
   }

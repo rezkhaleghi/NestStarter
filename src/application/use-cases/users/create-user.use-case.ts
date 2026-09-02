@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { randomUUID } from "crypto";
-import { UserRepository } from "../../../domain/repositories/user.repository";
+
 import { User } from "../../../domain/entities/user.entity";
 import { PasswordHasher } from "../../interfaces/password-hasher.interface";
 import { CreateUserInput } from "../../dtos/create-user.input";
@@ -8,39 +8,49 @@ import { UserAlreadyExistsException } from "../../../domain/exceptions/domain.ex
 import { normalizeEmail } from "../../utils/normalize-email";
 import { UserBalance } from "@domain/entities/user-balance.entity";
 import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
-import { UserBalanceRepository } from "@domain/repositories/user-balance.repository";
+import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
 
 @Injectable()
 export class CreateUserUseCase {
   constructor(
-    private readonly userRepository: UserRepository,
     private readonly passwordHasher: PasswordHasher,
-    private readonly userBalanceRepository: UserBalanceRepository,
+    private readonly unitOfWork: UnitOfWork,
   ) {}
 
   async execute(input: CreateUserInput): Promise<User> {
     const email = normalizeEmail(input.email);
-    const existing = await this.userRepository.findByEmail(email);
-    if (existing) {
-      throw new UserAlreadyExistsException(email);
-    }
 
     const hashedPassword = await this.passwordHasher.hash(input.password);
-    const user = User.create({ id: randomUUID(), email, hashedPassword });
-    user.verifyEmail();
 
-    // create user balance for the new user
-    const balance = new UserBalance(
-      crypto.randomUUID(),
-      user.id,
-      PaymentCurrency.USD,
-      "0",
-      new Date(),
-      new Date(),
+    return this.unitOfWork.execute(
+      async ({ userRepository, userBalanceRepository }) => {
+        const existing = await userRepository.findByEmail(email);
+
+        if (existing) {
+          throw new UserAlreadyExistsException(email);
+        }
+
+        const user = User.create({
+          id: randomUUID(),
+          email,
+          hashedPassword,
+        });
+
+        user.verifyEmail();
+
+        const balance = UserBalance.create({
+          userId: user.id,
+          currency:
+            (process.env.DEFAULT_CURRENCY as PaymentCurrency) ||
+            PaymentCurrency.USD,
+          amount: "0",
+        });
+
+        await userRepository.save(user);
+        await userBalanceRepository.create(balance);
+
+        return user;
+      },
     );
-
-    await this.userBalanceRepository.create(balance);
-
-    return this.userRepository.save(user);
   }
 }

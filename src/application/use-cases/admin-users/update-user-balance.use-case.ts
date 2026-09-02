@@ -5,10 +5,9 @@ import {
   UserNotFoundException,
 } from "../../../domain/exceptions/domain.exception";
 import { PaymentCurrency } from "../../../domain/enums/payment-currency.enum";
-import { UserBalanceRepository } from "../../../domain/repositories/user-balance.repository";
-import { UserRepository } from "../../../domain/repositories/user.repository";
 import { AuditAction } from "../../../domain/enums/audit-action.enum";
 import { AuditLogger } from "../../interfaces/audit-logger.interface";
+import { UnitOfWork } from "../../interfaces/unit-of-work.interface";
 
 export interface UpdateUserBalanceInput {
   userId: string;
@@ -19,49 +18,51 @@ export interface UpdateUserBalanceInput {
 @Injectable()
 export class UpdateUserBalanceUseCase {
   constructor(
-    private readonly userRepository: UserRepository,
-    private readonly userBalanceRepository: UserBalanceRepository,
     private readonly auditLogger: AuditLogger,
+    private readonly unitOfWork: UnitOfWork,
   ) {}
 
   async execute(input: UpdateUserBalanceInput, actorUserId: string) {
-    const user = await this.userRepository.findById(input.userId);
+    return this.unitOfWork.execute(
+      async ({ userRepository, userBalanceRepository }) => {
+        const user = await userRepository.findById(input.userId);
 
-    if (!user) {
-      throw new UserNotFoundException();
-    }
+        if (!user) {
+          throw new UserNotFoundException();
+        }
 
-    const balance = await this.userBalanceRepository.findByUserIdAndCurrency(
-      input.userId,
-      input.currency,
-    );
+        const balance = await userBalanceRepository.findByUserIdAndCurrency(
+          input.userId,
+          input.currency,
+        );
 
-    if (!balance) {
-      throw new UserBalanceNotFoundException(input.currency);
-    }
+        if (!balance) {
+          throw new UserBalanceNotFoundException(input.currency);
+        }
 
-    const before = balance.amount;
+        const before = balance.amount;
 
-    if (before === input.amount) {
-      return balance;
-    }
+        if (before === input.amount) {
+          return balance;
+        }
 
-    balance.amount = input.amount;
-    balance.updatedAt = new Date();
+        balance.amount = input.amount;
 
-    const saved = await this.userBalanceRepository.save(balance);
+        const saved = await userBalanceRepository.save(balance);
 
-    await this.auditLogger.log({
-      actorUserId,
-      targetUserId: input.userId,
-      action: AuditAction.USER_BALANCE_UPDATED,
-      metadata: {
-        currency: input.currency,
-        from: before,
-        to: saved.amount,
+        await this.auditLogger.log({
+          actorUserId,
+          targetUserId: input.userId,
+          action: AuditAction.USER_BALANCE_UPDATED,
+          metadata: {
+            currency: input.currency,
+            from: before,
+            to: saved.amount,
+          },
+        });
+
+        return saved;
       },
-    });
-
-    return saved;
+    );
   }
 }

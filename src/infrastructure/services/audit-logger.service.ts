@@ -17,14 +17,12 @@ export class AuditLoggerService extends AuditLogger {
   }
 
   async log(input: AuditLogInput): Promise<void> {
-    const log = new AuditLog(
-      randomUUID(),
-      input.actorUserId,
-      input.action,
-      input.targetUserId ?? null,
-      input.metadata ?? null,
-      new Date(),
-    );
+    const log = AuditLog.create({
+      actorUserId: input.actorUserId,
+      action: input.action,
+      targetUserId: input.targetUserId,
+      metadata: input.metadata,
+    });
 
     await this.auditLogRepository.create(log);
 

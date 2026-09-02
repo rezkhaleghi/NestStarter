@@ -207,14 +207,16 @@ export class User {
     id: string;
     email: string;
     hashedPassword: string | null;
+    role?: UserRole;
+    emailVerified?: boolean;
     googleId?: string;
   }): User {
     return new User(
       params.id,
       params.email,
       params.hashedPassword,
-      UserRole.USER,
-      false,
+      params.role ?? UserRole.USER,
+      params.emailVerified ?? false,
       new Date(),
       new Date(),
       params.googleId ?? null,

@@ -13,6 +13,7 @@ import { SearchUsersUseCase } from "./use-cases/users/search-users.use-case";
 import { InfrastructureModule } from "../infrastructure/infrastructure.module";
 import { GetUserBalancesUseCase } from "./use-cases/users/get-user-balances.use-case";
 import { CreateUserBalanceUseCase } from "./use-cases/admin-users/create-user-balance.use-case";
+import { UpdateUserBalanceUseCase } from "./use-cases/admin-users/update-user-balance.use-case";
 
 /**
  * Registers application use cases. Infrastructure bindings are supplied by
@@ -34,6 +35,7 @@ import { CreateUserBalanceUseCase } from "./use-cases/admin-users/create-user-ba
     SearchUsersUseCase,
     GetUserBalancesUseCase,
     CreateUserBalanceUseCase,
+    UpdateUserBalanceUseCase,
   ],
   exports: [
     CreateUserUseCase,
@@ -49,6 +51,7 @@ import { CreateUserBalanceUseCase } from "./use-cases/admin-users/create-user-ba
     SearchUsersUseCase,
     GetUserBalancesUseCase,
     CreateUserBalanceUseCase,
+    UpdateUserBalanceUseCase,
   ],
 })
 export class ApplicationModule {}

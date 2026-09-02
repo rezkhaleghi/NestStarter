@@ -86,14 +86,12 @@ export class UserBalanceRepositoryImpl implements UserBalanceRepository {
   }
 
   private toDomain(row: UserBalanceOrmEntity): UserBalance {
-    return new UserBalance(
-      row.id,
-      row.userId,
-      row.currency,
-      row.amount,
-      row.createdAt,
-      row.updatedAt,
-    );
+    return UserBalance.create({
+      id: row.id,
+      userId: row.userId,
+      currency: row.currency,
+      amount: row.amount,
+    });
   }
 
   private toOrm(balance: UserBalance): UserBalanceOrmEntity {
@@ -103,8 +101,6 @@ export class UserBalanceRepositoryImpl implements UserBalanceRepository {
     row.userId = balance.userId;
     row.currency = balance.currency;
     row.amount = balance.amount;
-    row.createdAt = balance.createdAt;
-    row.updatedAt = balance.updatedAt;
 
     return row;
   }

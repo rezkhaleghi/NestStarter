@@ -34,6 +34,8 @@ import { AuditLoggerService } from "./services/audit-logger.service";
 import { UserBalanceRepository } from "@domain/repositories/user-balance.repository";
 import { UserBalanceOrmEntity } from "./database/orm-entities/user-balance.orm-entity";
 import { UserBalanceRepositoryImpl } from "./database/repositories/user-balance.repository.impl";
+import { TypeOrmUnitOfWork } from "./database/unit-of-work.typeorm";
+import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
 
 /**
  * This module is the ONLY place where abstract tokens (interfaces) from
@@ -155,6 +157,10 @@ import { UserBalanceRepositoryImpl } from "./database/repositories/user-balance.
       provide: UserBalanceRepository,
       useClass: UserBalanceRepositoryImpl,
     },
+    {
+      provide: UnitOfWork,
+      useClass: TypeOrmUnitOfWork,
+    },
   ],
   exports: [
     UserRepository,
@@ -169,6 +175,7 @@ import { UserBalanceRepositoryImpl } from "./database/repositories/user-balance.
     AuditLogger,
     AuditLogRepository,
     UserBalanceRepository,
+    UnitOfWork,
   ],
 })
 export class InfrastructureModule {}

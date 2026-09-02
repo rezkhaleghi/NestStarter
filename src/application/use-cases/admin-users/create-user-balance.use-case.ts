@@ -1,5 +1,4 @@
 import { Injectable } from "@nestjs/common";
-import { randomUUID } from "crypto";
 
 import { PaymentCurrency } from "../../../domain/enums/payment-currency.enum";
 import {
@@ -46,16 +45,11 @@ export class CreateUserBalanceUseCase {
       throw new UserBalanceAlreadyExistsException(input.currency);
     }
 
-    const now = new Date();
-
-    const balance = new UserBalance(
-      randomUUID(),
-      input.userId,
-      input.currency,
-      input.amount,
-      now,
-      now,
-    );
+    const balance = UserBalance.create({
+      userId: input.userId,
+      currency: input.currency,
+      amount: input.amount,
+    });
 
     const saved = await this.userBalanceRepository.create(balance);
 
