@@ -8,6 +8,9 @@ import { AuditLogger } from "../../interfaces/audit-logger.interface";
 import { PasswordHasher } from "../../interfaces/password-hasher.interface";
 import { normalizeEmail } from "../../utils/normalize-email";
 import { AuditAction } from "@domain/enums/audit-action.enum";
+import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
+import { UserBalance } from "@domain/entities/user-balance.entity";
+import { UserBalanceRepository } from "@domain/repositories/user-balance.repository";
 
 export interface CreateAdminUserInput {
   email: string;
@@ -21,6 +24,7 @@ export class CreateAdminUserUseCase {
     private readonly userRepository: UserRepository,
     private readonly passwordHasher: PasswordHasher,
     private readonly auditLogger: AuditLogger,
+    private readonly userBalanceRepository: UserBalanceRepository,
   ) {}
 
   async execute(
@@ -44,6 +48,18 @@ export class CreateAdminUserUseCase {
     );
 
     const saved = await this.userRepository.save(user);
+
+    // create user balance for the new user
+    const balance = new UserBalance(
+      crypto.randomUUID(),
+      user.id,
+      PaymentCurrency.USD,
+      "0",
+      new Date(),
+      new Date(),
+    );
+
+    await this.userBalanceRepository.create(balance);
 
     await this.auditLogger.log({
       actorUserId,
