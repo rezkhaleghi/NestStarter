@@ -8,4 +8,8 @@ export abstract class UserBalanceRepository {
     userId: string,
     currency: PaymentCurrency,
   ): Promise<UserBalance | null>;
+
+  abstract findByUserId(userId: string): Promise<UserBalance[]>;
+
+  abstract save(balance: UserBalance): Promise<UserBalance>;
 }

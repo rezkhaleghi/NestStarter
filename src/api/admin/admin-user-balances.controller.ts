@@ -1,0 +1,90 @@
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseEnumPipe,
+  ParseUUIDPipe,
+  Patch,
+  Req,
+  UseGuards,
+} from "@nestjs/common";
+import { ApiOperation, ApiParam, ApiResponse, ApiTags } from "@nestjs/swagger";
+import type { Request } from "express";
+
+import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
+
+import { UpdateUserBalanceUseCase } from "../../application/use-cases/admin-users/update-user-balance.use-case";
+
+import { AdminAuthGuard } from "./admin-auth.guard";
+import { GetUserBalancesUseCase } from "@application/use-cases/users/get-user-balances.use-case";
+import { UpdateUserBalanceRequestDto } from "./dtos/update-user-balance.request.dto";
+
+@Controller("admin/users/:userId/balances")
+@ApiTags("admin-user-balances")
+@UseGuards(AdminAuthGuard)
+export class AdminUserBalancesController {
+  constructor(
+    private readonly getUserBalancesUseCase: GetUserBalancesUseCase,
+    private readonly updateUserBalanceUseCase: UpdateUserBalanceUseCase,
+  ) {}
+
+  @Get()
+  @ApiOperation({
+    summary: "Get user balances",
+  })
+  @ApiParam({
+    name: "userId",
+    description: "User UUID",
+    format: "uuid",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "User balances",
+  })
+  @ApiResponse({
+    status: 404,
+    description: "User not found",
+  })
+  async getBalances(@Param("userId", ParseUUIDPipe) userId: string) {
+    return this.getUserBalancesUseCase.execute(userId);
+  }
+
+  @Patch(":currency")
+  @ApiOperation({
+    summary: "Update a user's balance",
+  })
+  @ApiParam({
+    name: "userId",
+    description: "User UUID",
+    format: "uuid",
+  })
+  @ApiParam({
+    name: "currency",
+    enum: PaymentCurrency,
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Balance updated",
+  })
+  @ApiResponse({
+    status: 404,
+    description: "User or balance not found",
+  })
+  async updateBalance(
+    @Param("userId", ParseUUIDPipe) userId: string,
+    @Param("currency", new ParseEnumPipe(PaymentCurrency))
+    currency: PaymentCurrency,
+    @Body() dto: UpdateUserBalanceRequestDto,
+    @Req() request: Request,
+  ) {
+    return this.updateUserBalanceUseCase.execute(
+      {
+        userId,
+        currency,
+        amount: dto.amount,
+      },
+      request.session.userId!,
+    );
+  }
+}
