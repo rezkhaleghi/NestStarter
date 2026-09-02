@@ -10,11 +10,15 @@ import { UpdateCurrentUserUseCase } from "./use-cases/users/update-current-user.
 import { UpdateUserAvatarUseCase } from "./use-cases/users/update-user-avatar.use-case";
 import { DeleteUserAvatarUseCase } from "./use-cases/users/delete-user-avatar.use-case";
 import { SearchUsersUseCase } from "./use-cases/users/search-users.use-case";
+import { InfrastructureModule } from "../infrastructure/infrastructure.module";
+import { GetUserBalancesUseCase } from "./use-cases/users/get-user-balances.use-case";
+
 /**
  * Registers application use cases. Infrastructure bindings are supplied by
  * the composition root and injected through application interfaces.
  */
 @Module({
+  imports: [InfrastructureModule],
   providers: [
     CreateUserUseCase,
     VerifyOtpUseCase,
@@ -27,6 +31,7 @@ import { SearchUsersUseCase } from "./use-cases/users/search-users.use-case";
     UpdateUserAvatarUseCase,
     DeleteUserAvatarUseCase,
     SearchUsersUseCase,
+    GetUserBalancesUseCase,
   ],
   exports: [
     CreateUserUseCase,
@@ -40,6 +45,7 @@ import { SearchUsersUseCase } from "./use-cases/users/search-users.use-case";
     UpdateUserAvatarUseCase,
     DeleteUserAvatarUseCase,
     SearchUsersUseCase,
+    GetUserBalancesUseCase,
   ],
 })
 export class ApplicationModule {}

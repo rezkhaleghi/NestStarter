@@ -31,6 +31,9 @@ import { AuditLogRepositoryImpl } from "./database/repositories/audit-log.reposi
 import { AuditLogRepository } from "../domain/repositories/audit-log.repository";
 import { AuditLogger } from "../application/interfaces/audit-logger.interface";
 import { AuditLoggerService } from "./services/audit-logger.service";
+import { UserBalanceRepository } from "@domain/repositories/user-balance.repository";
+import { UserBalanceOrmEntity } from "./database/orm-entities/user-balance.orm-entity";
+import { UserBalanceRepositoryImpl } from "./database/repositories/user-balance.repository.impl";
 
 /**
  * This module is the ONLY place where abstract tokens (interfaces) from
@@ -91,7 +94,11 @@ import { AuditLoggerService } from "./services/audit-logger.service";
     TypeOrmModule.forRootAsync({
       useFactory: () => typeormConfig(),
     }),
-    TypeOrmModule.forFeature([UserOrmEntity, AuditLogOrmEntity]),
+    TypeOrmModule.forFeature([
+      UserOrmEntity,
+      AuditLogOrmEntity,
+      UserBalanceOrmEntity,
+    ]),
   ],
   providers: [
     {
@@ -144,6 +151,10 @@ import { AuditLoggerService } from "./services/audit-logger.service";
       provide: AuditLogRepository,
       useClass: AuditLogRepositoryImpl,
     },
+    {
+      provide: UserBalanceRepository,
+      useClass: UserBalanceRepositoryImpl,
+    },
   ],
   exports: [
     UserRepository,
@@ -157,6 +168,7 @@ import { AuditLoggerService } from "./services/audit-logger.service";
     AdminStatisticsService,
     AuditLogger,
     AuditLogRepository,
+    UserBalanceRepository,
   ],
 })
 export class InfrastructureModule {}

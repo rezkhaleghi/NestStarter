@@ -30,6 +30,8 @@ describe("admin user use cases", () => {
     deleteAdminUser: jest.fn<(id: string) => Promise<boolean>>(),
   };
 
+  const userBalanceRepository = {} as any;
+
   const hash = jest.fn<(password: string) => Promise<string>>();
 
   const auditLogger = {
@@ -51,6 +53,7 @@ describe("admin user use cases", () => {
         repository as any,
         { hash } as any,
         auditLogger as any,
+        userBalanceRepository,
       );
 
       const result = await useCase.execute(
@@ -91,6 +94,7 @@ describe("admin user use cases", () => {
         repository as any,
         { hash } as any,
         auditLogger as any,
+        userBalanceRepository,
       );
 
       await expect(

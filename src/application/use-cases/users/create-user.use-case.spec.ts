@@ -9,9 +9,12 @@ describe("CreateUserUseCase", () => {
   const hash = jest.fn<(password: string) => Promise<string>>();
   const save = jest.fn<(user: User) => Promise<User>>();
 
+  const userBalanceRepository = {} as any;
+
   const useCase = new CreateUserUseCase(
     { findByEmail, save } as any,
     { hash } as any,
+    userBalanceRepository,
   );
 
   beforeEach(() => {
