@@ -69,3 +69,9 @@ export class FileNotFoundException extends DomainException {
     super("File not found.");
   }
 }
+
+export class UserBalanceNotFoundException extends DomainException {
+  constructor(currency: string) {
+    super(`Balance for ${currency} does not exist for this user.`);
+  }
+}

@@ -1,6 +1,9 @@
 import { Injectable } from "@nestjs/common";
 
-import { UserNotFoundException } from "../../../domain/exceptions/domain.exception";
+import {
+  UserBalanceNotFoundException,
+  UserNotFoundException,
+} from "../../../domain/exceptions/domain.exception";
 import { PaymentCurrency } from "../../../domain/enums/payment-currency.enum";
 import { UserBalanceRepository } from "../../../domain/repositories/user-balance.repository";
 import { UserRepository } from "../../../domain/repositories/user.repository";
@@ -34,9 +37,7 @@ export class UpdateUserBalanceUseCase {
     );
 
     if (!balance) {
-      throw new Error(
-        `Balance for ${input.currency} does not exist for this user.`,
-      );
+      throw new UserBalanceNotFoundException(input.currency);
     }
 
     const before = balance.amount;

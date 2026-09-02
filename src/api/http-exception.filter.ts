@@ -4,6 +4,7 @@ import {
   ConflictException,
   ExceptionFilter,
   HttpException,
+  Logger,
   NotFoundException,
   UnauthorizedException,
 } from "@nestjs/common";
@@ -19,10 +20,13 @@ import {
   UsernameAlreadyExistsException,
   UserNotFoundException,
   OtpCooldownException,
+  UserBalanceNotFoundException,
 } from "../domain/exceptions/domain.exception";
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
+  private readonly logger = new Logger(HttpExceptionFilter.name);
+
   catch(exception: unknown, host: ArgumentsHost): void {
     const response = host.switchToHttp().getResponse<Response>();
     const request = host.switchToHttp().getRequest<Request>();
@@ -30,6 +34,25 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const status = this.statusFor(exception);
     const requestId =
       response.getHeader("X-Request-Id")?.toString() ?? "unknown";
+
+    /**
+     * Log unexpected server errors with their stack trace.
+     *
+     * We deliberately do not expose the stack trace to the client.
+     */
+    if (status >= 500) {
+      if (exception instanceof Error) {
+        this.logger.error(
+          `${request.method} ${request.url} - ${exception.message}`,
+          exception.stack,
+        );
+      } else {
+        this.logger.error(
+          `${request.method} ${request.url} - Unknown exception`,
+          String(exception),
+        );
+      }
+    }
 
     response.status(status).json({
       statusCode: status,
@@ -69,6 +92,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
 
     if (exception instanceof UserNotFoundException) {
+      return new NotFoundException().getStatus();
+    }
+
+    if (exception instanceof UserBalanceNotFoundException) {
       return new NotFoundException().getStatus();
     }
 
