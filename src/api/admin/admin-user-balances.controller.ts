@@ -22,8 +22,8 @@ import { GetUserBalancesUseCase } from "../../application/use-cases/users/get-us
 
 import { AdminAuthGuard } from "./admin-auth.guard";
 
-import { CreateUserBalanceRequestDto } from "./dtos/user-balance.request.dto";
-import { GetUserBalancesQueryDto } from "./dtos/user-balance.request.dto";
+import { CreateUserBalanceRequestDto } from "../users/dtos/user-balance.request.dto";
+import { GetUserBalancesQueryDto } from "../users/dtos/user-balance.request.dto";
 import { UpdateUserBalanceRequestDto } from "./dtos/update-user-balance.request.dto";
 
 @Controller("admin/users/:userId/balances")

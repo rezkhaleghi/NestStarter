@@ -14,7 +14,9 @@ import {
   FileTypeValidator,
   Post,
 } from "@nestjs/common";
+
 import { FileInterceptor } from "@nestjs/platform-express";
+
 import {
   ApiBody,
   ApiConsumes,
@@ -22,6 +24,7 @@ import {
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
+
 import type { Request } from "express";
 
 import { User } from "../../domain/entities/user.entity";
@@ -29,16 +32,25 @@ import { User } from "../../domain/entities/user.entity";
 import { AuthSessionGuard } from "../auth/auth-session.guard";
 
 import { GetCurrentUserUseCase } from "../../application/use-cases/users/get-current-user.use-case";
+
 import { UpdateCurrentUserUseCase } from "../../application/use-cases/users/update-current-user.use-case";
+
 import { UpdateUserAvatarUseCase } from "../../application/use-cases/users/update-user-avatar.use-case";
+
 import { DeleteUserAvatarUseCase } from "../../application/use-cases/users/delete-user-avatar.use-case";
+
 import { SearchUsersUseCase } from "../../application/use-cases/users/search-users.use-case";
 
 import { UpdateProfileRequestDto } from "../auth/dtos/update-profile.request.dto";
+
 import { SearchUsersRequestDto } from "./dtos/search-users.request.dto";
+
 import { UserSearchResponseDto } from "./dtos/user-search.response.dto";
 
 import { AuthenticatedUserResponseDto } from "../auth/dtos/authenticated-user.response.dto";
+
+import { GetUserBalancesUseCase } from "@application/use-cases/users/get-user-balances.use-case";
+import { GetUserBalancesQueryDto } from "@api/users/dtos/user-balance.request.dto";
 
 @ApiTags("users")
 @Controller("users")
@@ -46,6 +58,7 @@ import { AuthenticatedUserResponseDto } from "../auth/dtos/authenticated-user.re
 export class UsersController {
   constructor(
     private readonly getCurrentUserUseCase: GetCurrentUserUseCase,
+    private readonly getCurrentUserBalancesUseCase: GetUserBalancesUseCase,
     private readonly updateCurrentUserUseCase: UpdateCurrentUserUseCase,
     private readonly updateUserAvatarUseCase: UpdateUserAvatarUseCase,
     private readonly deleteUserAvatarUseCase: DeleteUserAvatarUseCase,
@@ -69,6 +82,32 @@ export class UsersController {
     const user = await this.getCurrentUserUseCase.execute(req.session.userId!);
 
     return this.toUserResponse(user);
+  }
+
+  @Get("me/balances")
+  @ApiOperation({
+    summary: "Get the currently authenticated user's balances",
+    description:
+      "Returns a paginated list of balances belonging to the currently authenticated user.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Current user's balances",
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Not authenticated",
+  })
+  async getMyBalances(
+    @Query() query: GetUserBalancesQueryDto,
+    @Req() req: Request,
+  ) {
+    return this.getCurrentUserBalancesUseCase.execute(req.session.userId!, {
+      page: query.page,
+      limit: query.limit,
+      sortBy: query.sortBy,
+      sortDirection: query.sortDirection,
+    });
   }
 
   @Patch("me")
