@@ -45,8 +45,6 @@ import { UpdateProfileRequestDto } from "../auth/dtos/update-profile.request.dto
 
 import { SearchUsersRequestDto } from "./dtos/search-users.request.dto";
 
-import { UserSearchResponseDto } from "./dtos/user-search.response.dto";
-
 import { AuthenticatedUserResponseDto } from "../auth/dtos/authenticated-user.response.dto";
 
 import { GetUserBalancesUseCase } from "@application/use-cases/users/get-user-balances.use-case";
