@@ -4,8 +4,12 @@ import { Repository } from "typeorm";
 
 import { UserBalance } from "../../../domain/entities/user-balance.entity";
 import { PaymentCurrency } from "../../../domain/enums/payment-currency.enum";
-import { UserBalanceRepository } from "../../../domain/repositories/user-balance.repository";
+import {
+  UserBalanceRepository,
+  UserBalanceSortBy,
+} from "../../../domain/repositories/user-balance.repository";
 import { UserBalanceOrmEntity } from "../orm-entities/user-balance.orm-entity";
+import { PageQuery, PageResult } from "../../../shared/pagination/page-query";
 
 @Injectable()
 export class UserBalanceRepositoryImpl implements UserBalanceRepository {
@@ -36,14 +40,41 @@ export class UserBalanceRepositoryImpl implements UserBalanceRepository {
     return row ? this.toDomain(row) : null;
   }
 
-  async findByUserId(userId: string): Promise<UserBalance[]> {
-    const rows = await this.repository.find({
+  async findByUserId(
+    userId: string,
+    query: PageQuery<UserBalanceSortBy>,
+  ): Promise<PageResult<UserBalance>> {
+    const page = query.page;
+    const limit = query.limit;
+    const skip = (page - 1) * limit;
+
+    const sortBy = query.sortBy ?? "createdAt";
+    const sortDirection = query.sortDirection ?? "DESC";
+
+    const order: Record<UserBalanceSortBy, "ASC" | "DESC"> = {
+      currency: "ASC",
+      amount: "DESC",
+      createdAt: "DESC",
+    };
+
+    order[sortBy] = sortDirection;
+
+    const [rows, total] = await this.repository.findAndCount({
       where: {
         userId,
       },
+      skip,
+      take: limit,
+      order,
     });
 
-    return rows.map((row) => this.toDomain(row));
+    return {
+      data: rows.map((row) => this.toDomain(row)),
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   async save(balance: UserBalance): Promise<UserBalance> {

@@ -75,3 +75,9 @@ export class UserBalanceNotFoundException extends DomainException {
     super(`Balance for ${currency} does not exist for this user.`);
   }
 }
+
+export class UserBalanceAlreadyExistsException extends DomainException {
+  constructor(currency: string) {
+    super(`A balance for ${currency} already exists for this user.`);
+  }
+}

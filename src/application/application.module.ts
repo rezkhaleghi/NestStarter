@@ -12,6 +12,7 @@ import { DeleteUserAvatarUseCase } from "./use-cases/users/delete-user-avatar.us
 import { SearchUsersUseCase } from "./use-cases/users/search-users.use-case";
 import { InfrastructureModule } from "../infrastructure/infrastructure.module";
 import { GetUserBalancesUseCase } from "./use-cases/users/get-user-balances.use-case";
+import { CreateUserBalanceUseCase } from "./use-cases/admin-users/create-user-balance.use-case";
 
 /**
  * Registers application use cases. Infrastructure bindings are supplied by
@@ -32,6 +33,7 @@ import { GetUserBalancesUseCase } from "./use-cases/users/get-user-balances.use-
     DeleteUserAvatarUseCase,
     SearchUsersUseCase,
     GetUserBalancesUseCase,
+    CreateUserBalanceUseCase,
   ],
   exports: [
     CreateUserUseCase,
@@ -46,6 +48,7 @@ import { GetUserBalancesUseCase } from "./use-cases/users/get-user-balances.use-
     DeleteUserAvatarUseCase,
     SearchUsersUseCase,
     GetUserBalancesUseCase,
+    CreateUserBalanceUseCase,
   ],
 })
 export class ApplicationModule {}
