@@ -2,7 +2,7 @@
 
 A production-oriented **NestJS backend boilerplate built around Clean Architecture**.
 
-NestStarter provides the infrastructure and application foundations that most backend projects repeatedly need: authentication, authorization, user management, sessions, Redis, PostgreSQL, object storage, image processing, email/OTP, validation, rate limiting, health checks, auditing, Swagger/OpenAPI, Docker, migrations, and testing.
+NestStarter provides the infrastructure and application foundations that most backend projects repeatedly need: authentication, authorization, user management, sessions, Redis, PostgreSQL, object storage, image processing, email/OTP, validation, rate limiting, health checks, auditing, transactional workflows, Swagger/OpenAPI, Docker, migrations, and testing.
 
 The goal is simple:
 
@@ -30,6 +30,7 @@ This gives the project:
 - Production-oriented authentication and security foundations
 - Dedicated abstractions for external services
 - Dedicated file-storage and image-processing capabilities
+- Transactional workflows through Unit of Work
 - Centralized error handling
 - Global request validation
 - Administrative auditing
@@ -140,12 +141,15 @@ domain/
 
 Domain entities represent business objects without depending on TypeORM or NestJS.
 
-Current entities include:
+Current domain entities include:
 
 ```text
 User
+UserBalance
 AuditLog
 ```
+
+### User
 
 The `User` domain entity contains user-related business state such as:
 
@@ -155,17 +159,107 @@ firstName
 lastName
 userName
 email
-password
+hashedPassword
 dateOfBirth
-hideYear
 avatar
 bio
 role
 status
+emailVerified
+googleId
 createdAt
+updatedAt
 ```
 
 The domain entity remains independent from the database ORM.
+
+### UserBalance
+
+`UserBalance` represents the current balance of a user for a specific payment currency.
+
+```text
+UserBalance
+├── id
+├── userId
+├── currency
+└── amount
+```
+
+The entity is created through a domain factory:
+
+```ts
+UserBalance.create({
+  userId,
+  currency,
+  amount,
+});
+```
+
+This keeps construction explicit and avoids exposing the entity's internal constructor.
+
+### AuditLog
+
+`AuditLog` represents an immutable record of an important application or administrative action.
+
+```text
+AuditLog
+├── id
+├── actorUserId
+├── targetUserId
+├── action
+└── metadata
+```
+
+Audit logs are created through the domain factory:
+
+```ts
+AuditLog.create({
+  actorUserId,
+  targetUserId,
+  action,
+  metadata,
+});
+```
+
+Domain entities therefore own their construction and business state while persistence remains outside the domain.
+
+---
+
+# Domain Entity Factories
+
+Entities that require controlled construction use factory methods instead of exposing positional constructors.
+
+For example:
+
+```ts
+const user = User.create({
+  id,
+  email,
+  hashedPassword,
+  role,
+  emailVerified,
+});
+```
+
+and:
+
+```ts
+const balance = UserBalance.create({
+  userId,
+  currency,
+  amount,
+});
+```
+
+This provides several advantages:
+
+- Named properties instead of positional arguments
+- Easier-to-read construction
+- Safer evolution of entities
+- Encapsulation of internal constructors
+- A clear place for future creation rules
+
+The domain remains responsible for its own object creation while the application layer remains responsible for orchestration.
 
 ---
 
@@ -177,6 +271,7 @@ Current domain enumerations include:
 UserRole
 UserStatus
 AuditAction
+PaymentCurrency
 ```
 
 For example:
@@ -206,6 +301,7 @@ UsernameAlreadyExistsException
 InvalidCredentialsException
 GoogleAccountConflictException
 UserNotFoundException
+UserBalanceAlreadyExistsException
 CannotRemoveLastAdminException
 CannotDeleteSelfException
 ```
@@ -232,10 +328,11 @@ The API layer is responsible for translating domain exceptions into HTTP respons
 
 Repositories are defined as contracts in the domain.
 
-For example:
+Current repository contracts include:
 
 ```text
 UserRepository
+UserBalanceRepository
 AuditLogRepository
 ```
 
@@ -265,6 +362,12 @@ UpdateUserAvatar
 DeleteUserAvatar
 ```
 
+User balance operations include:
+
+```text
+CreateUserBalance
+```
+
 Authentication use cases include:
 
 ```text
@@ -282,6 +385,7 @@ DeleteUser
 GetUser
 ListUsers
 UpdateUser
+CreateUserBalance
 GetAuditLogs
 ListAuditLogs
 GetStatistics
@@ -312,6 +416,7 @@ UpdateUserAvatarUseCase
 DeleteUserAvatarUseCase
 ChangeUserPasswordUseCase
 SearchUsersUseCase
+CreateUserBalanceUseCase
 ```
 
 This makes each operation:
@@ -321,6 +426,100 @@ This makes each operation:
 - Easier to authorize
 - Easier to audit
 - Easier to replace or extend
+
+---
+
+# Unit of Work
+
+NestStarter provides a `UnitOfWork` abstraction for application workflows that require multiple related database operations to succeed or fail together.
+
+The application depends on:
+
+```text
+UnitOfWork
+```
+
+rather than directly depending on TypeORM transactions.
+
+The Unit of Work exposes transaction-scoped repository implementations:
+
+```text
+UnitOfWork
+    │
+    ▼
+┌───────────────────────────────┐
+│ Transaction-scoped repositories│
+├───────────────────────────────┤
+│ UserRepository                │
+│ UserBalanceRepository         │
+│ AuditLogRepository            │
+└───────────────────────────────┘
+```
+
+For example:
+
+```ts
+return this.unitOfWork.execute(
+  async ({ userRepository, userBalanceRepository, auditLogRepository }) => {
+    // transactional workflow
+  },
+);
+```
+
+The infrastructure layer provides the concrete implementation:
+
+```text
+UnitOfWork
+    ▲
+    │
+TypeOrmUnitOfWork
+    │
+    ▼
+TypeORM EntityManager
+```
+
+`TypeOrmUnitOfWork` creates transaction-scoped repositories using the TypeORM `EntityManager`.
+
+This keeps transaction management and TypeORM-specific behavior inside infrastructure.
+
+---
+
+# Transactional Workflows
+
+Operations involving multiple related writes can use a single database transaction.
+
+For example, creating a user can involve:
+
+```text
+Create User
+     │
+     ├── Create UserBalance
+     │
+     └── Create AuditLog
+```
+
+The complete workflow runs inside one transaction:
+
+```text
+BEGIN
+  │
+  ├── Check user
+  ├── Create user
+  ├── Create initial balance
+  └── Create audit log
+  │
+COMMIT
+```
+
+If any transactional database operation fails:
+
+```text
+ROLLBACK
+```
+
+This prevents partially completed workflows.
+
+The Unit of Work therefore provides a clear boundary for operations that require database atomicity.
 
 ---
 
@@ -339,6 +538,7 @@ LoginProtection
 NotificationService
 OtpService
 PasswordHasher
+UnitOfWork
 ```
 
 The application depends on these abstractions.
@@ -369,7 +569,19 @@ FileStorage
 MinioService
 ```
 
-This allows infrastructure technologies to be replaced without changing business logic.
+And for transactional workflows:
+
+```text
+Application
+    │
+    ▼
+UnitOfWork
+    ▲
+    │
+TypeOrmUnitOfWork
+```
+
+This allows infrastructure technologies to be replaced without changing application use cases.
 
 ---
 
@@ -401,6 +613,7 @@ The infrastructure layer contains:
 - Database configuration
 - TypeORM migrations
 - Database seed/bootstrap logic
+- Transaction management
 
 The ORM entities are intentionally separate from domain entities.
 
@@ -421,6 +634,7 @@ Current database ORM entities include:
 
 ```text
 UserOrmEntity
+UserBalanceOrmEntity
 AuditLogOrmEntity
 ```
 
@@ -609,6 +823,45 @@ bio
 ```
 
 Avatar operations use dedicated use cases because they involve external object storage and image processing.
+
+---
+
+# User Balance
+
+NestStarter provides a domain-level `UserBalance` model for representing a user's current balance in a specific currency.
+
+```text
+User
+ │
+ └── UserBalance
+       ├── currency
+       └── amount
+```
+
+Balance creation is handled through a dedicated use case:
+
+```text
+CreateUserBalanceUseCase
+```
+
+The operation validates:
+
+- The target user exists
+- A balance for the requested currency does not already exist
+
+The balance is then created through the domain factory:
+
+```ts
+UserBalance.create({
+  userId,
+  currency,
+  amount,
+});
+```
+
+When the operation is part of a workflow involving related database changes, it is executed through `UnitOfWork`.
+
+> `UserBalance` represents the **current state** of a balance. A future accounting/ledger layer can provide immutable financial history when required by a specific application.
 
 ---
 
@@ -809,6 +1062,7 @@ Supported operations include:
 - Delete users
 - Get individual users
 - List users
+- Create user balances
 - Change/reset passwords
 - Manage roles
 - Manage user profiles
@@ -836,7 +1090,13 @@ AuditLogger
 
 with an infrastructure implementation responsible for persistence.
 
-Administrative use cases can therefore record important actions without directly depending on the database implementation.
+Transactional workflows that require the audit record to be committed atomically with other database changes can use the transaction-scoped:
+
+```text
+AuditLogRepository
+```
+
+provided by `UnitOfWork`.
 
 The audit system records information such as:
 
@@ -1127,6 +1387,7 @@ Tests currently cover important parts of the application and infrastructure laye
 - OTP services
 - Login protection
 - Redis-backed services
+- User balance workflows
 
 Run the test suite:
 
@@ -1182,6 +1443,8 @@ A typical feature follows this flow:
    └── Unit / Integration / E2E
 ```
 
+For features involving multiple related database operations, define the transactional boundary at the application layer using `UnitOfWork`.
+
 For example:
 
 ```text
@@ -1189,6 +1452,9 @@ Controller
     │
     ▼
 UseCase
+    │
+    ▼
+UnitOfWork
     │
     ├── Domain Entity
     │
@@ -1259,7 +1525,7 @@ The domain and application layers define the behavior of the system.
 
 ### Infrastructure is replaceable
 
-PostgreSQL, Redis, SMTP, MinIO, Sharp, and bcrypt are implementation details.
+PostgreSQL, Redis, SMTP, MinIO, Sharp, bcrypt, and TypeORM are implementation details.
 
 ### Controllers stay thin
 
@@ -1279,7 +1545,11 @@ Dependencies should be visible through constructors and interfaces rather than h
 
 ### Separate external capabilities
 
-File storage, image processing, password hashing, OTP, login protection, notifications, auditing, and statistics are represented through abstractions.
+File storage, image processing, password hashing, OTP, login protection, notifications, auditing, statistics, and transaction management are represented through abstractions.
+
+### Transactions belong at the application workflow boundary
+
+When multiple related database changes must succeed or fail together, the application defines the workflow through `UnitOfWork` while infrastructure handles the actual database transaction.
 
 ### Security by default
 
@@ -1288,6 +1558,10 @@ Authentication, authorization, password hashing, session storage, validation, ra
 ### Audit important administrative operations
 
 Administrative actions should be traceable without coupling business logic directly to the persistence mechanism.
+
+### Current state and historical state are separate concerns
+
+Current values such as `UserBalance.amount` represent application state. When a domain requires financial accounting or immutable transaction history, a dedicated ledger/accounting model should be introduced rather than using the current balance itself as historical evidence.
 
 ---
 
@@ -1301,6 +1575,7 @@ Administrative actions should be traceable without coupling business logic direc
 | Architecture      | Clean Architecture                        |
 | Database          | PostgreSQL                                |
 | ORM               | TypeORM                                   |
+| Transactions      | TypeORM + Unit of Work                    |
 | Cache / State     | Redis                                     |
 | Sessions          | express-session + connect-redis           |
 | Authentication    | Password, OTP, Google OAuth               |
@@ -1452,11 +1727,13 @@ Before deploying a project built from NestStarter:
 - Review dependency versions
 - Configure application logging and monitoring
 - Run integration/E2E tests against real infrastructure
-- Review database transaction boundaries for concurrent administrative operations
+- Review database transaction boundaries for concurrent operations
 - Configure object-storage access policies appropriately
 - Review uploaded-file validation and image-processing limits
 - Ensure publicly accessible file URLs are intentional
 - Monitor storage usage and orphaned files
+- Review transaction boundaries for workflows involving multiple related writes
+- Ensure financial applications use an appropriate immutable ledger/accounting model rather than relying solely on current balance values
 
 NestStarter provides the foundation, but production configuration remains application and deployment specific.
 
@@ -1474,12 +1751,14 @@ NestStarter **is**:
 - An example of use-case-oriented application design
 - A foundation for object storage and image-processing workflows
 - A foundation for administrative auditing
+- A foundation for transactional application workflows
 
 NestStarter **isn't**:
 
 - A framework
 - A complete SaaS application
 - A domain-specific business solution
+- A complete accounting or financial ledger system
 - A replacement for application-specific security review
 - A promise that every deployment is production-ready without configuration
 
@@ -1504,3 +1783,8 @@ MIT
 ---
 
 **NestStarter** — built to save time, reduce boilerplate, and keep your architecture clean.
+
+```
+
+One important point: **I intentionally did not add `Ledger` as a current feature.** I only documented the architectural distinction between current balance and a future ledger. When/if we actually implement the ledger, we can update the README with the real entities, repositories, migrations, and transaction flow.
+```
