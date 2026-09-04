@@ -9,10 +9,12 @@ import {
 import { UserRepositoryImpl } from "./repositories/user.repository.impl";
 import { UserBalanceRepositoryImpl } from "./repositories/user-balance.repository.impl";
 import { AuditLogRepositoryImpl } from "./repositories/audit-log.repository.impl";
+import { LedgerRepositoryImpl } from "./repositories/ledger.repository.impl";
 
 import { UserOrmEntity } from "./orm-entities/user.orm-entity";
 import { UserBalanceOrmEntity } from "./orm-entities/user-balance.orm-entity";
 import { AuditLogOrmEntity } from "./orm-entities/audit-log.orm-entity";
+import { LedgerOrmEntity } from "./orm-entities/ledger.orm-entity";
 
 @Injectable()
 export class TypeOrmUnitOfWork implements UnitOfWork {
@@ -34,10 +36,15 @@ export class TypeOrmUnitOfWork implements UnitOfWork {
         manager.getRepository(AuditLogOrmEntity),
       );
 
+      const ledgerRepository = new LedgerRepositoryImpl(
+        manager.getRepository(LedgerOrmEntity),
+      );
+
       return work({
         userRepository,
         userBalanceRepository,
         auditLogRepository,
+        ledgerRepository,
       });
     });
   }
