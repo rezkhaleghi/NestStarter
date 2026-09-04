@@ -70,7 +70,7 @@ export class LedgerRepositoryImpl extends LedgerRepository {
   }
 
   private toDomain(row: LedgerOrmEntity): Ledger {
-    return Ledger.create({
+    return Ledger.restore({
       id: row.id,
       userId: row.userId,
       currency: row.currency,

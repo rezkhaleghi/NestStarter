@@ -28,21 +28,21 @@ export class LedgerOrmEntity {
   @Column({
     type: "decimal",
     precision: 30,
-    scale: 8,
+    scale: 18,
   })
   amount: string;
 
   @Column({
     type: "decimal",
     precision: 30,
-    scale: 8,
+    scale: 18,
   })
   balanceBefore: string;
 
   @Column({
     type: "decimal",
     precision: 30,
-    scale: 8,
+    scale: 18,
   })
   balanceAfter: string;
 

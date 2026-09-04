@@ -5,26 +5,29 @@ import { LedgerType } from "../enums/ledger-type.enum";
 
 export interface CreateLedgerProps {
   id?: string;
-
   userId: string;
-
   currency: PaymentCurrency;
-
   amount: string;
-
   balanceBefore: string;
-
   balanceAfter: string;
-
   type: LedgerType;
-
   actorUserId?: string | null;
-
   referenceId?: string | null;
-
   metadata?: Record<string, unknown> | null;
+}
 
-  createdAt?: Date;
+export interface RestoreLedgerProps {
+  id: string;
+  userId: string;
+  currency: PaymentCurrency;
+  amount: string;
+  balanceBefore: string;
+  balanceAfter: string;
+  type: LedgerType;
+  actorUserId: string | null;
+  referenceId: string | null;
+  metadata: Record<string, unknown> | null;
+  createdAt: Date;
 }
 
 export class Ledger {
@@ -54,7 +57,23 @@ export class Ledger {
       props.actorUserId ?? null,
       props.referenceId ?? null,
       props.metadata ?? null,
-      props.createdAt ?? new Date(),
+      new Date(),
+    );
+  }
+
+  static restore(props: RestoreLedgerProps): Ledger {
+    return new Ledger(
+      props.id,
+      props.userId,
+      props.currency,
+      props.amount,
+      props.balanceBefore,
+      props.balanceAfter,
+      props.type,
+      props.actorUserId,
+      props.referenceId,
+      props.metadata,
+      props.createdAt,
     );
   }
 }
