@@ -1,11 +1,12 @@
 import { Injectable } from "@nestjs/common";
 
-import {
-  UserBalanceNotFoundException,
-  UserNotFoundException,
-} from "../../../domain/exceptions/domain.exception";
-import { PaymentCurrency } from "../../../domain/enums/payment-currency.enum";
+import { Ledger } from "@domain/entities/ledger.entity";
+import { UserBalance } from "@domain/entities/user-balance.entity";
 import { AuditAction } from "../../../domain/enums/audit-action.enum";
+import { LedgerType } from "../../../domain/enums/ledger-type.enum";
+import { PaymentCurrency } from "../../../domain/enums/payment-currency.enum";
+import { UserNotFoundException } from "../../../domain/exceptions/domain.exception";
+import { subtractDecimal } from "../../../domain/utils/decimal.util";
 import { AuditLogger } from "../../interfaces/audit-logger.interface";
 import { UnitOfWork } from "../../interfaces/unit-of-work.interface";
 
@@ -24,31 +25,54 @@ export class UpdateUserBalanceUseCase {
 
   async execute(input: UpdateUserBalanceInput, actorUserId: string) {
     return this.unitOfWork.execute(
-      async ({ userRepository, userBalanceRepository }) => {
+      async ({ userRepository, userBalanceRepository, ledgerRepository }) => {
         const user = await userRepository.findById(input.userId);
 
         if (!user) {
           throw new UserNotFoundException();
         }
 
-        const balance = await userBalanceRepository.findByUserIdAndCurrency(
-          input.userId,
-          input.currency,
-        );
+        const existingBalance =
+          await userBalanceRepository.findByUserIdAndCurrency(
+            input.userId,
+            input.currency,
+          );
 
-        if (!balance) {
-          throw new UserBalanceNotFoundException(input.currency);
-        }
-
-        const before = balance.amount;
+        const before = existingBalance?.amount ?? "0";
 
         if (before === input.amount) {
-          return balance;
+          return existingBalance;
         }
 
-        balance.amount = input.amount;
+        const amount = subtractDecimal(input.amount, before);
 
-        const saved = await userBalanceRepository.save(balance);
+        let saved;
+
+        if (existingBalance) {
+          existingBalance.amount = input.amount;
+
+          saved = await userBalanceRepository.save(existingBalance);
+        } else {
+          const balance = UserBalance.create({
+            userId: input.userId,
+            currency: input.currency,
+            amount: input.amount,
+          });
+
+          saved = await userBalanceRepository.create(balance);
+        }
+
+        await ledgerRepository.create(
+          Ledger.create({
+            userId: input.userId,
+            currency: input.currency,
+            amount,
+            balanceBefore: before,
+            balanceAfter: saved.amount,
+            type: LedgerType.ADMIN_ADJUSTMENT,
+            actorUserId,
+          }),
+        );
 
         await this.auditLogger.log({
           actorUserId,
