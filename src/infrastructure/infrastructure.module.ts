@@ -36,6 +36,9 @@ import { UserBalanceOrmEntity } from "./database/orm-entities/user-balance.orm-e
 import { UserBalanceRepositoryImpl } from "./database/repositories/user-balance.repository.impl";
 import { TypeOrmUnitOfWork } from "./database/unit-of-work.typeorm";
 import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
+import { LedgerOrmEntity } from "./database/orm-entities/ledger.orm-entity";
+import { LedgerRepository } from "@domain/repositories/ledger.repository";
+import { LedgerRepositoryImpl } from "./database/repositories/ledger.repository.impl";
 
 /**
  * This module is the ONLY place where abstract tokens (interfaces) from
@@ -100,6 +103,7 @@ import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
       UserOrmEntity,
       AuditLogOrmEntity,
       UserBalanceOrmEntity,
+      LedgerOrmEntity,
     ]),
   ],
   providers: [
@@ -161,6 +165,10 @@ import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
       provide: UnitOfWork,
       useClass: TypeOrmUnitOfWork,
     },
+    {
+      provide: LedgerRepository,
+      useClass: LedgerRepositoryImpl,
+    },
   ],
   exports: [
     UserRepository,
@@ -176,6 +184,7 @@ import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
     AuditLogRepository,
     UserBalanceRepository,
     UnitOfWork,
+    LedgerRepository,
   ],
 })
 export class InfrastructureModule {}
