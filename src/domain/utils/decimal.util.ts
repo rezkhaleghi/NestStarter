@@ -1,4 +1,16 @@
-// src/domain/utils/decimal.util.ts
+export function addDecimal(a: string, b: string): string {
+  const aParts = parseDecimal(a);
+  const bParts = parseDecimal(b);
+
+  const scale = Math.max(aParts.scale, bParts.scale);
+
+  const aValue = aParts.value * 10n ** BigInt(scale - aParts.scale);
+  const bValue = bParts.value * 10n ** BigInt(scale - bParts.scale);
+
+  const result = aValue + bValue;
+
+  return formatDecimal(result, scale);
+}
 
 export function subtractDecimal(a: string, b: string): string {
   const aParts = parseDecimal(a);
@@ -12,6 +24,10 @@ export function subtractDecimal(a: string, b: string): string {
   const result = aValue - bValue;
 
   return formatDecimal(result, scale);
+}
+
+export function isNegativeDecimal(value: string): boolean {
+  return parseDecimal(value).value < 0n;
 }
 
 function parseDecimal(input: string): {

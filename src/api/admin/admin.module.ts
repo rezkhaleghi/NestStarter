@@ -13,10 +13,16 @@ import { GetAdminStatisticsUseCase } from "../../application/use-cases/admin-use
 import { GetAuditLogsUseCase } from "@application/use-cases/admin-users/get-audit-logs.use-case";
 import { AdminUserBalancesController } from "./admin-user-balances.controller";
 import { UpdateUserBalanceUseCase } from "@application/use-cases/admin-users/update-user-balance.use-case";
+import { AdminLedgersController } from "./admin-ledgers.controller";
+import { ListLedgersUseCase } from "@application/use-cases/admin-ledgers/list-ledgers.use-case";
 
 @Module({
   imports: [ApplicationModule, InfrastructureModule],
-  controllers: [AdminUsersController, AdminUserBalancesController],
+  controllers: [
+    AdminUsersController,
+    AdminUserBalancesController,
+    AdminLedgersController,
+  ],
   providers: [
     AdminAuthGuard,
     CreateAdminUserUseCase,
@@ -28,6 +34,7 @@ import { UpdateUserBalanceUseCase } from "@application/use-cases/admin-users/upd
     GetAdminStatisticsUseCase,
     GetAuditLogsUseCase,
     UpdateUserBalanceUseCase,
+    ListLedgersUseCase,
   ],
 })
 export class AdminModule {}

@@ -6,7 +6,10 @@ import { AuditAction } from "../../../domain/enums/audit-action.enum";
 import { LedgerType } from "../../../domain/enums/ledger-type.enum";
 import { PaymentCurrency } from "../../../domain/enums/payment-currency.enum";
 import { UserNotFoundException } from "../../../domain/exceptions/domain.exception";
-import { subtractDecimal } from "../../../domain/utils/decimal.util";
+import {
+  addDecimal,
+  isNegativeDecimal,
+} from "../../../domain/utils/decimal.util";
 import { AuditLogger } from "../../interfaces/audit-logger.interface";
 import { UnitOfWork } from "../../interfaces/unit-of-work.interface";
 
@@ -40,23 +43,33 @@ export class UpdateUserBalanceUseCase {
 
         const before = existingBalance?.amount ?? "0";
 
-        if (before === input.amount) {
-          return existingBalance;
+        // input.amount is a signed adjustment:
+        // +100  → increase balance by 100
+        // -100  → decrease balance by 100
+        const amount = input.amount;
+        const after = addDecimal(before, amount);
+
+        // User balances cannot become negative.
+        if (isNegativeDecimal(after)) {
+          throw new Error("Insufficient balance");
         }
 
-        const amount = subtractDecimal(input.amount, before);
+        // No balance change means there is nothing to record.
+        if (amount === "0") {
+          return existingBalance;
+        }
 
         let saved;
 
         if (existingBalance) {
-          existingBalance.amount = input.amount;
+          existingBalance.amount = after;
 
           saved = await userBalanceRepository.save(existingBalance);
         } else {
           const balance = UserBalance.create({
             userId: input.userId,
             currency: input.currency,
-            amount: input.amount,
+            amount: after,
           });
 
           saved = await userBalanceRepository.create(balance);

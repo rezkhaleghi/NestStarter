@@ -3,6 +3,7 @@ import { TypeOrmModuleOptions } from "@nestjs/typeorm";
 import { UserOrmEntity } from "../database/orm-entities/user.orm-entity";
 import { AuditLogOrmEntity } from "../database/orm-entities/audit-log.orm-entity";
 import { UserBalanceOrmEntity } from "@infrastructure/database/orm-entities/user-balance.orm-entity";
+import { LedgerOrmEntity } from "@infrastructure/database/orm-entities/ledger.orm-entity";
 
 /**
  * NestJS database configuration.
@@ -19,7 +20,12 @@ export default registerAs(
     username: process.env.DB_USERNAME,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
-    entities: [UserOrmEntity, AuditLogOrmEntity, UserBalanceOrmEntity],
+    entities: [
+      UserOrmEntity,
+      AuditLogOrmEntity,
+      UserBalanceOrmEntity,
+      LedgerOrmEntity,
+    ],
     // synchronize: process.env.NODE_ENV === "development",
     synchronize: false,
     extra: {
