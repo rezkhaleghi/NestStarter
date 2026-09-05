@@ -43,19 +43,3 @@ export class GetUserBalancesQueryDto {
   @IsEnum(["ASC", "DESC"])
   sortDirection: "ASC" | "DESC" = "DESC";
 }
-
-export class CreateUserBalanceRequestDto {
-  @ApiProperty({
-    enum: PaymentCurrency,
-    example: PaymentCurrency.USDT,
-  })
-  @IsEnum(PaymentCurrency)
-  currency: PaymentCurrency;
-
-  @ApiProperty({
-    example: "100.00000000",
-    description: "Initial balance amount.",
-  })
-  @IsString()
-  amount: string;
-}
