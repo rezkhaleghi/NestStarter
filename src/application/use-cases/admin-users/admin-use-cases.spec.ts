@@ -47,10 +47,6 @@ describe("admin user use cases", () => {
     execute: jest.fn(),
   };
 
-  const auditLogger = {
-    log: jest.fn(),
-  };
-
   beforeEach(() => {
     jest.clearAllMocks();
 
@@ -231,17 +227,14 @@ describe("admin user use cases", () => {
         new User("id", "admin@example.com", "hashed", UserRole.ADMIN),
       );
 
-      const useCase = new DeleteAdminUserUseCase(
-        repository as any,
-        auditLogger as any,
-      );
+      const useCase = new DeleteAdminUserUseCase(unitOfWork as any);
 
       await expect(useCase.execute("id", "id")).rejects.toBeInstanceOf(
         CannotDeleteSelfException,
       );
 
       expect(repository.deleteAdminUser).not.toHaveBeenCalled();
-      expect(auditLogger.log).not.toHaveBeenCalled();
+      expect(auditLogRepository.create).not.toHaveBeenCalled();
     });
 
     it("rejects deleting the last admin", async () => {
@@ -251,17 +244,14 @@ describe("admin user use cases", () => {
 
       repository.deleteAdminUser.mockResolvedValue(false);
 
-      const useCase = new DeleteAdminUserUseCase(
-        repository as any,
-        auditLogger as any,
-      );
+      const useCase = new DeleteAdminUserUseCase(unitOfWork as any);
 
       await expect(useCase.execute("id", "other")).rejects.toBeInstanceOf(
         CannotRemoveLastAdminException,
       );
 
       expect(repository.deleteAdminUser).toHaveBeenCalledWith("id");
-      expect(auditLogger.log).not.toHaveBeenCalled();
+      expect(auditLogRepository.create).not.toHaveBeenCalled();
     });
 
     it("deletes a user and creates an audit log", async () => {
@@ -275,10 +265,7 @@ describe("admin user use cases", () => {
       repository.findById.mockResolvedValue(user);
       repository.deleteAdminUser.mockResolvedValue(true);
 
-      const useCase = new DeleteAdminUserUseCase(
-        repository as any,
-        auditLogger as any,
-      );
+      const useCase = new DeleteAdminUserUseCase(unitOfWork as any);
 
       await expect(
         useCase.execute("user-id", "admin-id"),
@@ -286,15 +273,17 @@ describe("admin user use cases", () => {
 
       expect(repository.deleteAdminUser).toHaveBeenCalledWith("user-id");
 
-      expect(auditLogger.log).toHaveBeenCalledWith({
-        actorUserId: "admin-id",
-        targetUserId: "user-id",
-        action: AuditAction.USER_DELETED,
-        metadata: {
-          email: "user@example.com",
-          role: UserRole.USER,
-        },
-      });
+      expect(auditLogRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          actorUserId: "admin-id",
+          targetUserId: "user-id",
+          action: AuditAction.USER_DELETED,
+          metadata: {
+            email: "user@example.com",
+            role: UserRole.USER,
+          },
+        }),
+      );
     });
   });
 
@@ -316,9 +305,8 @@ describe("admin user use cases", () => {
       );
 
       const useCase = new UpdateAdminUserUseCase(
-        repository as any,
         { hash } as any,
-        auditLogger as any,
+        unitOfWork as any,
       );
 
       const result = await useCase.execute(
@@ -339,31 +327,33 @@ describe("admin user use cases", () => {
 
       expect(repository.saveAdminMutation).toHaveBeenCalledWith(user, false);
 
-      expect(auditLogger.log).toHaveBeenCalledWith({
-        actorUserId: "admin-id",
-        targetUserId: "id",
-        action: AuditAction.USER_UPDATED,
-        metadata: {
-          changes: {
-            firstName: {
-              from: null,
-              to: "Jane",
-            },
-            lastName: {
-              from: null,
-              to: "Doe",
-            },
-            userName: {
-              from: null,
-              to: "jane",
-            },
-            bio: {
-              from: null,
-              to: "Updated bio",
+      expect(auditLogRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          actorUserId: "admin-id",
+          targetUserId: "id",
+          action: AuditAction.USER_UPDATED,
+          metadata: {
+            changes: {
+              firstName: {
+                from: null,
+                to: "Jane",
+              },
+              lastName: {
+                from: null,
+                to: "Doe",
+              },
+              userName: {
+                from: null,
+                to: "jane",
+              },
+              bio: {
+                from: null,
+                to: "Updated bio",
+              },
             },
           },
-        },
-      });
+        }),
+      );
     });
 
     it("rejects duplicate usernames", async () => {
@@ -382,9 +372,8 @@ describe("admin user use cases", () => {
       );
 
       const useCase = new UpdateAdminUserUseCase(
-        repository as any,
         { hash } as any,
-        auditLogger as any,
+        unitOfWork as any,
       );
 
       await expect(
@@ -398,7 +387,7 @@ describe("admin user use cases", () => {
       ).rejects.toBeInstanceOf(UsernameAlreadyExistsException);
 
       expect(repository.saveAdminMutation).not.toHaveBeenCalled();
-      expect(auditLogger.log).not.toHaveBeenCalled();
+      expect(auditLogRepository.create).not.toHaveBeenCalled();
     });
 
     it("rejects duplicate emails", async () => {
@@ -417,9 +406,8 @@ describe("admin user use cases", () => {
       );
 
       const useCase = new UpdateAdminUserUseCase(
-        repository as any,
         { hash } as any,
-        auditLogger as any,
+        unitOfWork as any,
       );
 
       await expect(
@@ -433,7 +421,7 @@ describe("admin user use cases", () => {
       ).rejects.toBeInstanceOf(UserAlreadyExistsException);
 
       expect(repository.saveAdminMutation).not.toHaveBeenCalled();
-      expect(auditLogger.log).not.toHaveBeenCalled();
+      expect(auditLogRepository.create).not.toHaveBeenCalled();
     });
 
     it("changes the password and creates a password audit log", async () => {
@@ -454,9 +442,8 @@ describe("admin user use cases", () => {
       hash.mockResolvedValue("new-hash");
 
       const useCase = new UpdateAdminUserUseCase(
-        repository as any,
         { hash } as any,
-        auditLogger as any,
+        unitOfWork as any,
       );
 
       const result = await useCase.execute(
@@ -470,14 +457,16 @@ describe("admin user use cases", () => {
       expect(hash).toHaveBeenCalledWith("new-password");
       expect(result.hashedPassword).toBe("new-hash");
 
-      expect(auditLogger.log).toHaveBeenCalledWith({
-        actorUserId: "admin-id",
-        targetUserId: "id",
-        action: AuditAction.USER_PASSWORD_CHANGED,
-        metadata: {
-          email: "user@example.com",
-        },
-      });
+      expect(auditLogRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          actorUserId: "admin-id",
+          targetUserId: "id",
+          action: AuditAction.USER_PASSWORD_CHANGED,
+          metadata: {
+            email: "user@example.com",
+          },
+        }),
+      );
     });
 
     it("changes the role and creates a role audit log", async () => {
@@ -496,9 +485,8 @@ describe("admin user use cases", () => {
       );
 
       const useCase = new UpdateAdminUserUseCase(
-        repository as any,
         { hash } as any,
-        auditLogger as any,
+        unitOfWork as any,
       );
 
       const result = await useCase.execute(
@@ -513,15 +501,17 @@ describe("admin user use cases", () => {
 
       expect(repository.saveAdminMutation).toHaveBeenCalledWith(user, false);
 
-      expect(auditLogger.log).toHaveBeenCalledWith({
-        actorUserId: "admin-id",
-        targetUserId: "id",
-        action: AuditAction.USER_ROLE_CHANGED,
-        metadata: {
-          from: UserRole.USER,
-          to: UserRole.ADMIN,
-        },
-      });
+      expect(auditLogRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          actorUserId: "admin-id",
+          targetUserId: "id",
+          action: AuditAction.USER_ROLE_CHANGED,
+          metadata: {
+            from: UserRole.USER,
+            to: UserRole.ADMIN,
+          },
+        }),
+      );
     });
 
     it("prevents demoting the last admin", async () => {
@@ -538,9 +528,8 @@ describe("admin user use cases", () => {
       repository.saveAdminMutation.mockResolvedValue(null);
 
       const useCase = new UpdateAdminUserUseCase(
-        repository as any,
         { hash } as any,
-        auditLogger as any,
+        unitOfWork as any,
       );
 
       await expect(
@@ -555,7 +544,7 @@ describe("admin user use cases", () => {
 
       expect(repository.saveAdminMutation).toHaveBeenCalledWith(user, true);
 
-      expect(auditLogger.log).not.toHaveBeenCalled();
+      expect(auditLogRepository.create).not.toHaveBeenCalled();
     });
 
     it("changes account status and creates an update audit log", async () => {
@@ -574,9 +563,8 @@ describe("admin user use cases", () => {
       );
 
       const useCase = new UpdateAdminUserUseCase(
-        repository as any,
         { hash } as any,
-        auditLogger as any,
+        unitOfWork as any,
       );
 
       const result = await useCase.execute(
@@ -589,19 +577,21 @@ describe("admin user use cases", () => {
 
       expect(result.status).toBe(UserStatus.RESTRICTED);
 
-      expect(auditLogger.log).toHaveBeenCalledWith({
-        actorUserId: "admin-id",
-        targetUserId: "id",
-        action: AuditAction.USER_UPDATED,
-        metadata: {
-          changes: {
-            status: {
-              from: UserStatus.ACTIVE,
-              to: UserStatus.RESTRICTED,
+      expect(auditLogRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          actorUserId: "admin-id",
+          targetUserId: "id",
+          action: AuditAction.USER_UPDATED,
+          metadata: {
+            changes: {
+              status: {
+                from: UserStatus.ACTIVE,
+                to: UserStatus.RESTRICTED,
+              },
             },
           },
-        },
-      });
+        }),
+      );
     });
 
     it("can explicitly clear nullable profile fields", async () => {
@@ -629,9 +619,8 @@ describe("admin user use cases", () => {
       );
 
       const useCase = new UpdateAdminUserUseCase(
-        repository as any,
         { hash } as any,
-        auditLogger as any,
+        unitOfWork as any,
       );
 
       const result = await useCase.execute(
@@ -652,35 +641,37 @@ describe("admin user use cases", () => {
       expect(result.dateOfBirth).toBeNull();
       expect(result.bio).toBeNull();
 
-      expect(auditLogger.log).toHaveBeenCalledWith({
-        actorUserId: "admin-id",
-        targetUserId: "id",
-        action: AuditAction.USER_UPDATED,
-        metadata: {
-          changes: {
-            firstName: {
-              from: "John",
-              to: null,
-            },
-            lastName: {
-              from: "Doe",
-              to: null,
-            },
-            userName: {
-              from: "john",
-              to: null,
-            },
-            dateOfBirth: {
-              from: new Date("2000-01-01"),
-              to: null,
-            },
-            bio: {
-              from: "Old bio",
-              to: null,
+      expect(auditLogRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          actorUserId: "admin-id",
+          targetUserId: "id",
+          action: AuditAction.USER_UPDATED,
+          metadata: {
+            changes: {
+              firstName: {
+                from: "John",
+                to: null,
+              },
+              lastName: {
+                from: "Doe",
+                to: null,
+              },
+              userName: {
+                from: "john",
+                to: null,
+              },
+              dateOfBirth: {
+                from: new Date("2000-01-01"),
+                to: null,
+              },
+              bio: {
+                from: "Old bio",
+                to: null,
+              },
             },
           },
-        },
-      });
+        }),
+      );
     });
 
     it("does not create an update audit log when nothing changed", async () => {
@@ -699,9 +690,8 @@ describe("admin user use cases", () => {
       );
 
       const useCase = new UpdateAdminUserUseCase(
-        repository as any,
         { hash } as any,
-        auditLogger as any,
+        unitOfWork as any,
       );
 
       await useCase.execute(
@@ -711,7 +701,7 @@ describe("admin user use cases", () => {
         "admin-id",
       );
 
-      expect(auditLogger.log).not.toHaveBeenCalled();
+      expect(auditLogRepository.create).not.toHaveBeenCalled();
     });
   });
 });

@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 
 import { Ledger } from "@domain/entities/ledger.entity";
 import { UserBalance } from "@domain/entities/user-balance.entity";
+import { AuditLog } from "@domain/entities/audit-log.entity";
 import { AuditAction } from "../../../domain/enums/audit-action.enum";
 import { LedgerType } from "../../../domain/enums/ledger-type.enum";
 import { PaymentCurrency } from "../../../domain/enums/payment-currency.enum";
@@ -14,8 +15,6 @@ import {
   isNegativeDecimal,
 } from "../../../domain/utils/decimal.util";
 import { UnitOfWork } from "../../interfaces/unit-of-work.interface";
-import { AuditLog } from "@domain/entities/audit-log.entity";
-import { AuditLogRepository } from "@domain/repositories/audit-log.repository";
 
 export interface UpdateUserBalanceInput {
   userId: string;
@@ -25,14 +24,16 @@ export interface UpdateUserBalanceInput {
 
 @Injectable()
 export class UpdateUserBalanceUseCase {
-  constructor(
-    private readonly unitOfWork: UnitOfWork,
-    private readonly auditLogRepository: AuditLogRepository,
-  ) {}
+  constructor(private readonly unitOfWork: UnitOfWork) {}
 
   async execute(input: UpdateUserBalanceInput, actorUserId: string) {
     return this.unitOfWork.execute(
-      async ({ userRepository, userBalanceRepository, ledgerRepository }) => {
+      async ({
+        userRepository,
+        userBalanceRepository,
+        ledgerRepository,
+        auditLogRepository,
+      }) => {
         const user = await userRepository.findById(input.userId);
 
         if (!user) {
@@ -112,7 +113,7 @@ export class UpdateUserBalanceUseCase {
           }),
         );
 
-        await this.auditLogRepository.create(
+        await auditLogRepository.create(
           AuditLog.create({
             actorUserId,
             targetUserId: input.userId,
