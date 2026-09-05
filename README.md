@@ -2,7 +2,7 @@
 
 A production-oriented **NestJS backend boilerplate built around Clean Architecture**.
 
-NestStarter provides the infrastructure and application foundations that most backend projects repeatedly need: authentication, authorization, user management, sessions, Redis, PostgreSQL, object storage, image processing, email/OTP, validation, rate limiting, health checks, auditing, transactional workflows, Swagger/OpenAPI, Docker, migrations, and testing.
+NestStarter provides the infrastructure and application foundations that most backend projects repeatedly need: authentication, authorization, user management, sessions, Redis, PostgreSQL, object storage, image processing, email/OTP, validation, rate limiting, health checks, auditing, transactional workflows, financial balance tracking, immutable ledgers, Swagger/OpenAPI, Docker, migrations, and testing.
 
 The goal is simple:
 
@@ -34,6 +34,8 @@ This gives the project:
 - Centralized error handling
 - Global request validation
 - Administrative auditing
+- Current balance tracking
+- Immutable financial history through a ledger
 
 NestStarter is intentionally **not a complete application**. It provides the foundation on which an application can be built.
 
@@ -100,6 +102,7 @@ src/
 │   ├── dtos/
 │   ├── interfaces/
 │   └── use-cases/
+│       ├── admin-ledgers/
 │       ├── admin-users/
 │       ├── auth/
 │       └── users/
@@ -108,7 +111,8 @@ src/
 │   ├── entities/
 │   ├── enums/
 │   ├── exceptions/
-│   └── repositories/
+│   ├── repositories/
+│   └── utils/
 │
 ├── infrastructure/
 │   ├── auth/
@@ -134,7 +138,8 @@ domain/
 ├── entities/
 ├── enums/
 ├── exceptions/
-└── repositories/
+├── repositories/
+└── utils/
 ```
 
 ## Entities
@@ -146,6 +151,7 @@ Current domain entities include:
 ```text
 User
 UserBalance
+Ledger
 AuditLog
 ```
 
@@ -175,10 +181,11 @@ The domain entity remains independent from the database ORM.
 
 ### UserBalance
 
-`UserBalance` represents the current balance of a user for a specific payment currency.
+`UserBalance` represents the **current balance** of a user for a specific payment currency.
 
 ```text
 UserBalance
+
 ├── id
 ├── userId
 ├── currency
@@ -195,7 +202,61 @@ UserBalance.create({
 });
 ```
 
-This keeps construction explicit and avoids exposing the entity's internal constructor.
+`UserBalance.amount` represents the current state of the user's balance.
+
+### Ledger
+
+`Ledger` represents an **immutable financial record** describing a balance movement.
+
+```text
+Ledger
+
+├── id
+├── userId
+├── currency
+├── amount
+├── balanceBefore
+├── balanceAfter
+├── type
+├── actorUserId
+├── referenceId
+├── metadata
+└── createdAt
+```
+
+The ledger stores both the signed financial movement and the balance state before and after the operation.
+
+For example:
+
+```text
+Balance before:  1500.50
+Adjustment:      -500.00
+Balance after:   1000.50
+```
+
+The corresponding ledger records:
+
+```text
+amount        = -500.00
+balanceBefore = 1500.50
+balanceAfter  = 1000.50
+```
+
+Ledger records are immutable. They provide historical evidence of balance changes instead of relying on the current `UserBalance` value as historical information.
+
+Ledger entries are created through the domain factory:
+
+```ts
+Ledger.create({
+  userId,
+  currency,
+  amount,
+  balanceBefore,
+  balanceAfter,
+  type,
+  actorUserId,
+});
+```
 
 ### AuditLog
 
@@ -203,6 +264,7 @@ This keeps construction explicit and avoids exposing the entity's internal const
 
 ```text
 AuditLog
+
 ├── id
 ├── actorUserId
 ├── targetUserId
@@ -241,13 +303,23 @@ const user = User.create({
 });
 ```
 
-and:
-
 ```ts
 const balance = UserBalance.create({
   userId,
   currency,
   amount,
+});
+```
+
+```ts
+const ledger = Ledger.create({
+  userId,
+  currency,
+  amount,
+  balanceBefore,
+  balanceAfter,
+  type,
+  actorUserId,
 });
 ```
 
@@ -263,7 +335,7 @@ The domain remains responsible for its own object creation while the application
 
 ---
 
-## Enums
+# Enums
 
 Current domain enumerations include:
 
@@ -272,6 +344,7 @@ UserRole
 UserStatus
 AuditAction
 PaymentCurrency
+LedgerType
 ```
 
 For example:
@@ -285,9 +358,20 @@ ADMIN
 
 User lifecycle/state is represented separately through `UserStatus`.
 
+Ledger operations are represented through `LedgerType`:
+
+```text
+ADMIN_ADJUSTMENT
+DEPOSIT
+WITHDRAWAL
+TRANSFER_IN
+TRANSFER_OUT
+REFUND
+```
+
 ---
 
-## Exceptions
+# Exceptions
 
 Business errors live in the domain instead of the HTTP layer.
 
@@ -302,6 +386,7 @@ InvalidCredentialsException
 GoogleAccountConflictException
 UserNotFoundException
 UserBalanceAlreadyExistsException
+InsufficientBalanceException
 CannotRemoveLastAdminException
 CannotDeleteSelfException
 ```
@@ -318,13 +403,19 @@ For example:
 throw new UserNotFoundException();
 ```
 
+or:
+
+```ts
+throw new InsufficientBalanceException();
+```
+
 The domain does not know anything about HTTP status codes, Express, or NestJS exception classes.
 
 The API layer is responsible for translating domain exceptions into HTTP responses.
 
 ---
 
-## Repository Contracts
+# Repository Contracts
 
 Repositories are defined as contracts in the domain.
 
@@ -333,6 +424,7 @@ Current repository contracts include:
 ```text
 UserRepository
 UserBalanceRepository
+LedgerRepository
 AuditLogRepository
 ```
 
@@ -341,6 +433,38 @@ The domain defines the persistence operations required by the application.
 The infrastructure layer provides the actual implementations.
 
 This keeps persistence technology out of the domain.
+
+---
+
+# Decimal Arithmetic
+
+Financial values are represented as strings rather than JavaScript floating-point numbers.
+
+NestStarter provides decimal utilities for safe arithmetic:
+
+```text
+addDecimal()
+subtractDecimal()
+isNegativeDecimal()
+```
+
+These utilities use `BigInt` internally to avoid floating-point precision problems.
+
+For example:
+
+```ts
+addDecimal("1500.50", "-500.25");
+// "1000.25"
+```
+
+and:
+
+```ts
+addDecimal("2000", "-5500");
+// "-3500"
+```
+
+This is particularly important for balances and ledger calculations where precision must not depend on JavaScript floating-point behavior.
 
 ---
 
@@ -362,11 +486,31 @@ UpdateUserAvatar
 DeleteUserAvatar
 ```
 
-User balance operations include:
+Balance operations include:
 
 ```text
-CreateUserBalance
+UpdateUserBalance
 ```
+
+`UpdateUserBalanceUseCase` is responsible for applying a signed balance adjustment.
+
+For example:
+
+```text
++1500.00 → increase balance by 1500
+-500.00  → decrease balance by 500
+```
+
+The use case:
+
+1. Loads the current balance
+2. Calculates the resulting balance
+3. Rejects negative resulting balances
+4. Updates or creates the balance
+5. Creates an immutable ledger record
+6. Creates the audit record
+
+These operations execute inside a single transaction.
 
 Authentication use cases include:
 
@@ -385,14 +529,12 @@ DeleteUser
 GetUser
 ListUsers
 UpdateUser
-CreateUserBalance
+UpdateUserBalance
 GetAuditLogs
-ListAuditLogs
+ListLedgers
 GetStatistics
 DeleteUserAvatar
 ```
-
-The same business operation can therefore have different application entry points depending on its context.
 
 The application layer contains the business workflow rather than HTTP-specific logic.
 
@@ -416,7 +558,8 @@ UpdateUserAvatarUseCase
 DeleteUserAvatarUseCase
 ChangeUserPasswordUseCase
 SearchUsersUseCase
-CreateUserBalanceUseCase
+UpdateUserBalanceUseCase
+ListLedgersUseCase
 ```
 
 This makes each operation:
@@ -445,22 +588,25 @@ The Unit of Work exposes transaction-scoped repository implementations:
 
 ```text
 UnitOfWork
+
     │
     ▼
-┌───────────────────────────────┐
-│ Transaction-scoped repositories│
-├───────────────────────────────┤
-│ UserRepository                │
-│ UserBalanceRepository         │
-│ AuditLogRepository            │
-└───────────────────────────────┘
+
+┌─────────────────────────────────┐
+│ Transaction-scoped repositories │
+├─────────────────────────────────┤
+│ UserRepository                  │
+│ UserBalanceRepository           │
+│ LedgerRepository                │
+│ AuditLogRepository              │
+└─────────────────────────────────┘
 ```
 
 For example:
 
 ```ts
 return this.unitOfWork.execute(
-  async ({ userRepository, userBalanceRepository, auditLogRepository }) => {
+  async ({ userRepository, userBalanceRepository, ledgerRepository }) => {
     // transactional workflow
   },
 );
@@ -488,12 +634,15 @@ This keeps transaction management and TypeORM-specific behavior inside infrastru
 
 Operations involving multiple related writes can use a single database transaction.
 
-For example, creating a user can involve:
+A balance adjustment is one example:
 
 ```text
-Create User
+Update Balance
+
      │
-     ├── Create UserBalance
+     ├── Update UserBalance
+     │
+     ├── Create Ledger
      │
      └── Create AuditLog
 ```
@@ -502,12 +651,18 @@ The complete workflow runs inside one transaction:
 
 ```text
 BEGIN
+
   │
-  ├── Check user
-  ├── Create user
-  ├── Create initial balance
-  └── Create audit log
+  ├── Load user
+  ├── Load current balance
+  ├── Calculate resulting balance
+  ├── Validate resulting balance
+  ├── Update/create UserBalance
+  ├── Create Ledger
+  └── Create AuditLog
+
   │
+
 COMMIT
 ```
 
@@ -517,9 +672,191 @@ If any transactional database operation fails:
 ROLLBACK
 ```
 
-This prevents partially completed workflows.
+This prevents partially completed financial operations.
 
-The Unit of Work therefore provides a clear boundary for operations that require database atomicity.
+For example, if an administrator attempts:
+
+```text
+Current balance:  $2,000
+Adjustment:       -$5,500
+Result:           -$3,500
+```
+
+the operation is rejected with `InsufficientBalanceException`.
+
+No balance, ledger, or audit record is written.
+
+---
+
+# Balance Adjustment and Ledger
+
+Administrative balance changes use signed adjustments.
+
+For example:
+
+```text
+Current balance:  2000
+Adjustment:       +500
+Result:            2500
+```
+
+creates:
+
+```text
+Ledger amount:        +500
+Balance before:       2000
+Balance after:        2500
+```
+
+A negative adjustment works the same way:
+
+```text
+Current balance:  2000
+Adjustment:       -500
+Result:            1500
+```
+
+creates:
+
+```text
+Ledger amount:        -500
+Balance before:       2000
+Balance after:        1500
+```
+
+If the resulting balance would be negative, the operation is rejected.
+
+```text
+Current balance:  2000
+Adjustment:       -5500
+Result:           -3500
+
+                    ↓
+
+            InsufficientBalanceException
+```
+
+This prevents accidental negative user balances.
+
+The ledger amount is the signed movement itself. It is not calculated by treating the requested adjustment as the new balance.
+
+---
+
+# Ledger
+
+The ledger provides immutable financial history for balance changes.
+
+Current ledger types include:
+
+```text
+ADMIN_ADJUSTMENT
+DEPOSIT
+WITHDRAWAL
+TRANSFER_IN
+TRANSFER_OUT
+REFUND
+```
+
+A ledger record contains:
+
+```text
+amount
+balanceBefore
+balanceAfter
+```
+
+This allows the system to reconstruct the effect of each financial operation.
+
+For example:
+
+```text
+Ledger #1
+
+amount        = +1500
+balanceBefore = 0
+balanceAfter  = 1500
+```
+
+followed by:
+
+```text
+Ledger #2
+
+amount        = -500
+balanceBefore = 1500
+balanceAfter  = 1000
+```
+
+The current `UserBalance` stores:
+
+```text
+1000
+```
+
+while the ledger stores the historical movements.
+
+The balance and ledger are deliberately separate concerns:
+
+```text
+UserBalance
+    │
+    └── Current state
+
+Ledger
+    │
+    └── Historical financial movements
+```
+
+---
+
+# Admin Ledger API
+
+Administrative users can inspect ledger history through:
+
+```text
+GET /admin/ledgers
+```
+
+The endpoint supports filtering by:
+
+```text
+userId
+currency
+type
+actorUserId
+referenceId
+from
+to
+```
+
+Pagination and sorting are also supported.
+
+Supported sorting fields include:
+
+```text
+createdAt
+amount
+```
+
+Example:
+
+```text
+GET /admin/ledgers?userId=<user-id>&currency=USD&type=ADMIN_ADJUSTMENT
+```
+
+The response follows the shared pagination format:
+
+```json
+{
+  "data": [],
+  "total": 0,
+  "page": 1,
+  "limit": 20,
+  "totalPages": 0
+}
+```
+
+The endpoint is documented through Swagger/OpenAPI and protected by administrative authorization.
 
 ---
 
@@ -628,15 +965,24 @@ UserOrmEntity
 PostgreSQL
 ```
 
-This prevents TypeORM decorators and persistence concerns from leaking into the domain.
-
 Current database ORM entities include:
 
 ```text
 UserOrmEntity
 UserBalanceOrmEntity
+LedgerOrmEntity
 AuditLogOrmEntity
 ```
+
+The `LedgerOrmEntity` uses PostgreSQL `numeric(30,18)` fields for:
+
+```text
+amount
+balanceBefore
+balanceAfter
+```
+
+This provides sufficient precision for payment and crypto-related balances.
 
 ---
 
@@ -651,6 +997,29 @@ InitialUsers
 CreateAuditLogs
 AddUserProfileFields
 AddUserStatus
+CreateLedgers1788355062580
+```
+
+The ledger migration creates:
+
+```text
+ledgers
+```
+
+with support for:
+
+```text
+id
+userId
+currency
+amount
+balanceBefore
+balanceAfter
+type
+actorUserId
+referenceId
+metadata
+createdAt
 ```
 
 Production deployments should use migrations rather than relying on TypeORM schema synchronization.
@@ -838,30 +1207,33 @@ User
        └── amount
 ```
 
-Balance creation is handled through a dedicated use case:
+Balance adjustments are handled through:
 
 ```text
-CreateUserBalanceUseCase
+UpdateUserBalanceUseCase
 ```
 
-The operation validates:
+The `amount` field represents a **signed adjustment**, not a target balance.
 
-- The target user exists
-- A balance for the requested currency does not already exist
-
-The balance is then created through the domain factory:
-
-```ts
-UserBalance.create({
-  userId,
-  currency,
-  amount,
-});
+```text
++1000 → increase by 1000
+-250  → decrease by 250
 ```
 
-When the operation is part of a workflow involving related database changes, it is executed through `UnitOfWork`.
+The operation:
 
-> `UserBalance` represents the **current state** of a balance. A future accounting/ledger layer can provide immutable financial history when required by a specific application.
+- Validates that the target user exists
+- Loads the existing balance
+- Calculates the resulting balance
+- Rejects negative resulting balances
+- Creates the balance if it does not already exist
+- Updates the balance when it already exists
+- Creates a ledger record
+- Creates an audit record
+
+The complete workflow executes through `UnitOfWork`.
+
+A negative balance is never persisted by this workflow.
 
 ---
 
@@ -1040,7 +1412,7 @@ Administrative avatar operations are also supported.
 
 This prevents object-storage concerns from leaking into normal profile-management logic.
 
-The avatar flow can therefore independently handle:
+The avatar flow can independently handle:
 
 - Image validation
 - Image processing
@@ -1062,7 +1434,7 @@ Supported operations include:
 - Delete users
 - Get individual users
 - List users
-- Create user balances
+- Update user balances
 - Change/reset passwords
 - Manage roles
 - Manage user profiles
@@ -1070,6 +1442,7 @@ Supported operations include:
 - Manage avatars
 - View audit logs
 - List audit logs
+- List financial ledgers
 - View user statistics
 
 Administrative operations are protected by the admin authorization guard.
@@ -1097,6 +1470,17 @@ AuditLogRepository
 ```
 
 provided by `UnitOfWork`.
+
+For example, a balance adjustment records:
+
+```text
+actorUserId
+targetUserId
+action
+currency
+from
+to
+```
 
 The audit system records information such as:
 
@@ -1177,13 +1561,17 @@ ChangePasswordRequestDto
 UpdateProfileRequestDto
 SearchUsersRequestDto
 UserSearchResponseDto
+
 AdminUserRequestDto
 AdminUserResponseDto
 AdminUserListResponseDto
+
 AuditLogRequestDto
 AuditLogResponseDto
 GetAuditLogsQueryDto
+
 ChangeUserPasswordRequestDto
+ListLedgersQueryDto
 ```
 
 DTOs belong to the API layer and should not be used as domain entities.
@@ -1213,6 +1601,7 @@ The API documentation includes:
 - Authentication-related responses
 - Multipart file-upload documentation
 - File endpoint documentation
+- Ledger filtering and pagination documentation
 
 The goal is for **all API controllers and endpoints to be explicitly documented**, rather than relying only on generated route information.
 
@@ -1244,6 +1633,12 @@ For example:
 
 ```ts
 throw new UserNotFoundException();
+```
+
+or:
+
+```ts
+throw new InsufficientBalanceException();
 ```
 
 The API layer translates the exception into an appropriate HTTP response.
@@ -1376,7 +1771,7 @@ The production configuration is designed so PostgreSQL and Redis are not unneces
 
 Jest is used for unit testing.
 
-Tests currently cover important parts of the application and infrastructure layers, including:
+Tests cover important parts of the application and infrastructure layers, including:
 
 - Authentication use cases
 - User use cases
@@ -1488,6 +1883,7 @@ src/
 │   ├── dtos/
 │   ├── interfaces/
 │   └── use-cases/
+│       ├── admin-ledgers/
 │       ├── admin-users/
 │       ├── auth/
 │       └── users/
@@ -1496,7 +1892,8 @@ src/
 │   ├── entities/
 │   ├── enums/
 │   ├── exceptions/
-│   └── repositories/
+│   ├── repositories/
+│   └── utils/
 │
 ├── infrastructure/
 │   ├── auth/
@@ -1561,35 +1958,48 @@ Administrative actions should be traceable without coupling business logic direc
 
 ### Current state and historical state are separate concerns
 
-Current values such as `UserBalance.amount` represent application state. When a domain requires financial accounting or immutable transaction history, a dedicated ledger/accounting model should be introduced rather than using the current balance itself as historical evidence.
+Current values such as `UserBalance.amount` represent application state.
+
+When financial history is required, immutable `Ledger` records provide historical financial movements independently from the current balance.
+
+### Financial operations are atomic
+
+A financial balance mutation and its corresponding ledger/audit records should succeed or fail together through `UnitOfWork`.
+
+### Financial arithmetic must preserve precision
+
+Money and payment amounts should not rely on JavaScript floating-point arithmetic.
+
+Decimal utilities use string values and `BigInt` internally to preserve precision.
 
 ---
 
 # Technology Stack
 
-| Area              | Technology                                |
-| ----------------- | ----------------------------------------- |
-| Runtime           | Node.js                                   |
-| Framework         | NestJS                                    |
-| Language          | TypeScript                                |
-| Architecture      | Clean Architecture                        |
-| Database          | PostgreSQL                                |
-| ORM               | TypeORM                                   |
-| Transactions      | TypeORM + Unit of Work                    |
-| Cache / State     | Redis                                     |
-| Sessions          | express-session + connect-redis           |
-| Authentication    | Password, OTP, Google OAuth               |
-| OAuth             | Passport + Google OAuth 2.0               |
-| Password hashing  | bcrypt                                    |
-| Email             | Nodemailer / SMTP                         |
-| Object storage    | MinIO                                     |
-| Image processing  | Sharp                                     |
-| Validation        | class-validator / class-transformer / Joi |
-| Security headers  | Helmet                                    |
-| Rate limiting     | NestJS Throttler                          |
-| API documentation | Swagger / OpenAPI                         |
-| Testing           | Jest / ts-jest                            |
-| Containers        | Docker / Docker Compose                   |
+| Area                 | Technology                                |
+| -------------------- | ----------------------------------------- |
+| Runtime              | Node.js                                   |
+| Framework            | NestJS                                    |
+| Language             | TypeScript                                |
+| Architecture         | Clean Architecture                        |
+| Database             | PostgreSQL                                |
+| ORM                  | TypeORM                                   |
+| Transactions         | TypeORM + Unit of Work                    |
+| Cache / State        | Redis                                     |
+| Sessions             | express-session + connect-redis           |
+| Authentication       | Password, OTP, Google OAuth               |
+| OAuth                | Passport + Google OAuth 2.0               |
+| Password hashing     | bcrypt                                    |
+| Email                | Nodemailer / SMTP                         |
+| Object storage       | MinIO                                     |
+| Image processing     | Sharp                                     |
+| Validation           | class-validator / class-transformer / Joi |
+| Security headers     | Helmet                                    |
+| Rate limiting        | NestJS Throttler                          |
+| API documentation    | Swagger / OpenAPI                         |
+| Financial arithmetic | BigInt-based decimal utilities            |
+| Testing              | Jest / ts-jest                            |
+| Containers           | Docker / Docker Compose                   |
 
 ---
 
@@ -1733,7 +2143,9 @@ Before deploying a project built from NestStarter:
 - Ensure publicly accessible file URLs are intentional
 - Monitor storage usage and orphaned files
 - Review transaction boundaries for workflows involving multiple related writes
-- Ensure financial applications use an appropriate immutable ledger/accounting model rather than relying solely on current balance values
+- Ensure financial operations use precise decimal arithmetic
+- Ensure financial balance mutations and ledger creation occur atomically
+- Ensure immutable ledger history is used for financial auditing rather than relying solely on current balances
 
 NestStarter provides the foundation, but production configuration remains application and deployment specific.
 
@@ -1752,13 +2164,16 @@ NestStarter **is**:
 - A foundation for object storage and image-processing workflows
 - A foundation for administrative auditing
 - A foundation for transactional application workflows
+- A foundation for current user balance management
+- A foundation for immutable financial ledger history
 
 NestStarter **isn't**:
 
 - A framework
 - A complete SaaS application
 - A domain-specific business solution
-- A complete accounting or financial ledger system
+- A complete payment processor
+- A complete accounting system
 - A replacement for application-specific security review
 - A promise that every deployment is production-ready without configuration
 
@@ -1783,8 +2198,3 @@ MIT
 ---
 
 **NestStarter** — built to save time, reduce boilerplate, and keep your architecture clean.
-
-```
-
-One important point: **I intentionally did not add `Ledger` as a current feature.** I only documented the architectural distinction between current balance and a future ledger. When/if we actually implement the ledger, we can update the README with the real entities, repositories, migrations, and transaction flow.
-```
