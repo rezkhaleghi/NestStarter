@@ -82,7 +82,7 @@ export class UserBalanceAlreadyExistsException extends DomainException {
   }
 }
 
-export class InsufficientBalance extends DomainException {
+export class InsufficientBalanceException extends DomainException {
   constructor() {
     super(`Insufficient Balance!`);
   }

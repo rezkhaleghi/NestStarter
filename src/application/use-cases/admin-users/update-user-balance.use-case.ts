@@ -6,7 +6,7 @@ import { AuditAction } from "../../../domain/enums/audit-action.enum";
 import { LedgerType } from "../../../domain/enums/ledger-type.enum";
 import { PaymentCurrency } from "../../../domain/enums/payment-currency.enum";
 import {
-  InsufficientBalance,
+  InsufficientBalanceException,
   UserNotFoundException,
 } from "../../../domain/exceptions/domain.exception";
 import {
@@ -76,7 +76,7 @@ export class UpdateUserBalanceUseCase {
 
         // User balances cannot become negative.
         if (isNegativeDecimal(after)) {
-          throw new InsufficientBalance();
+          throw new InsufficientBalanceException();
         }
 
         // No balance change means there is nothing to record.
