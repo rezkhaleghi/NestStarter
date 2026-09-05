@@ -40,6 +40,24 @@ export class UserBalanceRepositoryImpl implements UserBalanceRepository {
     return row ? this.toDomain(row) : null;
   }
 
+  // for locking the row for update, we need to use a transaction and a pessimistic lock
+  async findByUserIdAndCurrencyForUpdate(
+    userId: string,
+    currency: PaymentCurrency,
+  ): Promise<UserBalance | null> {
+    const row = await this.repository.findOne({
+      where: {
+        userId,
+        currency,
+      },
+      lock: {
+        mode: "pessimistic_write",
+      },
+    });
+
+    return row ? this.toDomain(row) : null;
+  }
+
   async findByUserId(
     userId: string,
     query: PageQuery<UserBalanceSortBy>,

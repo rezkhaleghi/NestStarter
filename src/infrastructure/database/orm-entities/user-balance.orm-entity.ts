@@ -2,12 +2,15 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
+
 import { PaymentCurrency } from "../../../domain/enums/payment-currency.enum";
 
 @Entity("user_balances")
+@Index(["userId", "currency"], { unique: true })
 export class UserBalanceOrmEntity {
   @PrimaryGeneratedColumn("uuid")
   id: string;

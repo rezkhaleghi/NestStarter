@@ -12,6 +12,12 @@ export abstract class UserBalanceRepository {
     currency: PaymentCurrency,
   ): Promise<UserBalance | null>;
 
+  // lock it too
+  abstract findByUserIdAndCurrencyForUpdate(
+    userId: string,
+    currency: PaymentCurrency,
+  ): Promise<UserBalance | null>;
+
   abstract findByUserId(
     userId: string,
     query: PageQuery<UserBalanceSortBy>,

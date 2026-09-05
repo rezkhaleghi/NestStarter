@@ -38,17 +38,38 @@ export class UpdateUserBalanceUseCase {
           throw new UserNotFoundException();
         }
 
-        const existingBalance =
-          await userBalanceRepository.findByUserIdAndCurrency(
+        let existingBalance =
+          await userBalanceRepository.findByUserIdAndCurrencyForUpdate(
             input.userId,
             input.currency,
           );
 
+        if (!existingBalance) {
+          // Lock the user row so concurrent first-time balance
+          // creations for this user are serialized.
+          const lockedUser = await userRepository.findByIdForUpdate(
+            input.userId,
+          );
+
+          if (!lockedUser) {
+            throw new UserNotFoundException();
+          }
+
+          // Re-check after acquiring the user lock.
+          // Another transaction may have created the balance
+          // while we were waiting for the lock.
+          existingBalance =
+            await userBalanceRepository.findByUserIdAndCurrencyForUpdate(
+              input.userId,
+              input.currency,
+            );
+        }
+
         const before = existingBalance?.amount ?? "0";
 
         // input.amount is a signed adjustment:
-        // +100  → increase balance by 100
-        // -100  → decrease balance by 100
+        // +100 → increase balance by 100
+        // -100 → decrease balance by 100
         const amount = input.amount;
         const after = addDecimal(before, amount);
 

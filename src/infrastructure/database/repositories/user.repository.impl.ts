@@ -28,6 +28,18 @@ export class UserRepositoryImpl implements UserRepository {
     return row ? this.toDomain(row) : null;
   }
 
+  // for locking the row for update, we need to use a transaction and a pessimistic lock
+  async findByIdForUpdate(id: string): Promise<User | null> {
+    const row = await this.repo.findOne({
+      where: { id },
+      lock: {
+        mode: "pessimistic_write",
+      },
+    });
+
+    return row ? this.toDomain(row) : null;
+  }
+
   async findByEmail(email: string): Promise<User | null> {
     const row = await this.repo.findOne({
       where: { email: email.toLowerCase() },

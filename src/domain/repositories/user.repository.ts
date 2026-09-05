@@ -6,6 +6,9 @@ import { PageQuery, PageResult } from "src/shared/pagination/page-query";
 export abstract class UserRepository {
   abstract findById(id: string): Promise<User | null>;
 
+  // for locking the row for update, we need to use a transaction and a pessimistic lock
+  abstract findByIdForUpdate(id: string): Promise<User | null>;
+
   abstract findByEmail(email: string): Promise<User | null>;
 
   abstract findByGoogleId(googleId: string): Promise<User | null>;
