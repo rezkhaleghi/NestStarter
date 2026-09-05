@@ -13,8 +13,9 @@ import {
   addDecimal,
   isNegativeDecimal,
 } from "../../../domain/utils/decimal.util";
-import { AuditLogger } from "../../interfaces/audit-logger.interface";
 import { UnitOfWork } from "../../interfaces/unit-of-work.interface";
+import { AuditLog } from "@domain/entities/audit-log.entity";
+import { AuditLogRepository } from "@domain/repositories/audit-log.repository";
 
 export interface UpdateUserBalanceInput {
   userId: string;
@@ -25,8 +26,8 @@ export interface UpdateUserBalanceInput {
 @Injectable()
 export class UpdateUserBalanceUseCase {
   constructor(
-    private readonly auditLogger: AuditLogger,
     private readonly unitOfWork: UnitOfWork,
+    private readonly auditLogRepository: AuditLogRepository,
   ) {}
 
   async execute(input: UpdateUserBalanceInput, actorUserId: string) {
@@ -111,16 +112,18 @@ export class UpdateUserBalanceUseCase {
           }),
         );
 
-        await this.auditLogger.log({
-          actorUserId,
-          targetUserId: input.userId,
-          action: AuditAction.USER_BALANCE_UPDATED,
-          metadata: {
-            currency: input.currency,
-            from: before,
-            to: saved.amount,
-          },
-        });
+        await this.auditLogRepository.create(
+          AuditLog.create({
+            actorUserId,
+            targetUserId: input.userId,
+            action: AuditAction.USER_BALANCE_UPDATED,
+            metadata: {
+              currency: input.currency,
+              from: before,
+              to: saved.amount,
+            },
+          }),
+        );
 
         return saved;
       },
