@@ -1,7 +1,6 @@
 import { Type } from "class-transformer";
 import { IsDateString, IsEnum, IsOptional, IsUUID } from "class-validator";
 import { ApiPropertyOptional } from "@nestjs/swagger";
-
 import { LedgerType } from "../../../domain/enums/ledger-type.enum";
 import { PaymentCurrency } from "../../../domain/enums/payment-currency.enum";
 

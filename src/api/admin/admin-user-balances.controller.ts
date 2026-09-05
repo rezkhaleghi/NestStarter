@@ -20,8 +20,6 @@ import { UpdateUserBalanceUseCase } from "../../application/use-cases/admin-user
 import { GetUserBalancesUseCase } from "../../application/use-cases/users/get-user-balances.use-case";
 
 import { AdminAuthGuard } from "./admin-auth.guard";
-
-import { CreateUserBalanceRequestDto } from "../users/dtos/user-balance.request.dto";
 import { GetUserBalancesQueryDto } from "../users/dtos/user-balance.request.dto";
 import { UpdateUserBalanceRequestDto } from "./dtos/update-user-balance.request.dto";
 

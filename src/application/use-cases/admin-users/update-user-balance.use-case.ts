@@ -5,7 +5,10 @@ import { UserBalance } from "@domain/entities/user-balance.entity";
 import { AuditAction } from "../../../domain/enums/audit-action.enum";
 import { LedgerType } from "../../../domain/enums/ledger-type.enum";
 import { PaymentCurrency } from "../../../domain/enums/payment-currency.enum";
-import { UserNotFoundException } from "../../../domain/exceptions/domain.exception";
+import {
+  InsufficientBalance,
+  UserNotFoundException,
+} from "../../../domain/exceptions/domain.exception";
 import {
   addDecimal,
   isNegativeDecimal,
@@ -51,7 +54,7 @@ export class UpdateUserBalanceUseCase {
 
         // User balances cannot become negative.
         if (isNegativeDecimal(after)) {
-          throw new Error("Insufficient balance");
+          throw new InsufficientBalance();
         }
 
         // No balance change means there is nothing to record.
