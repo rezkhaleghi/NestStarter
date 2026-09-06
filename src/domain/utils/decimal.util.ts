@@ -70,3 +70,7 @@ function formatDecimal(value: bigint, scale: number): string {
     decimalPart ? `.${decimalPart}` : ""
   }`;
 }
+
+export function isZeroDecimal(value: string): boolean {
+  return value.trim() === "0" || /^[-+]?0+(\.0+)?$/.test(value.trim());
+}

@@ -13,6 +13,7 @@ import {
 import {
   addDecimal,
   isNegativeDecimal,
+  isZeroDecimal,
 } from "../../../domain/utils/decimal.util";
 import { UnitOfWork } from "../../interfaces/unit-of-work.interface";
 
@@ -81,7 +82,7 @@ export class UpdateUserBalanceUseCase {
         }
 
         // No balance change means there is nothing to record.
-        if (amount === "0") {
+        if (isZeroDecimal(amount)) {
           return existingBalance;
         }
 

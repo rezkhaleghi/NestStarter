@@ -29,8 +29,6 @@ import { AdminStatisticsService } from "../application/interfaces/admin-statisti
 import { AuditLogOrmEntity } from "./database/orm-entities/audit-log.orm-entity";
 import { AuditLogRepositoryImpl } from "./database/repositories/audit-log.repository.impl";
 import { AuditLogRepository } from "../domain/repositories/audit-log.repository";
-import { AuditLogger } from "../application/interfaces/audit-logger.interface";
-import { AuditLoggerService } from "./services/audit-logger.service";
 import { UserBalanceRepository } from "@domain/repositories/user-balance.repository";
 import { UserBalanceOrmEntity } from "./database/orm-entities/user-balance.orm-entity";
 import { UserBalanceRepositoryImpl } from "./database/repositories/user-balance.repository.impl";
@@ -150,10 +148,6 @@ import { LedgerRepositoryImpl } from "./database/repositories/ledger.repository.
       useExisting: AdminStatisticsServiceImpl,
     },
     {
-      provide: AuditLogger,
-      useClass: AuditLoggerService,
-    },
-    {
       provide: AuditLogRepository,
       useClass: AuditLogRepositoryImpl,
     },
@@ -180,7 +174,6 @@ import { LedgerRepositoryImpl } from "./database/repositories/ledger.repository.
     FileStorage,
     ImageProcessing,
     AdminStatisticsService,
-    AuditLogger,
     AuditLogRepository,
     UserBalanceRepository,
     UnitOfWork,
