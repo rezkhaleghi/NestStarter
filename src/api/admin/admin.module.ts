@@ -12,9 +12,9 @@ import { DeleteAdminUserAvatarUseCase } from "@application/use-cases/admin-users
 import { GetAdminStatisticsUseCase } from "../../application/use-cases/admin-users/get-statistics.use-case";
 import { GetAuditLogsUseCase } from "@application/use-cases/admin-users/get-audit-logs.use-case";
 import { AdminUserBalancesController } from "./admin-user-balances.controller";
-import { UpdateUserBalanceUseCase } from "@application/use-cases/admin-users/update-user-balance.use-case";
+import { UpdateUserBalanceUseCase } from "@application/use-cases/admin-financials/update-user-balance.use-case";
 import { AdminLedgersController } from "./admin-ledgers.controller";
-import { ListLedgersUseCase } from "@application/use-cases/admin-ledgers/list-ledgers.use-case";
+import { ListLedgersUseCase } from "@application/use-cases/admin-financials/list-ledgers.use-case";
 import { AdminDepositController } from "./admin-deposit.controller";
 import { AdminWithdrawalController } from "./admin-withdrawal.controller";
 

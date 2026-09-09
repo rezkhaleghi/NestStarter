@@ -12,8 +12,8 @@ import { DeleteUserAvatarUseCase } from "./use-cases/users/delete-user-avatar.us
 import { SearchUsersUseCase } from "./use-cases/users/search-users.use-case";
 import { InfrastructureModule } from "../infrastructure/infrastructure.module";
 import { GetUserBalancesUseCase } from "./use-cases/users/get-user-balances.use-case";
-import { UpdateUserBalanceUseCase } from "./use-cases/admin-users/update-user-balance.use-case";
-import { ListLedgersUseCase } from "./use-cases/admin-ledgers/list-ledgers.use-case";
+import { UpdateUserBalanceUseCase } from "./use-cases/admin-financials/update-user-balance.use-case";
+import { ListLedgersUseCase } from "./use-cases/admin-financials/list-ledgers.use-case";
 import { CreateDepositUseCase } from "./use-cases/deposits/create-deposit.use-case";
 import { VerifyDepositUseCase } from "./use-cases/deposits/verify-deposit.use-case";
 import { AdminListDepositsUseCase } from "./use-cases/admin-financials/list-deposits.use-case";
