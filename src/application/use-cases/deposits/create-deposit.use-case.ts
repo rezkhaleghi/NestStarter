@@ -1,0 +1,74 @@
+import { Injectable } from "@nestjs/common";
+import { Inject } from "@nestjs/common";
+import { randomUUID } from "crypto";
+
+import { Deposit } from "@domain/entities/deposit.entity";
+import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
+import { DepositStatus } from "@domain/enums/deposit-status.enum";
+import { UserNotFoundException } from "@domain/exceptions/domain.exception";
+import {
+  PAYMENT_PROVIDER,
+  PaymentProviderInterface,
+} from "@application/interfaces/payment-provider.interface";
+import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
+
+export interface CreateDepositInput {
+  userId: string;
+  currency: PaymentCurrency;
+  amount: string;
+}
+
+@Injectable()
+export class CreateDepositUseCase {
+  constructor(
+    @Inject(PAYMENT_PROVIDER)
+    private readonly paymentProvider: PaymentProviderInterface,
+    private readonly unitOfWork: UnitOfWork,
+  ) {}
+
+  async execute(input: CreateDepositInput): Promise<Deposit> {
+    return this.unitOfWork.execute(
+      async ({ userRepository, depositRepository }) => {
+        const user = await userRepository.findById(input.userId);
+        if (!user) {
+          throw new UserNotFoundException();
+        }
+
+        if (
+          !this.paymentProvider.supportedCurrencies.includes(input.currency)
+        ) {
+          throw new Error(
+            `Currency ${input.currency} is not supported by the payment provider.`,
+          );
+        }
+
+        const amountValue = Number(input.amount);
+        if (!Number.isFinite(amountValue) || amountValue <= 0) {
+          throw new Error("Deposit amount must be positive.");
+        }
+
+        const deposit = Deposit.create({
+          id: randomUUID(),
+          userId: input.userId,
+          currency: input.currency,
+          amount: input.amount,
+          status: DepositStatus.PENDING,
+          referenceId: randomUUID(),
+        });
+
+        const payment = await this.paymentProvider.createPayment({
+          amount: deposit.amount,
+          currency: deposit.currency,
+          provider: this.paymentProvider.name,
+          referenceId: deposit.referenceId,
+          callbackUrl: "",
+        });
+
+        deposit.setProviderPayment(payment.providerPaymentId);
+
+        const saved = await depositRepository.create(deposit);
+        return saved;
+      },
+    );
+  }
+}

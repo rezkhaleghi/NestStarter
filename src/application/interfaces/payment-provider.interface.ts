@@ -159,24 +159,46 @@ export interface VerifyPaymentResult {
  * The application layer depends on this abstraction instead of
  * depending directly on any payment provider or SDK.
  */
-export interface PaymentProviderInterface {
-  /**
-   * Provider identifier.
-   */
-  readonly name: PaymentProvider;
+export interface CreateWithdrawalInput {
+  amount: string;
+  currency: PaymentCurrency;
+  referenceId: string;
+  destination: string;
+  metadata?: Record<string, string>;
+}
 
-  /**
-   * Currencies or crypto assets supported by this provider.
-   */
+export interface CreateWithdrawalResult {
+  provider: PaymentProvider;
+  providerWithdrawalId: string;
+  status?: string;
+  transactionId?: string;
+}
+
+export interface GetWithdrawalStatusInput {
+  providerWithdrawalId: string;
+  referenceId?: string;
+}
+
+export interface GetWithdrawalStatusResult {
+  providerWithdrawalId: string;
+  status: string;
+  transactionId?: string;
+  amount?: string;
+  currency?: PaymentCurrency;
+}
+
+export interface PaymentProviderInterface {
+  readonly name: PaymentProvider;
   readonly supportedCurrencies: PaymentCurrency[];
 
-  /**
-   * Creates a payment with the external provider.
-   */
   createPayment(input: CreatePaymentInput): Promise<CreatePaymentResult>;
-
-  /**
-   * Verifies the payment with the external provider.
-   */
   verifyPayment(input: VerifyPaymentInput): Promise<VerifyPaymentResult>;
+  createWithdrawal?(
+    input: CreateWithdrawalInput,
+  ): Promise<CreateWithdrawalResult>;
+  getWithdrawalStatus?(
+    input: GetWithdrawalStatusInput,
+  ): Promise<GetWithdrawalStatusResult>;
 }
+
+export const PAYMENT_PROVIDER = Symbol("PAYMENT_PROVIDER");

@@ -4,6 +4,8 @@ import { UserOrmEntity } from "../database/orm-entities/user.orm-entity";
 import { AuditLogOrmEntity } from "../database/orm-entities/audit-log.orm-entity";
 import { UserBalanceOrmEntity } from "@infrastructure/database/orm-entities/user-balance.orm-entity";
 import { LedgerOrmEntity } from "@infrastructure/database/orm-entities/ledger.orm-entity";
+import { DepositOrmEntity } from "@infrastructure/database/orm-entities/deposit.orm-entity";
+import { WithdrawalOrmEntity } from "@infrastructure/database/orm-entities/withdrawal.orm-entity";
 
 /**
  * NestJS database configuration.
@@ -25,6 +27,8 @@ export default registerAs(
       AuditLogOrmEntity,
       UserBalanceOrmEntity,
       LedgerOrmEntity,
+      DepositOrmEntity,
+      WithdrawalOrmEntity,
     ],
     // synchronize: process.env.NODE_ENV === "development",
     synchronize: false,

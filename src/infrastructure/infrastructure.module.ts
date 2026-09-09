@@ -37,6 +37,17 @@ import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
 import { LedgerOrmEntity } from "./database/orm-entities/ledger.orm-entity";
 import { LedgerRepository } from "@domain/repositories/ledger.repository";
 import { LedgerRepositoryImpl } from "./database/repositories/ledger.repository.impl";
+import { DepositOrmEntity } from "./database/orm-entities/deposit.orm-entity";
+import { WithdrawalOrmEntity } from "./database/orm-entities/withdrawal.orm-entity";
+import { DepositRepository } from "@domain/repositories/deposit.repository";
+import { WithdrawalRepository } from "@domain/repositories/withdrawal.repository";
+import { DepositRepositoryImpl } from "./database/repositories/deposit.repository.impl";
+import { WithdrawalRepositoryImpl } from "./database/repositories/withdrawal.repository.impl";
+import {
+  PAYMENT_PROVIDER,
+  PaymentProviderInterface,
+} from "@application/interfaces/payment-provider.interface";
+import { FakePaymentProvider } from "./services/fake-payment-provider.service";
 
 /**
  * This module is the ONLY place where abstract tokens (interfaces) from
@@ -102,6 +113,8 @@ import { LedgerRepositoryImpl } from "./database/repositories/ledger.repository.
       AuditLogOrmEntity,
       UserBalanceOrmEntity,
       LedgerOrmEntity,
+      DepositOrmEntity,
+      WithdrawalOrmEntity,
     ]),
   ],
   providers: [
@@ -163,6 +176,18 @@ import { LedgerRepositoryImpl } from "./database/repositories/ledger.repository.
       provide: LedgerRepository,
       useClass: LedgerRepositoryImpl,
     },
+    {
+      provide: DepositRepository,
+      useClass: DepositRepositoryImpl,
+    },
+    {
+      provide: WithdrawalRepository,
+      useClass: WithdrawalRepositoryImpl,
+    },
+    {
+      provide: PAYMENT_PROVIDER,
+      useClass: FakePaymentProvider,
+    },
   ],
   exports: [
     UserRepository,
@@ -178,6 +203,9 @@ import { LedgerRepositoryImpl } from "./database/repositories/ledger.repository.
     UserBalanceRepository,
     UnitOfWork,
     LedgerRepository,
+    DepositRepository,
+    WithdrawalRepository,
+    PAYMENT_PROVIDER,
   ],
 })
 export class InfrastructureModule {}

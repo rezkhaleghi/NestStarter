@@ -14,6 +14,15 @@ import { InfrastructureModule } from "../infrastructure/infrastructure.module";
 import { GetUserBalancesUseCase } from "./use-cases/users/get-user-balances.use-case";
 import { UpdateUserBalanceUseCase } from "./use-cases/admin-users/update-user-balance.use-case";
 import { ListLedgersUseCase } from "./use-cases/admin-ledgers/list-ledgers.use-case";
+import { CreateDepositUseCase } from "./use-cases/deposits/create-deposit.use-case";
+import { VerifyDepositUseCase } from "./use-cases/deposits/verify-deposit.use-case";
+import { ListDepositsUseCase } from "./use-cases/deposits/list-deposits.use-case";
+import { GetDepositUseCase } from "./use-cases/deposits/get-deposit.use-case";
+import { CreateWithdrawalUseCase } from "./use-cases/withdrawals/create-withdrawal.use-case";
+import { ListWithdrawalsUseCase } from "./use-cases/withdrawals/list-withdrawals.use-case";
+import { GetWithdrawalUseCase } from "./use-cases/withdrawals/get-withdrawal.use-case";
+import { ApproveWithdrawalUseCase } from "./use-cases/withdrawals/approve-withdrawal.use-case";
+import { RejectWithdrawalUseCase } from "./use-cases/withdrawals/reject-withdrawal.use-case";
 
 /**
  * Registers application use cases. Infrastructure bindings are supplied by
@@ -36,6 +45,15 @@ import { ListLedgersUseCase } from "./use-cases/admin-ledgers/list-ledgers.use-c
     GetUserBalancesUseCase,
     UpdateUserBalanceUseCase,
     ListLedgersUseCase,
+    CreateDepositUseCase,
+    VerifyDepositUseCase,
+    ListDepositsUseCase,
+    GetDepositUseCase,
+    CreateWithdrawalUseCase,
+    ListWithdrawalsUseCase,
+    GetWithdrawalUseCase,
+    ApproveWithdrawalUseCase,
+    RejectWithdrawalUseCase,
   ],
   exports: [
     CreateUserUseCase,
@@ -52,6 +70,15 @@ import { ListLedgersUseCase } from "./use-cases/admin-ledgers/list-ledgers.use-c
     GetUserBalancesUseCase,
     UpdateUserBalanceUseCase,
     ListLedgersUseCase,
+    CreateDepositUseCase,
+    VerifyDepositUseCase,
+    ListDepositsUseCase,
+    GetDepositUseCase,
+    CreateWithdrawalUseCase,
+    ListWithdrawalsUseCase,
+    GetWithdrawalUseCase,
+    ApproveWithdrawalUseCase,
+    RejectWithdrawalUseCase,
   ],
 })
 export class ApplicationModule {}

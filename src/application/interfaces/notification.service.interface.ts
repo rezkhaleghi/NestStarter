@@ -4,4 +4,73 @@ export abstract class NotificationService {
     otp: string,
     expirySeconds: number,
   ): Promise<void>;
+
+  abstract sendWithdrawalApproved(
+    email: string,
+    payload: {
+      userName?: string;
+      amount: string;
+      currency: string;
+      withdrawalId: string;
+      referenceId: string;
+      status: string;
+      destination?: string;
+      timestamp: Date;
+      reason?: string;
+    },
+  ): Promise<void>;
+
+  abstract sendWithdrawalRejected(
+    email: string,
+    payload: {
+      userName?: string;
+      amount: string;
+      currency: string;
+      withdrawalId: string;
+      referenceId: string;
+      status: string;
+      rejectionReason?: string;
+      timestamp: Date;
+    },
+  ): Promise<void>;
+
+  abstract sendWithdrawalCompleted(
+    email: string,
+    payload: {
+      userName?: string;
+      amount: string;
+      currency: string;
+      withdrawalId: string;
+      referenceId: string;
+      destination?: string;
+      transactionId?: string;
+      timestamp: Date;
+    },
+  ): Promise<void>;
+
+  abstract sendWithdrawalFailed(
+    email: string,
+    payload: {
+      userName?: string;
+      amount: string;
+      currency: string;
+      withdrawalId: string;
+      referenceId: string;
+      reason?: string;
+      timestamp: Date;
+    },
+  ): Promise<void>;
+
+  abstract sendDepositCompleted(
+    email: string,
+    payload: {
+      userName?: string;
+      amount: string;
+      currency: string;
+      depositId: string;
+      referenceId: string;
+      transactionId?: string;
+      timestamp: Date;
+    },
+  ): Promise<void>;
 }
