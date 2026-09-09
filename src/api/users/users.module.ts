@@ -4,10 +4,11 @@ import { InfrastructureModule } from "../../infrastructure/infrastructure.module
 import { ApplicationModule } from "../../application/application.module";
 
 import { UsersController } from "./users.controller";
-import { FinancialController } from "./financial.controller";
+import { DepositsController } from "./deposits.controller";
+import { WithdrawalsController } from "./withdrawals.controller";
 
 @Module({
   imports: [ApplicationModule, InfrastructureModule],
-  controllers: [UsersController, FinancialController],
+  controllers: [UsersController, DepositsController, WithdrawalsController],
 })
 export class UsersModule {}

@@ -16,13 +16,17 @@ import { UpdateUserBalanceUseCase } from "./use-cases/admin-users/update-user-ba
 import { ListLedgersUseCase } from "./use-cases/admin-ledgers/list-ledgers.use-case";
 import { CreateDepositUseCase } from "./use-cases/deposits/create-deposit.use-case";
 import { VerifyDepositUseCase } from "./use-cases/deposits/verify-deposit.use-case";
+import { AdminListDepositsUseCase } from "./use-cases/admin-financials/list-deposits.use-case";
+import { AdminGetDepositUseCase } from "./use-cases/admin-financials/get-deposit.use-case";
+import { CreateWithdrawalUseCase } from "./use-cases/withdrawals/create-withdrawal.use-case";
+import { AdminListWithdrawalsUseCase } from "./use-cases/admin-financials/list-withdrawals.use-case";
+import { AdminGetWithdrawalUseCase } from "./use-cases/admin-financials/get-withdrawal.use-case";
+import { AdminApproveWithdrawalUseCase } from "./use-cases/admin-financials/approve-withdrawal.use-case";
+import { AdminRejectWithdrawalUseCase } from "./use-cases/admin-financials/reject-withdrawal.use-case";
 import { ListDepositsUseCase } from "./use-cases/deposits/list-deposits.use-case";
 import { GetDepositUseCase } from "./use-cases/deposits/get-deposit.use-case";
-import { CreateWithdrawalUseCase } from "./use-cases/withdrawals/create-withdrawal.use-case";
 import { ListWithdrawalsUseCase } from "./use-cases/withdrawals/list-withdrawals.use-case";
 import { GetWithdrawalUseCase } from "./use-cases/withdrawals/get-withdrawal.use-case";
-import { ApproveWithdrawalUseCase } from "./use-cases/withdrawals/approve-withdrawal.use-case";
-import { RejectWithdrawalUseCase } from "./use-cases/withdrawals/reject-withdrawal.use-case";
 
 /**
  * Registers application use cases. Infrastructure bindings are supplied by
@@ -52,8 +56,12 @@ import { RejectWithdrawalUseCase } from "./use-cases/withdrawals/reject-withdraw
     CreateWithdrawalUseCase,
     ListWithdrawalsUseCase,
     GetWithdrawalUseCase,
-    ApproveWithdrawalUseCase,
-    RejectWithdrawalUseCase,
+    AdminListDepositsUseCase,
+    AdminGetDepositUseCase,
+    AdminListWithdrawalsUseCase,
+    AdminGetWithdrawalUseCase,
+    AdminApproveWithdrawalUseCase,
+    AdminRejectWithdrawalUseCase,
   ],
   exports: [
     CreateUserUseCase,
@@ -77,8 +85,12 @@ import { RejectWithdrawalUseCase } from "./use-cases/withdrawals/reject-withdraw
     CreateWithdrawalUseCase,
     ListWithdrawalsUseCase,
     GetWithdrawalUseCase,
-    ApproveWithdrawalUseCase,
-    RejectWithdrawalUseCase,
+    AdminListDepositsUseCase,
+    AdminGetDepositUseCase,
+    AdminListWithdrawalsUseCase,
+    AdminGetWithdrawalUseCase,
+    AdminApproveWithdrawalUseCase,
+    AdminRejectWithdrawalUseCase,
   ],
 })
 export class ApplicationModule {}

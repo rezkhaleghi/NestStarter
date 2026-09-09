@@ -15,7 +15,8 @@ import { AdminUserBalancesController } from "./admin-user-balances.controller";
 import { UpdateUserBalanceUseCase } from "@application/use-cases/admin-users/update-user-balance.use-case";
 import { AdminLedgersController } from "./admin-ledgers.controller";
 import { ListLedgersUseCase } from "@application/use-cases/admin-ledgers/list-ledgers.use-case";
-import { FinancialAdminController } from "./financial-admin.controller";
+import { AdminDepositController } from "./admin-deposit.controller";
+import { AdminWithdrawalController } from "./admin-withdrawal.controller";
 
 @Module({
   imports: [ApplicationModule, InfrastructureModule],
@@ -23,7 +24,8 @@ import { FinancialAdminController } from "./financial-admin.controller";
     AdminUsersController,
     AdminUserBalancesController,
     AdminLedgersController,
-    FinancialAdminController,
+    AdminDepositController,
+    AdminWithdrawalController,
   ],
   providers: [
     AdminAuthGuard,

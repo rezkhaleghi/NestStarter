@@ -12,7 +12,7 @@ export interface ApproveWithdrawalInput {
 }
 
 @Injectable()
-export class ApproveWithdrawalUseCase {
+export class AdminApproveWithdrawalUseCase {
   constructor(private readonly unitOfWork: UnitOfWork) {}
 
   async execute(input: ApproveWithdrawalInput): Promise<Withdrawal> {

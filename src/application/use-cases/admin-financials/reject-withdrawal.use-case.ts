@@ -16,7 +16,7 @@ export interface RejectWithdrawalInput {
 }
 
 @Injectable()
-export class RejectWithdrawalUseCase {
+export class AdminRejectWithdrawalUseCase {
   constructor(private readonly unitOfWork: UnitOfWork) {}
 
   async execute(input: RejectWithdrawalInput): Promise<Withdrawal> {

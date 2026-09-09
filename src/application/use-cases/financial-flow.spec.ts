@@ -13,8 +13,8 @@ import { Withdrawal } from "@domain/entities/withdrawal.entity";
 import { CreateDepositUseCase } from "./deposits/create-deposit.use-case";
 import { VerifyDepositUseCase } from "./deposits/verify-deposit.use-case";
 import { CreateWithdrawalUseCase } from "./withdrawals/create-withdrawal.use-case";
-import { ApproveWithdrawalUseCase } from "./withdrawals/approve-withdrawal.use-case";
-import { RejectWithdrawalUseCase } from "./withdrawals/reject-withdrawal.use-case";
+import { AdminApproveWithdrawalUseCase } from "./admin-financials/approve-withdrawal.use-case";
+import { AdminRejectWithdrawalUseCase } from "./admin-financials/reject-withdrawal.use-case";
 
 const makeUser = (id: string) =>
   User.create({
@@ -196,7 +196,7 @@ describe("financial flows", () => {
     expect(withdrawal.status).toBe(WithdrawalStatus.PENDING);
     expect(userBalanceRepository.save).toHaveBeenCalled();
 
-    const approveUseCase = new ApproveWithdrawalUseCase(unitOfWork as any);
+    const approveUseCase = new AdminApproveWithdrawalUseCase(unitOfWork as any);
     const pendingWithdrawal = Withdrawal.create({
       id: withdrawal.id,
       userId,
@@ -215,7 +215,7 @@ describe("financial flows", () => {
     });
     expect(approved.status).toBe(WithdrawalStatus.APPROVED);
 
-    const rejectUseCase = new RejectWithdrawalUseCase(unitOfWork as any);
+    const rejectUseCase = new AdminRejectWithdrawalUseCase(unitOfWork as any);
     const rejectableWithdrawal = Withdrawal.create({
       id: approved.id,
       userId,
