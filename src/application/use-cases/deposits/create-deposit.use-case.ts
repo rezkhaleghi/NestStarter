@@ -1,5 +1,4 @@
-import { Injectable } from "@nestjs/common";
-import { Inject } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import { randomUUID } from "crypto";
 
 import { Deposit } from "@domain/entities/deposit.entity";
@@ -11,6 +10,7 @@ import {
   PaymentProviderInterface,
 } from "@application/interfaces/payment-provider.interface";
 import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
+import { isNegativeDecimal, isZeroDecimal } from "@domain/utils/decimal.util";
 
 export interface CreateDepositInput {
   userId: string;
@@ -30,6 +30,7 @@ export class CreateDepositUseCase {
     return this.unitOfWork.execute(
       async ({ userRepository, depositRepository }) => {
         const user = await userRepository.findById(input.userId);
+
         if (!user) {
           throw new UserNotFoundException();
         }
@@ -42,8 +43,7 @@ export class CreateDepositUseCase {
           );
         }
 
-        const amountValue = Number(input.amount);
-        if (!Number.isFinite(amountValue) || amountValue <= 0) {
+        if (isNegativeDecimal(input.amount) || isZeroDecimal(input.amount)) {
           throw new Error("Deposit amount must be positive.");
         }
 
@@ -66,8 +66,7 @@ export class CreateDepositUseCase {
 
         deposit.setProviderPayment(payment.providerPaymentId);
 
-        const saved = await depositRepository.create(deposit);
-        return saved;
+        return depositRepository.create(deposit);
       },
     );
   }

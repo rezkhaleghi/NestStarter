@@ -1,3 +1,5 @@
+const MAX_DECIMAL_SCALE = 18;
+
 export function addDecimal(a: string, b: string): string {
   const aParts = parseDecimal(a);
   const bParts = parseDecimal(b);
@@ -7,9 +9,7 @@ export function addDecimal(a: string, b: string): string {
   const aValue = aParts.value * 10n ** BigInt(scale - aParts.scale);
   const bValue = bParts.value * 10n ** BigInt(scale - bParts.scale);
 
-  const result = aValue + bValue;
-
-  return formatDecimal(result, scale);
+  return formatDecimal(aValue + bValue, scale);
 }
 
 export function subtractDecimal(a: string, b: string): string {
@@ -21,13 +21,15 @@ export function subtractDecimal(a: string, b: string): string {
   const aValue = aParts.value * 10n ** BigInt(scale - aParts.scale);
   const bValue = bParts.value * 10n ** BigInt(scale - bParts.scale);
 
-  const result = aValue - bValue;
-
-  return formatDecimal(result, scale);
+  return formatDecimal(aValue - bValue, scale);
 }
 
 export function isNegativeDecimal(value: string): boolean {
   return parseDecimal(value).value < 0n;
+}
+
+export function isZeroDecimal(value: string): boolean {
+  return parseDecimal(value).value === 0n;
 }
 
 function parseDecimal(input: string): {
@@ -44,6 +46,12 @@ function parseDecimal(input: string): {
   const unsigned = negative ? normalized.slice(1) : normalized;
 
   const [integerPart, decimalPart = ""] = unsigned.split(".");
+
+  if (decimalPart.length > MAX_DECIMAL_SCALE) {
+    throw new Error(
+      `Decimal value cannot have more than ${MAX_DECIMAL_SCALE} decimal places.`,
+    );
+  }
 
   const scaledValue = BigInt(`${integerPart}${decimalPart}`);
 
@@ -69,8 +77,4 @@ function formatDecimal(value: bigint, scale: number): string {
   return `${negative ? "-" : ""}${integerPart}${
     decimalPart ? `.${decimalPart}` : ""
   }`;
-}
-
-export function isZeroDecimal(value: string): boolean {
-  return value.trim() === "0" || /^[-+]?0+(\.0+)?$/.test(value.trim());
 }
