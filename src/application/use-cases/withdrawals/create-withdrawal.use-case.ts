@@ -36,11 +36,13 @@ export class CreateWithdrawalUseCase {
         withdrawalRepository,
       }) => {
         const user = await userRepository.findById(input.userId);
+
         if (!user) {
           throw new UserNotFoundException();
         }
 
         const amountValue = Number(input.amount);
+
         if (!Number.isFinite(amountValue) || amountValue <= 0) {
           throw new Error("Withdrawal amount must be positive.");
         }
@@ -50,16 +52,22 @@ export class CreateWithdrawalUseCase {
             input.userId,
             input.currency,
           );
+
         if (!balance) {
           throw new Error(`No balance exists for ${input.currency}.`);
         }
 
-        const after = subtractDecimal(balance.amount, input.amount);
-        if (Number(after) < 0) {
+        // Preserve the original balance before mutating the entity.
+        const balanceBefore = balance.amount;
+
+        const balanceAfter = subtractDecimal(balanceBefore, input.amount);
+
+        if (Number(balanceAfter) < 0) {
           throw new InsufficientBalanceException();
         }
 
-        balance.amount = after;
+        balance.amount = balanceAfter;
+
         const savedBalance = await userBalanceRepository.save(balance);
 
         const withdrawal = Withdrawal.create({
@@ -79,7 +87,7 @@ export class CreateWithdrawalUseCase {
             userId: input.userId,
             currency: input.currency,
             amount: `-${input.amount}`,
-            balanceBefore: balance.amount,
+            balanceBefore,
             balanceAfter: savedBalance.amount,
             type: LedgerType.WITHDRAWAL,
             referenceId: savedWithdrawal.referenceId,

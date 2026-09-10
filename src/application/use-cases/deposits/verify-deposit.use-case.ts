@@ -1,5 +1,4 @@
-import { Injectable } from "@nestjs/common";
-import { Inject } from "@nestjs/common";
+import { Injectable, Inject } from "@nestjs/common";
 
 import { Deposit } from "@domain/entities/deposit.entity";
 import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
@@ -43,6 +42,7 @@ export class VerifyDepositUseCase {
         const deposit = await depositRepository.findByIdForUpdate(
           input.depositId,
         );
+
         if (!deposit) {
           throw new Error("Deposit not found.");
         }
@@ -73,27 +73,31 @@ export class VerifyDepositUseCase {
           throw new Error("Verified deposit amount or currency mismatch.");
         }
 
-        const balanceBefore =
+        const balance =
           await userBalanceRepository.findByUserIdAndCurrencyForUpdate(
             deposit.userId,
             deposit.currency,
           );
 
-        if (!balanceBefore) {
+        if (!balance) {
           throw new UserBalanceNotFoundException(deposit.currency);
         }
 
-        const balanceAfter = addDecimal(balanceBefore.amount, deposit.amount);
-        balanceBefore.amount = balanceAfter;
+        // Preserve the original balance before mutating the entity.
+        const balanceBefore = balance.amount;
 
-        const savedBalance = await userBalanceRepository.save(balanceBefore);
+        const balanceAfter = addDecimal(balanceBefore, deposit.amount);
+
+        balance.amount = balanceAfter;
+
+        const savedBalance = await userBalanceRepository.save(balance);
 
         await ledgerRepository.create(
           Ledger.create({
             userId: deposit.userId,
             currency: deposit.currency,
             amount: deposit.amount,
-            balanceBefore: balanceBefore.amount,
+            balanceBefore,
             balanceAfter: savedBalance.amount,
             type: LedgerType.DEPOSIT,
             referenceId: deposit.referenceId,
@@ -106,6 +110,7 @@ export class VerifyDepositUseCase {
         );
 
         deposit.markCompleted(verification.transactionId);
+
         await depositRepository.save(deposit);
 
         await auditLogRepository.create(
