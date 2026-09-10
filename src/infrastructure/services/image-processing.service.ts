@@ -1,6 +1,10 @@
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import sharp = require("sharp");
+
 import { ImageProcessing } from "../../application/interfaces/image-processing.interface";
+
+const MAX_AVATAR_DIMENSION = 4096;
+const MAX_AVATAR_PIXELS = 16_777_216; // 4096 × 4096
 
 @Injectable()
 export class ImageProcessingService implements ImageProcessing {
@@ -19,15 +23,11 @@ export class ImageProcessingService implements ImageProcessing {
        * project's CommonJS TypeScript configuration, TypeScript does not
        * recognize the imported Sharp module as callable.
        *
-       * We intentionally cast it here instead of enabling `esModuleInterop`
-       * globally, because changing the module interop configuration affects
-       * other CommonJS dependencies in the application (such as Passport).
-       *
-       * This workaround is isolated to the infrastructure layer and can be
-       * removed if a future Sharp/TypeScript setup provides compatible typings.
+       * This workaround is isolated to the infrastructure layer.
        */
       const image = (sharp as unknown as (input: Buffer) => any)(buffer);
 
+      // Metadata inspection does not decode the entire image.
       const metadata = await image.metadata();
 
       this.logger.debug(
@@ -36,6 +36,31 @@ export class ImageProcessingService implements ImageProcessing {
 
       if (!metadata.format) {
         throw new BadRequestException("Could not determine image format");
+      }
+
+      const supportedFormats = new Set(["jpeg", "png", "webp", "gif"]);
+
+      if (!supportedFormats.has(metadata.format)) {
+        throw new BadRequestException(
+          "The uploaded file format is not supported",
+        );
+      }
+
+      const width = metadata.width ?? 0;
+      const height = metadata.height ?? 0;
+
+      if (width <= 0 || height <= 0) {
+        throw new BadRequestException("Could not determine image dimensions");
+      }
+
+      if (
+        width > MAX_AVATAR_DIMENSION ||
+        height > MAX_AVATAR_DIMENSION ||
+        width * height > MAX_AVATAR_PIXELS
+      ) {
+        throw new BadRequestException(
+          `Image dimensions must not exceed ${MAX_AVATAR_DIMENSION}x${MAX_AVATAR_DIMENSION}`,
+        );
       }
 
       const processedImage = await image
