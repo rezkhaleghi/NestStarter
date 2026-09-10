@@ -13,6 +13,7 @@ import { DepositStatus } from "@domain/enums/deposit-status.enum";
 @Entity("deposits")
 @Index(["userId", "createdAt"])
 @Index(["referenceId"], { unique: true })
+@Index(["providerPaymentId"], { unique: true })
 export class DepositOrmEntity {
   @PrimaryColumn("uuid")
   id!: string;
@@ -27,7 +28,11 @@ export class DepositOrmEntity {
   @Column({ type: "decimal", precision: 30, scale: 18 })
   amount!: string;
 
-  @Column({ type: "enum", enum: DepositStatus, default: DepositStatus.PENDING })
+  @Column({
+    type: "enum",
+    enum: DepositStatus,
+    default: DepositStatus.PENDING,
+  })
   status!: DepositStatus;
 
   @Column({ type: "uuid" })
