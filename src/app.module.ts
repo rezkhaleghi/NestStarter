@@ -7,6 +7,7 @@ import { HealthModule } from "./api/health/health.module";
 import { InfrastructureModule } from "./infrastructure/infrastructure.module";
 import { UsersModule } from "./api/users/users.module";
 import { FilesModule } from "./api/files/files.module";
+import { TicketsModule } from "./api/tickets/tickets.module";
 
 /**
  * Root application module.
@@ -24,6 +25,7 @@ import { FilesModule } from "./api/files/files.module";
     AdminModule,
     HealthModule,
     UsersModule,
+    TicketsModule,
     FilesModule,
   ],
 

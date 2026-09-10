@@ -6,6 +6,9 @@ import { UserBalanceOrmEntity } from "@infrastructure/database/orm-entities/user
 import { LedgerOrmEntity } from "@infrastructure/database/orm-entities/ledger.orm-entity";
 import { DepositOrmEntity } from "@infrastructure/database/orm-entities/deposit.orm-entity";
 import { WithdrawalOrmEntity } from "@infrastructure/database/orm-entities/withdrawal.orm-entity";
+import { TicketOrmEntity } from "../database/orm-entities/ticket.orm-entity";
+import { TicketMessageOrmEntity } from "../database/orm-entities/ticket-message.orm-entity";
+import { TicketCategoryOrmEntity } from "../database/orm-entities/ticket-category.orm-entity";
 
 /**
  * NestJS database configuration.
@@ -29,6 +32,9 @@ export default registerAs(
       LedgerOrmEntity,
       DepositOrmEntity,
       WithdrawalOrmEntity,
+      TicketOrmEntity,
+      TicketMessageOrmEntity,
+      TicketCategoryOrmEntity,
     ],
     // synchronize: process.env.NODE_ENV === "development",
     synchronize: false,

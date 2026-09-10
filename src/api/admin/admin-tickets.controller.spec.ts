@@ -17,7 +17,6 @@ describe("AdminTicketsController", () => {
       {} as any,
       {} as any,
       {} as any,
-      {} as any,
     );
 
     await controller.status(

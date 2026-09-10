@@ -233,6 +233,124 @@ export class SmtpNotificationService implements NotificationPort, OnModuleInit {
     );
   }
 
+  async sendTicketReplied(
+    email: string,
+    payload: {
+      userName?: string;
+      ticketId: string;
+      ticketSubject: string;
+      ticketStatus: string;
+      messagePreview: string;
+      updatedAt: Date;
+      frontendUrl?: string;
+    },
+  ): Promise<void> {
+    await this.sendEmail(
+      email,
+      `Support update: ${payload.ticketSubject}`,
+      `A support agent replied to ticket ${payload.ticketId}.`,
+      this.renderTemplate({
+        title: "Support ticket updated",
+        heading: "Support ticket reply",
+        message: `A support agent replied to your ticket "${payload.ticketSubject}".`,
+        details: [
+          ["Ticket ID", payload.ticketId],
+          ["Status", payload.ticketStatus],
+          ["Subject", payload.ticketSubject],
+          ["Preview", payload.messagePreview],
+          ["Updated at", payload.updatedAt.toISOString()],
+        ],
+      }),
+    );
+  }
+
+  async sendTicketResolved(
+    email: string,
+    payload: {
+      userName?: string;
+      ticketId: string;
+      ticketSubject: string;
+      ticketStatus: string;
+      updatedAt: Date;
+      frontendUrl?: string;
+    },
+  ): Promise<void> {
+    await this.sendEmail(
+      email,
+      `Support ticket resolved: ${payload.ticketSubject}`,
+      `Your ticket ${payload.ticketId} has been marked as resolved.`,
+      this.renderTemplate({
+        title: "Support ticket resolved",
+        heading: "Ticket resolved",
+        message: `Your ticket "${payload.ticketSubject}" has been resolved and is now waiting for your confirmation.`,
+        details: [
+          ["Ticket ID", payload.ticketId],
+          ["Status", payload.ticketStatus],
+          ["Subject", payload.ticketSubject],
+          ["Updated at", payload.updatedAt.toISOString()],
+        ],
+      }),
+    );
+  }
+
+  async sendTicketClosed(
+    email: string,
+    payload: {
+      userName?: string;
+      ticketId: string;
+      ticketSubject: string;
+      ticketStatus: string;
+      updatedAt: Date;
+      frontendUrl?: string;
+    },
+  ): Promise<void> {
+    await this.sendEmail(
+      email,
+      `Support ticket closed: ${payload.ticketSubject}`,
+      `Your ticket ${payload.ticketId} has been closed.`,
+      this.renderTemplate({
+        title: "Support ticket closed",
+        heading: "Ticket closed",
+        message: `Your ticket "${payload.ticketSubject}" has been closed.`,
+        details: [
+          ["Ticket ID", payload.ticketId],
+          ["Status", payload.ticketStatus],
+          ["Subject", payload.ticketSubject],
+          ["Updated at", payload.updatedAt.toISOString()],
+        ],
+      }),
+    );
+  }
+
+  async sendTicketReopened(
+    email: string,
+    payload: {
+      userName?: string;
+      ticketId: string;
+      ticketSubject: string;
+      ticketStatus: string;
+      updatedAt: Date;
+      frontendUrl?: string;
+    },
+  ): Promise<void> {
+    await this.sendEmail(
+      email,
+      `Support ticket reopened: ${payload.ticketSubject}`,
+      `Your ticket ${payload.ticketId} has been reopened.`,
+      this.renderTemplate({
+        title: "Support ticket reopened",
+        heading: "Ticket reopened",
+        message: `Your ticket "${payload.ticketSubject}" has been reopened and support is actively reviewing it.`,
+        details: [
+          ["Ticket ID", payload.ticketId],
+          ["Status", payload.ticketStatus],
+          ["Subject", payload.ticketSubject],
+          ["Updated at", payload.updatedAt.toISOString()],
+        ],
+      }),
+    );
+  }
+
   async sendEmail(
     to: string,
     subject: string,

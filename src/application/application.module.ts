@@ -27,6 +27,20 @@ import { ListDepositsUseCase } from "./use-cases/deposits/list-deposits.use-case
 import { GetDepositUseCase } from "./use-cases/deposits/get-deposit.use-case";
 import { ListWithdrawalsUseCase } from "./use-cases/withdrawals/list-withdrawals.use-case";
 import { GetWithdrawalUseCase } from "./use-cases/withdrawals/get-withdrawal.use-case";
+import { CreateTicketUseCase } from "./use-cases/tickets/create-ticket.use-case";
+import { ListUserTicketsUseCase } from "./use-cases/tickets/list-user-tickets.use-case";
+import { GetTicketUseCase } from "./use-cases/tickets/get-ticket.use-case";
+import { CreateTicketMessageUseCase } from "./use-cases/tickets/create-ticket-message.use-case";
+import { ListAdminTicketsUseCase } from "./use-cases/admin-tickets/list-admin-tickets.use-case";
+import { GetAdminTicketUseCase } from "./use-cases/admin-tickets/get-admin-ticket.use-case";
+import { CreateAdminTicketMessageUseCase } from "./use-cases/admin-tickets/create-admin-ticket-message.use-case";
+import { AssignTicketUseCase } from "./use-cases/admin-tickets/assign-ticket.use-case";
+import { UpdateTicketStatusUseCase } from "./use-cases/admin-tickets/update-ticket-status.use-case";
+import { UpdateTicketPriorityUseCase } from "./use-cases/admin-tickets/update-ticket-priority.use-case";
+import { ListTicketCategoriesUseCase } from "./use-cases/admin-tickets/list-ticket-categories.use-case";
+import { CreateTicketCategoryUseCase } from "./use-cases/admin-tickets/create-ticket-category.use-case";
+import { UpdateTicketCategoryUseCase } from "./use-cases/admin-tickets/update-ticket-category.use-case";
+import { DeleteTicketCategoryUseCase } from "./use-cases/admin-tickets/delete-ticket-category.use-case";
 
 /**
  * Registers application use cases. Infrastructure bindings are supplied by
@@ -62,6 +76,20 @@ import { GetWithdrawalUseCase } from "./use-cases/withdrawals/get-withdrawal.use
     AdminGetWithdrawalUseCase,
     AdminApproveWithdrawalUseCase,
     AdminRejectWithdrawalUseCase,
+    CreateTicketUseCase,
+    ListUserTicketsUseCase,
+    GetTicketUseCase,
+    CreateTicketMessageUseCase,
+    ListAdminTicketsUseCase,
+    GetAdminTicketUseCase,
+    CreateAdminTicketMessageUseCase,
+    AssignTicketUseCase,
+    UpdateTicketStatusUseCase,
+    UpdateTicketPriorityUseCase,
+    ListTicketCategoriesUseCase,
+    CreateTicketCategoryUseCase,
+    UpdateTicketCategoryUseCase,
+    DeleteTicketCategoryUseCase,
   ],
   exports: [
     CreateUserUseCase,
@@ -91,6 +119,20 @@ import { GetWithdrawalUseCase } from "./use-cases/withdrawals/get-withdrawal.use
     AdminGetWithdrawalUseCase,
     AdminApproveWithdrawalUseCase,
     AdminRejectWithdrawalUseCase,
+    CreateTicketUseCase,
+    ListUserTicketsUseCase,
+    GetTicketUseCase,
+    CreateTicketMessageUseCase,
+    ListAdminTicketsUseCase,
+    GetAdminTicketUseCase,
+    CreateAdminTicketMessageUseCase,
+    AssignTicketUseCase,
+    UpdateTicketStatusUseCase,
+    UpdateTicketPriorityUseCase,
+    ListTicketCategoriesUseCase,
+    CreateTicketCategoryUseCase,
+    UpdateTicketCategoryUseCase,
+    DeleteTicketCategoryUseCase,
   ],
 })
 export class ApplicationModule {}

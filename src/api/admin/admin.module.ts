@@ -17,6 +17,17 @@ import { AdminLedgersController } from "./admin-ledgers.controller";
 import { ListLedgersUseCase } from "@application/use-cases/admin-financials/list-ledgers.use-case";
 import { AdminDepositController } from "./admin-deposit.controller";
 import { AdminWithdrawalController } from "./admin-withdrawal.controller";
+import { AdminTicketsController } from "./admin-tickets.controller";
+import { ListAdminTicketsUseCase } from "@application/use-cases/admin-tickets/list-admin-tickets.use-case";
+import { GetAdminTicketUseCase } from "@application/use-cases/admin-tickets/get-admin-ticket.use-case";
+import { CreateAdminTicketMessageUseCase } from "@application/use-cases/admin-tickets/create-admin-ticket-message.use-case";
+import { AssignTicketUseCase } from "@application/use-cases/admin-tickets/assign-ticket.use-case";
+import { UpdateTicketStatusUseCase } from "@application/use-cases/admin-tickets/update-ticket-status.use-case";
+import { UpdateTicketPriorityUseCase } from "@application/use-cases/admin-tickets/update-ticket-priority.use-case";
+import { ListTicketCategoriesUseCase } from "@application/use-cases/admin-tickets/list-ticket-categories.use-case";
+import { CreateTicketCategoryUseCase } from "@application/use-cases/admin-tickets/create-ticket-category.use-case";
+import { UpdateTicketCategoryUseCase } from "@application/use-cases/admin-tickets/update-ticket-category.use-case";
+import { DeleteTicketCategoryUseCase } from "@application/use-cases/admin-tickets/delete-ticket-category.use-case";
 
 @Module({
   imports: [ApplicationModule, InfrastructureModule],
@@ -26,6 +37,7 @@ import { AdminWithdrawalController } from "./admin-withdrawal.controller";
     AdminLedgersController,
     AdminDepositController,
     AdminWithdrawalController,
+    AdminTicketsController,
   ],
   providers: [
     AdminAuthGuard,
@@ -39,6 +51,16 @@ import { AdminWithdrawalController } from "./admin-withdrawal.controller";
     GetAuditLogsUseCase,
     UpdateUserBalanceUseCase,
     ListLedgersUseCase,
+    ListAdminTicketsUseCase,
+    GetAdminTicketUseCase,
+    CreateAdminTicketMessageUseCase,
+    AssignTicketUseCase,
+    UpdateTicketStatusUseCase,
+    UpdateTicketPriorityUseCase,
+    ListTicketCategoriesUseCase,
+    CreateTicketCategoryUseCase,
+    UpdateTicketCategoryUseCase,
+    DeleteTicketCategoryUseCase,
   ],
 })
 export class AdminModule {}
