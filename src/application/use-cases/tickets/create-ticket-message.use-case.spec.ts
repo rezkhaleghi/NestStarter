@@ -5,8 +5,8 @@ import { Ticket } from "@domain/entities/ticket.entity";
 describe("CreateTicketMessageUseCase", () => {
   it("moves a waiting-for-user ticket back to in progress when the user replies", async () => {
     const ticket = Ticket.create({ userId: "user-1", subject: "Login" });
+    ticket.setStatus(TicketStatus.IN_PROGRESS);
     ticket.setStatus(TicketStatus.WAITING_FOR_USER);
-
     const unitOfWork = {
       execute: jest.fn(async (work) =>
         work({
