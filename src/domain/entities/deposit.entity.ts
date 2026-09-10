@@ -54,8 +54,8 @@ export class Deposit {
   }
 
   markCompleted(transactionId?: string): void {
-    if (this.status === DepositStatus.COMPLETED) {
-      return;
+    if (this.status !== DepositStatus.PENDING) {
+      throw new Error(`Cannot complete deposit from status ${this.status}.`);
     }
 
     this.status = DepositStatus.COMPLETED;
@@ -65,17 +65,19 @@ export class Deposit {
   }
 
   markFailed(): void {
-    if (this.status === DepositStatus.COMPLETED) {
-      return;
+    if (this.status !== DepositStatus.PENDING) {
+      throw new Error(`Cannot fail deposit from status ${this.status}.`);
     }
+
     this.status = DepositStatus.FAILED;
     this.updatedAt = new Date();
   }
 
   markCancelled(): void {
-    if (this.status === DepositStatus.COMPLETED) {
-      return;
+    if (this.status !== DepositStatus.PENDING) {
+      throw new Error(`Cannot cancel deposit from status ${this.status}.`);
     }
+
     this.status = DepositStatus.CANCELLED;
     this.updatedAt = new Date();
   }
