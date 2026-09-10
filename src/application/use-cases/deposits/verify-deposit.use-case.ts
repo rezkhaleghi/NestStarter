@@ -1,19 +1,22 @@
 import { Injectable, Inject } from "@nestjs/common";
 
 import { Deposit } from "@domain/entities/deposit.entity";
+import { AuditLog } from "@domain/entities/audit-log.entity";
+import { Ledger } from "@domain/entities/ledger.entity";
+
 import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
 import { DepositStatus } from "@domain/enums/deposit-status.enum";
 import { LedgerType } from "@domain/enums/ledger-type.enum";
 import { AuditAction } from "@domain/enums/audit-action.enum";
+
 import { UserBalanceNotFoundException } from "@domain/exceptions/domain.exception";
 import { addDecimal } from "@domain/utils/decimal.util";
+
 import {
   PAYMENT_PROVIDER,
   PaymentProviderInterface,
 } from "@application/interfaces/payment-provider.interface";
 import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
-import { AuditLog } from "@domain/entities/audit-log.entity";
-import { Ledger } from "@domain/entities/ledger.entity";
 
 export interface VerifyDepositInput {
   depositId: string;
@@ -62,15 +65,16 @@ export class VerifyDepositUseCase {
         const verification = await this.paymentProvider.verifyPayment({
           providerPaymentId: input.providerPaymentId,
           referenceId: input.referenceId,
-          amount: input.amount,
-          currency: input.currency,
+          amount: deposit.amount,
+          currency: deposit.currency,
         });
 
         if (
+          verification.providerPaymentId !== deposit.providerPaymentId ||
           verification.amount !== deposit.amount ||
           verification.currency !== deposit.currency
         ) {
-          throw new Error("Verified deposit amount or currency mismatch.");
+          throw new Error("Verified payment does not match the deposit.");
         }
 
         const balance =
@@ -83,7 +87,6 @@ export class VerifyDepositUseCase {
           throw new UserBalanceNotFoundException(deposit.currency);
         }
 
-        // Preserve the original balance before mutating the entity.
         const balanceBefore = balance.amount;
 
         const balanceAfter = addDecimal(balanceBefore, deposit.amount);
@@ -103,7 +106,7 @@ export class VerifyDepositUseCase {
             referenceId: deposit.referenceId,
             metadata: {
               depositId: deposit.id,
-              providerPaymentId: input.providerPaymentId,
+              providerPaymentId: verification.providerPaymentId,
               transactionId: verification.transactionId,
             },
           }),
