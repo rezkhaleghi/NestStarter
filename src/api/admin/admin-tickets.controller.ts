@@ -14,14 +14,24 @@ import {
   ApiBody,
   ApiOperation,
   ApiParam,
-  ApiProperty,
-  ApiPropertyOptional,
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
 import type { Request } from "express";
 
 import { AdminAuthGuard } from "./admin-auth.guard";
+import {
+  AdminListCategoriesQueryDto,
+  AdminListTicketsQueryDto,
+} from "./dtos/admin-ticket-query.dto";
+import {
+  AssignTicketRequestDto,
+  CreateAdminTicketMessageRequestDto,
+  CreateTicketCategoryRequestDto,
+  UpdateTicketCategoryRequestDto,
+  UpdateTicketPriorityRequestDto,
+  UpdateTicketStatusRequestDto,
+} from "./dtos/admin-ticket.request.dto";
 import { ListAdminTicketsUseCase } from "@application/use-cases/admin-tickets/list-admin-tickets.use-case";
 import { GetAdminTicketUseCase } from "@application/use-cases/admin-tickets/get-admin-ticket.use-case";
 import { CreateAdminTicketMessageUseCase } from "@application/use-cases/admin-tickets/create-admin-ticket-message.use-case";
@@ -32,95 +42,6 @@ import { ListTicketCategoriesUseCase } from "@application/use-cases/admin-ticket
 import { CreateTicketCategoryUseCase } from "@application/use-cases/admin-tickets/create-ticket-category.use-case";
 import { UpdateTicketCategoryUseCase } from "@application/use-cases/admin-tickets/update-ticket-category.use-case";
 import { DeleteTicketCategoryUseCase } from "@application/use-cases/admin-tickets/delete-ticket-category.use-case";
-import { TicketPriority } from "@domain/enums/ticket-priority.enum";
-import { TicketStatus } from "@domain/enums/ticket-status.enum";
-
-class AdminListTicketsQueryDto {
-  @ApiPropertyOptional({ default: 1, minimum: 1 })
-  page?: number = 1;
-  @ApiPropertyOptional({ default: 20, minimum: 1, maximum: 100 })
-  limit?: number = 20;
-  @ApiPropertyOptional({ enum: TicketStatus })
-  status?: TicketStatus;
-  @ApiPropertyOptional({ enum: TicketPriority })
-  priority?: TicketPriority;
-  @ApiPropertyOptional({ description: "Ticket category UUID", format: "uuid" })
-  categoryId?: string;
-  @ApiPropertyOptional({
-    description: "Ticket owner's user UUID",
-    format: "uuid",
-  })
-  userId?: string;
-  @ApiPropertyOptional({
-    description: "Assigned administrator's user UUID",
-    format: "uuid",
-  })
-  assignedToUserId?: string;
-  @ApiPropertyOptional({
-    enum: ["createdAt", "priority", "status"],
-    default: "createdAt",
-  })
-  sortBy?: "createdAt" | "priority" | "status" = "createdAt";
-  @ApiPropertyOptional({ enum: ["ASC", "DESC"], default: "DESC" })
-  sortDirection?: "ASC" | "DESC" = "DESC";
-}
-
-class AdminListCategoriesQueryDto {
-  @ApiPropertyOptional({ default: 1, minimum: 1 })
-  page?: number = 1;
-  @ApiPropertyOptional({ default: 20, minimum: 1, maximum: 100 })
-  limit?: number = 20;
-  @ApiPropertyOptional({ enum: ["createdAt", "name"], default: "createdAt" })
-  sortBy?: "createdAt" | "name" = "createdAt";
-  @ApiPropertyOptional({ enum: ["ASC", "DESC"], default: "DESC" })
-  sortDirection?: "ASC" | "DESC" = "DESC";
-}
-
-class CreateAdminReplyRequestDto {
-  @ApiProperty({
-    description: "Message body",
-    example: "We are reviewing your request.",
-  })
-  body: string;
-}
-
-class AssignTicketRequestDto {
-  @ApiProperty({
-    description: "Administrator user UUID, or null to unassign",
-    format: "uuid",
-    nullable: true,
-  })
-  assignedToUserId: string | null;
-}
-
-class UpdateTicketStatusRequestDto {
-  @ApiProperty({ enum: TicketStatus })
-  status: TicketStatus;
-}
-
-class UpdateTicketPriorityRequestDto {
-  @ApiProperty({ enum: TicketPriority })
-  priority: TicketPriority;
-}
-
-class CreateTicketCategoryRequestDto {
-  @ApiProperty({ example: "Account access" })
-  name: string;
-  @ApiPropertyOptional({ example: "Questions about account access and login" })
-  description?: string;
-}
-
-class UpdateTicketCategoryRequestDto {
-  @ApiPropertyOptional({ example: "Account access" })
-  name?: string;
-  @ApiPropertyOptional({
-    example: "Questions about account access",
-    nullable: true,
-  })
-  description?: string | null;
-  @ApiPropertyOptional({ default: true })
-  isActive?: boolean;
-}
 
 @ApiTags("admin-tickets")
 @Controller("admin/tickets")
@@ -224,13 +145,13 @@ export class AdminTicketsController {
   @Post(":id/messages")
   @ApiOperation({ summary: "Reply as admin" })
   @ApiParam({ name: "id", description: "Ticket UUID", format: "uuid" })
-  @ApiBody({ type: CreateAdminReplyRequestDto })
+  @ApiBody({ type: CreateAdminTicketMessageRequestDto })
   @ApiResponse({ status: 201, description: "Admin reply created" })
   @ApiResponse({ status: 400, description: "Invalid ticket UUID or message" })
   @ApiResponse({ status: 404, description: "Ticket not found" })
   async createMessage(
     @Param("id", ParseUUIDPipe) id: string,
-    @Body() dto: CreateAdminReplyRequestDto,
+    @Body() dto: CreateAdminTicketMessageRequestDto,
     @Req() req: Request,
   ) {
     return this.createAdminTicketMessageUseCase.execute({

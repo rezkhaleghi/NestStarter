@@ -13,65 +13,21 @@ import {
   ApiBody,
   ApiOperation,
   ApiParam,
-  ApiProperty,
-  ApiPropertyOptional,
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
 import type { Request } from "express";
 
 import { AuthSessionGuard } from "../auth/auth-session.guard";
+import { ListTicketsQueryDto } from "./dtos/ticket-query.dto";
+import {
+  CreateTicketMessageRequestDto,
+  CreateTicketRequestDto,
+} from "./dtos/ticket.request.dto";
 import { CreateTicketUseCase } from "@application/use-cases/tickets/create-ticket.use-case";
 import { ListUserTicketsUseCase } from "@application/use-cases/tickets/list-user-tickets.use-case";
 import { GetTicketUseCase } from "@application/use-cases/tickets/get-ticket.use-case";
 import { CreateTicketMessageUseCase } from "@application/use-cases/tickets/create-ticket-message.use-case";
-import { TicketPriority } from "@domain/enums/ticket-priority.enum";
-import { TicketStatus } from "@domain/enums/ticket-status.enum";
-
-class CreateTicketRequestDto {
-  @ApiProperty({
-    description: "Short subject of the ticket",
-    example: "Unable to withdraw funds",
-  })
-  subject!: string;
-  @ApiPropertyOptional({ description: "Ticket category UUID", format: "uuid" })
-  categoryId?: string;
-  @ApiPropertyOptional({ enum: TicketPriority, default: TicketPriority.NORMAL })
-  priority?: TicketPriority;
-  @ApiProperty({
-    description: "Initial message",
-    example: "My withdrawal has been pending since yesterday.",
-  })
-  message!: string;
-}
-
-class CreateTicketMessageRequestDto {
-  @ApiProperty({
-    description: "Message body",
-    example: "Thanks, I have attached the requested details.",
-  })
-  body!: string;
-}
-
-class ListTicketsQueryDto {
-  @ApiPropertyOptional({ default: 1, minimum: 1 })
-  page?: number = 1;
-  @ApiPropertyOptional({ default: 20, minimum: 1, maximum: 100 })
-  limit?: number = 20;
-  @ApiPropertyOptional({ enum: TicketStatus })
-  status?: TicketStatus;
-  @ApiPropertyOptional({ enum: TicketPriority })
-  priority?: TicketPriority;
-  @ApiPropertyOptional({ description: "Ticket category UUID", format: "uuid" })
-  categoryId?: string;
-  @ApiPropertyOptional({
-    enum: ["createdAt", "priority", "status"],
-    default: "createdAt",
-  })
-  sortBy?: "createdAt" | "priority" | "status" = "createdAt";
-  @ApiPropertyOptional({ enum: ["ASC", "DESC"], default: "DESC" })
-  sortDirection?: "ASC" | "DESC" = "DESC";
-}
 
 @ApiTags("tickets")
 @Controller("tickets")
