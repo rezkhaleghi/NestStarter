@@ -9,7 +9,15 @@ import {
   Req,
   UseGuards,
 } from "@nestjs/common";
-import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
+import {
+  ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiProperty,
+  ApiPropertyOptional,
+  ApiResponse,
+  ApiTags,
+} from "@nestjs/swagger";
 import type { Request } from "express";
 
 import { AuthSessionGuard } from "../auth/auth-session.guard";
@@ -21,23 +29,47 @@ import { TicketPriority } from "@domain/enums/ticket-priority.enum";
 import { TicketStatus } from "@domain/enums/ticket-status.enum";
 
 class CreateTicketRequestDto {
+  @ApiProperty({
+    description: "Short subject of the ticket",
+    example: "Unable to withdraw funds",
+  })
   subject: string;
+  @ApiPropertyOptional({ description: "Ticket category UUID", format: "uuid" })
   categoryId?: string;
+  @ApiPropertyOptional({ enum: TicketPriority, default: TicketPriority.NORMAL })
   priority?: TicketPriority;
+  @ApiProperty({
+    description: "Initial message",
+    example: "My withdrawal has been pending since yesterday.",
+  })
   message: string;
 }
 
 class CreateTicketMessageRequestDto {
+  @ApiProperty({
+    description: "Message body",
+    example: "Thanks, I have attached the requested details.",
+  })
   body: string;
 }
 
 class ListTicketsQueryDto {
+  @ApiPropertyOptional({ default: 1, minimum: 1 })
   page?: number = 1;
+  @ApiPropertyOptional({ default: 20, minimum: 1, maximum: 100 })
   limit?: number = 20;
+  @ApiPropertyOptional({ enum: TicketStatus })
   status?: TicketStatus;
+  @ApiPropertyOptional({ enum: TicketPriority })
   priority?: TicketPriority;
+  @ApiPropertyOptional({ description: "Ticket category UUID", format: "uuid" })
   categoryId?: string;
+  @ApiPropertyOptional({
+    enum: ["createdAt", "priority", "status"],
+    default: "createdAt",
+  })
   sortBy?: "createdAt" | "priority" | "status" = "createdAt";
+  @ApiPropertyOptional({ enum: ["ASC", "DESC"], default: "DESC" })
   sortDirection?: "ASC" | "DESC" = "DESC";
 }
 
@@ -54,7 +86,9 @@ export class TicketsController {
 
   @Post()
   @ApiOperation({ summary: "Create a ticket" })
+  @ApiBody({ type: CreateTicketRequestDto })
   @ApiResponse({ status: 201, description: "Ticket created" })
+  @ApiResponse({ status: 400, description: "Invalid ticket data" })
   async create(@Body() dto: CreateTicketRequestDto, @Req() req: Request) {
     return this.createTicketUseCase.execute({
       userId: req.session.userId!,
@@ -82,7 +116,10 @@ export class TicketsController {
 
   @Get(":id")
   @ApiOperation({ summary: "Get my ticket detail" })
+  @ApiParam({ name: "id", description: "Ticket UUID", format: "uuid" })
   @ApiResponse({ status: 200, description: "Ticket detail" })
+  @ApiResponse({ status: 400, description: "Invalid ticket UUID" })
+  @ApiResponse({ status: 404, description: "Ticket not found" })
   async get(@Param("id", ParseUUIDPipe) id: string, @Req() req: Request) {
     return this.getTicketUseCase.execute({
       userId: req.session.userId!,
@@ -92,7 +129,11 @@ export class TicketsController {
 
   @Post(":id/messages")
   @ApiOperation({ summary: "Reply to a ticket" })
+  @ApiParam({ name: "id", description: "Ticket UUID", format: "uuid" })
+  @ApiBody({ type: CreateTicketMessageRequestDto })
   @ApiResponse({ status: 201, description: "Message created" })
+  @ApiResponse({ status: 400, description: "Invalid ticket UUID or message" })
+  @ApiResponse({ status: 404, description: "Ticket not found" })
   async createMessage(
     @Param("id", ParseUUIDPipe) id: string,
     @Body() dto: CreateTicketMessageRequestDto,

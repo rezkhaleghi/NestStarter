@@ -10,7 +10,15 @@ import {
   Req,
   UseGuards,
 } from "@nestjs/common";
-import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
+import {
+  ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiProperty,
+  ApiPropertyOptional,
+  ApiResponse,
+  ApiTags,
+} from "@nestjs/swagger";
 import type { Request } from "express";
 
 import { AdminAuthGuard } from "./admin-auth.guard";
@@ -28,41 +36,78 @@ import { TicketPriority } from "@domain/enums/ticket-priority.enum";
 import { TicketStatus } from "@domain/enums/ticket-status.enum";
 
 class AdminListTicketsQueryDto {
+  @ApiPropertyOptional({ default: 1, minimum: 1 })
   page?: number = 1;
+  @ApiPropertyOptional({ default: 20, minimum: 1, maximum: 100 })
   limit?: number = 20;
+  @ApiPropertyOptional({ enum: TicketStatus })
   status?: TicketStatus;
+  @ApiPropertyOptional({ enum: TicketPriority })
   priority?: TicketPriority;
+  @ApiPropertyOptional({ description: "Ticket category UUID", format: "uuid" })
   categoryId?: string;
+  @ApiPropertyOptional({
+    description: "Ticket owner's user UUID",
+    format: "uuid",
+  })
   userId?: string;
+  @ApiPropertyOptional({
+    description: "Assigned administrator's user UUID",
+    format: "uuid",
+  })
   assignedToUserId?: string;
+  @ApiPropertyOptional({
+    enum: ["createdAt", "priority", "status"],
+    default: "createdAt",
+  })
   sortBy?: "createdAt" | "priority" | "status" = "createdAt";
+  @ApiPropertyOptional({ enum: ["ASC", "DESC"], default: "DESC" })
   sortDirection?: "ASC" | "DESC" = "DESC";
 }
 
 class CreateAdminReplyRequestDto {
+  @ApiProperty({
+    description: "Message body",
+    example: "We are reviewing your request.",
+  })
   body: string;
 }
 
 class AssignTicketRequestDto {
+  @ApiProperty({
+    description: "Administrator user UUID, or null to unassign",
+    format: "uuid",
+    nullable: true,
+  })
   assignedToUserId: string | null;
 }
 
 class UpdateTicketStatusRequestDto {
+  @ApiProperty({ enum: TicketStatus })
   status: TicketStatus;
 }
 
 class UpdateTicketPriorityRequestDto {
+  @ApiProperty({ enum: TicketPriority })
   priority: TicketPriority;
 }
 
 class CreateTicketCategoryRequestDto {
+  @ApiProperty({ example: "Account access" })
   name: string;
+  @ApiPropertyOptional({ example: "Questions about account access and login" })
   description?: string;
 }
 
 class UpdateTicketCategoryRequestDto {
+  @ApiPropertyOptional({ example: "Account access" })
   name?: string;
+  @ApiPropertyOptional({
+    example: "Questions about account access",
+    nullable: true,
+  })
   description?: string | null;
+  @ApiPropertyOptional({ default: true })
   isActive?: boolean;
 }
 
@@ -86,6 +131,8 @@ export class AdminTicketsController {
   @Get()
   @ApiOperation({ summary: "List tickets for admins" })
   @ApiResponse({ status: 200, description: "Tickets list" })
+  @ApiResponse({ status: 401, description: "Authentication required" })
+  @ApiResponse({ status: 403, description: "Administrator access required" })
   async list(@Query() query: AdminListTicketsQueryDto) {
     return this.listAdminTicketsUseCase.execute({
       page: query.page ?? 1,
@@ -102,6 +149,9 @@ export class AdminTicketsController {
 
   @Get("categories")
   @ApiOperation({ summary: "List ticket categories" })
+  @ApiResponse({ status: 200, description: "Ticket categories list" })
+  @ApiResponse({ status: 401, description: "Authentication required" })
+  @ApiResponse({ status: 403, description: "Administrator access required" })
   async listCategories(@Query() query: any) {
     return this.listTicketCategoriesUseCase.execute({
       page: query.page ?? 1,
@@ -113,6 +163,9 @@ export class AdminTicketsController {
 
   @Post("categories")
   @ApiOperation({ summary: "Create ticket category" })
+  @ApiBody({ type: CreateTicketCategoryRequestDto })
+  @ApiResponse({ status: 201, description: "Ticket category created" })
+  @ApiResponse({ status: 409, description: "Ticket category already exists" })
   async createCategory(@Body() dto: CreateTicketCategoryRequestDto) {
     return this.createTicketCategoryUseCase.execute({
       name: dto.name,
@@ -122,6 +175,10 @@ export class AdminTicketsController {
 
   @Patch("categories/:id")
   @ApiOperation({ summary: "Update ticket category" })
+  @ApiParam({ name: "id", description: "Ticket category UUID", format: "uuid" })
+  @ApiBody({ type: UpdateTicketCategoryRequestDto })
+  @ApiResponse({ status: 200, description: "Ticket category updated" })
+  @ApiResponse({ status: 404, description: "Ticket category not found" })
   async updateCategory(
     @Param("id", ParseUUIDPipe) id: string,
     @Body() dto: UpdateTicketCategoryRequestDto,
@@ -136,20 +193,30 @@ export class AdminTicketsController {
 
   @Patch("categories/:id/deactivate")
   @ApiOperation({ summary: "Deactivate ticket category" })
+  @ApiParam({ name: "id", description: "Ticket category UUID", format: "uuid" })
+  @ApiResponse({ status: 200, description: "Ticket category deactivated" })
+  @ApiResponse({ status: 404, description: "Ticket category not found" })
   async deactivateCategory(@Param("id", ParseUUIDPipe) id: string) {
     return this.deleteTicketCategoryUseCase.execute(id);
   }
 
   @Get(":id")
   @ApiOperation({ summary: "Get admin ticket detail" })
+  @ApiParam({ name: "id", description: "Ticket UUID", format: "uuid" })
   @ApiResponse({ status: 200, description: "Ticket detail" })
+  @ApiResponse({ status: 400, description: "Invalid ticket UUID" })
+  @ApiResponse({ status: 404, description: "Ticket not found" })
   async get(@Param("id", ParseUUIDPipe) id: string) {
     return this.getAdminTicketUseCase.execute(id);
   }
 
   @Post(":id/messages")
   @ApiOperation({ summary: "Reply as admin" })
+  @ApiParam({ name: "id", description: "Ticket UUID", format: "uuid" })
+  @ApiBody({ type: CreateAdminReplyRequestDto })
   @ApiResponse({ status: 201, description: "Admin reply created" })
+  @ApiResponse({ status: 400, description: "Invalid ticket UUID or message" })
+  @ApiResponse({ status: 404, description: "Ticket not found" })
   async createMessage(
     @Param("id", ParseUUIDPipe) id: string,
     @Body() dto: CreateAdminReplyRequestDto,
@@ -164,6 +231,13 @@ export class AdminTicketsController {
 
   @Patch(":id/assign")
   @ApiOperation({ summary: "Assign a ticket to an admin" })
+  @ApiParam({ name: "id", description: "Ticket UUID", format: "uuid" })
+  @ApiBody({ type: AssignTicketRequestDto })
+  @ApiResponse({ status: 200, description: "Ticket assignment updated" })
+  @ApiResponse({
+    status: 404,
+    description: "Ticket or administrator not found",
+  })
   async assign(
     @Param("id", ParseUUIDPipe) id: string,
     @Body() dto: AssignTicketRequestDto,
@@ -179,6 +253,10 @@ export class AdminTicketsController {
 
   @Patch(":id/status")
   @ApiOperation({ summary: "Change ticket status" })
+  @ApiParam({ name: "id", description: "Ticket UUID", format: "uuid" })
+  @ApiBody({ type: UpdateTicketStatusRequestDto })
+  @ApiResponse({ status: 200, description: "Ticket status updated" })
+  @ApiResponse({ status: 404, description: "Ticket not found" })
   async status(
     @Param("id", ParseUUIDPipe) id: string,
     @Body() dto: UpdateTicketStatusRequestDto,
@@ -194,6 +272,10 @@ export class AdminTicketsController {
 
   @Patch(":id/priority")
   @ApiOperation({ summary: "Change ticket priority" })
+  @ApiParam({ name: "id", description: "Ticket UUID", format: "uuid" })
+  @ApiBody({ type: UpdateTicketPriorityRequestDto })
+  @ApiResponse({ status: 200, description: "Ticket priority updated" })
+  @ApiResponse({ status: 404, description: "Ticket not found" })
   async priority(
     @Param("id", ParseUUIDPipe) id: string,
     @Body() dto: UpdateTicketPriorityRequestDto,
