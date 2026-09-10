@@ -73,4 +73,53 @@ export abstract class NotificationService {
       timestamp: Date;
     },
   ): Promise<void>;
+
+  abstract sendTicketReplied(
+    email: string,
+    payload: {
+      userName?: string;
+      ticketId: string;
+      ticketSubject: string;
+      ticketStatus: string;
+      messagePreview: string;
+      updatedAt: Date;
+      frontendUrl?: string;
+    },
+  ): Promise<void>;
+
+  abstract sendTicketResolved(
+    email: string,
+    payload: {
+      userName?: string;
+      ticketId: string;
+      ticketSubject: string;
+      ticketStatus: string;
+      updatedAt: Date;
+      frontendUrl?: string;
+    },
+  ): Promise<void>;
+
+  abstract sendTicketClosed(
+    email: string,
+    payload: {
+      userName?: string;
+      ticketId: string;
+      ticketSubject: string;
+      ticketStatus: string;
+      updatedAt: Date;
+      frontendUrl?: string;
+    },
+  ): Promise<void>;
+
+  abstract sendTicketReopened(
+    email: string,
+    payload: {
+      userName?: string;
+      ticketId: string;
+      ticketSubject: string;
+      ticketStatus: string;
+      updatedAt: Date;
+      frontendUrl?: string;
+    },
+  ): Promise<void>;
 }

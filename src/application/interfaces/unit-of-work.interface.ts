@@ -4,6 +4,9 @@ import { AuditLogRepository } from "../../domain/repositories/audit-log.reposito
 import { LedgerRepository } from "@domain/repositories/ledger.repository";
 import { DepositRepository } from "@domain/repositories/deposit.repository";
 import { WithdrawalRepository } from "@domain/repositories/withdrawal.repository";
+import { TicketRepository } from "@domain/repositories/ticket.repository";
+import { TicketMessageRepository } from "@domain/repositories/ticket-message.repository";
+import { TicketCategoryRepository } from "@domain/repositories/ticket-category.repository";
 
 export interface UnitOfWorkRepositories {
   userRepository: UserRepository;
@@ -12,6 +15,9 @@ export interface UnitOfWorkRepositories {
   ledgerRepository: LedgerRepository;
   depositRepository: DepositRepository;
   withdrawalRepository: WithdrawalRepository;
+  ticketRepository: TicketRepository;
+  ticketMessageRepository: TicketMessageRepository;
+  ticketCategoryRepository: TicketCategoryRepository;
 }
 
 export abstract class UnitOfWork {

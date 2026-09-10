@@ -19,6 +19,12 @@ import { DepositOrmEntity } from "./orm-entities/deposit.orm-entity";
 import { WithdrawalOrmEntity } from "./orm-entities/withdrawal.orm-entity";
 import { DepositRepositoryImpl } from "./repositories/deposit.repository.impl";
 import { WithdrawalRepositoryImpl } from "./repositories/withdrawal.repository.impl";
+import { TicketOrmEntity } from "./orm-entities/ticket.orm-entity";
+import { TicketMessageOrmEntity } from "./orm-entities/ticket-message.orm-entity";
+import { TicketCategoryOrmEntity } from "./orm-entities/ticket-category.orm-entity";
+import { TicketRepositoryImpl } from "./repositories/ticket.repository.impl";
+import { TicketMessageRepositoryImpl } from "./repositories/ticket-message.repository.impl";
+import { TicketCategoryRepositoryImpl } from "./repositories/ticket-category.repository.impl";
 
 @Injectable()
 export class TypeOrmUnitOfWork implements UnitOfWork {
@@ -52,6 +58,18 @@ export class TypeOrmUnitOfWork implements UnitOfWork {
         manager.getRepository(WithdrawalOrmEntity),
       );
 
+      const ticketRepository = new TicketRepositoryImpl(
+        manager.getRepository(TicketOrmEntity),
+      );
+
+      const ticketMessageRepository = new TicketMessageRepositoryImpl(
+        manager.getRepository(TicketMessageOrmEntity),
+      );
+
+      const ticketCategoryRepository = new TicketCategoryRepositoryImpl(
+        manager.getRepository(TicketCategoryOrmEntity),
+      );
+
       return work({
         userRepository,
         userBalanceRepository,
@@ -59,6 +77,9 @@ export class TypeOrmUnitOfWork implements UnitOfWork {
         ledgerRepository,
         depositRepository,
         withdrawalRepository,
+        ticketRepository,
+        ticketMessageRepository,
+        ticketCategoryRepository,
       });
     });
   }

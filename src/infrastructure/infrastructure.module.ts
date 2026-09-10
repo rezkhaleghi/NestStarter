@@ -43,6 +43,15 @@ import { DepositRepository } from "@domain/repositories/deposit.repository";
 import { WithdrawalRepository } from "@domain/repositories/withdrawal.repository";
 import { DepositRepositoryImpl } from "./database/repositories/deposit.repository.impl";
 import { WithdrawalRepositoryImpl } from "./database/repositories/withdrawal.repository.impl";
+import { TicketRepository } from "@domain/repositories/ticket.repository";
+import { TicketMessageRepository } from "@domain/repositories/ticket-message.repository";
+import { TicketCategoryRepository } from "@domain/repositories/ticket-category.repository";
+import { TicketRepositoryImpl } from "./database/repositories/ticket.repository.impl";
+import { TicketMessageRepositoryImpl } from "./database/repositories/ticket-message.repository.impl";
+import { TicketCategoryRepositoryImpl } from "./database/repositories/ticket-category.repository.impl";
+import { TicketOrmEntity } from "./database/orm-entities/ticket.orm-entity";
+import { TicketMessageOrmEntity } from "./database/orm-entities/ticket-message.orm-entity";
+import { TicketCategoryOrmEntity } from "./database/orm-entities/ticket-category.orm-entity";
 import {
   PAYMENT_PROVIDER,
   PaymentProviderInterface,
@@ -115,6 +124,9 @@ import { FakePaymentProvider } from "./services/fake-payment-provider.service";
       LedgerOrmEntity,
       DepositOrmEntity,
       WithdrawalOrmEntity,
+      TicketOrmEntity,
+      TicketMessageOrmEntity,
+      TicketCategoryOrmEntity,
     ]),
   ],
   providers: [
@@ -185,6 +197,18 @@ import { FakePaymentProvider } from "./services/fake-payment-provider.service";
       useClass: WithdrawalRepositoryImpl,
     },
     {
+      provide: TicketRepository,
+      useClass: TicketRepositoryImpl,
+    },
+    {
+      provide: TicketMessageRepository,
+      useClass: TicketMessageRepositoryImpl,
+    },
+    {
+      provide: TicketCategoryRepository,
+      useClass: TicketCategoryRepositoryImpl,
+    },
+    {
       provide: PAYMENT_PROVIDER,
       useClass: FakePaymentProvider,
     },
@@ -205,6 +229,9 @@ import { FakePaymentProvider } from "./services/fake-payment-provider.service";
     LedgerRepository,
     DepositRepository,
     WithdrawalRepository,
+    TicketRepository,
+    TicketMessageRepository,
+    TicketCategoryRepository,
     PAYMENT_PROVIDER,
   ],
 })
