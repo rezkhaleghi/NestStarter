@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+
 import { User } from "../../../domain/entities/user.entity";
 import { UserNotFoundException } from "../../../domain/exceptions/domain.exception";
 import { UserRepository } from "../../../domain/repositories/user.repository";
@@ -55,17 +56,39 @@ export class UpdateUserAvatarUseCase {
       avatar: objectName,
     });
 
-    const saved = await this.userRepository.save(user);
+    try {
+      /**
+       * Save the database change only after the new file
+       * has been successfully uploaded.
+       */
+      const saved = await this.userRepository.save(user);
 
-    /**
-     * Delete the old file only after the database update succeeds.
-     *
-     * This avoids deleting the previous avatar if saving the user fails.
-     */
-    if (oldAvatar && oldAvatar !== objectName) {
-      await this.fileStorage.delete(oldAvatar);
+      /**
+       * Delete the old file only after the database update succeeds.
+       *
+       * This avoids deleting the previous avatar if saving the user fails.
+       */
+      if (oldAvatar && oldAvatar !== objectName) {
+        await this.fileStorage.delete(oldAvatar);
+      }
+
+      return saved;
+    } catch (error) {
+      /**
+       * The database update failed after the new object was uploaded.
+       *
+       * Remove the newly uploaded object so we don't leave an
+       * orphaned file in storage.
+       *
+       * Cleanup errors must not hide the original database error.
+       */
+      try {
+        await this.fileStorage.delete(objectName);
+      } catch {
+        // Preserve the original database error.
+      }
+
+      throw error;
     }
-
-    return saved;
   }
 }
