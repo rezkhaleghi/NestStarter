@@ -33,7 +33,7 @@ class CreateTicketRequestDto {
     description: "Short subject of the ticket",
     example: "Unable to withdraw funds",
   })
-  subject: string;
+  subject!: string;
   @ApiPropertyOptional({ description: "Ticket category UUID", format: "uuid" })
   categoryId?: string;
   @ApiPropertyOptional({ enum: TicketPriority, default: TicketPriority.NORMAL })
@@ -42,7 +42,7 @@ class CreateTicketRequestDto {
     description: "Initial message",
     example: "My withdrawal has been pending since yesterday.",
   })
-  message: string;
+  message!: string;
 }
 
 class CreateTicketMessageRequestDto {
@@ -50,7 +50,7 @@ class CreateTicketMessageRequestDto {
     description: "Message body",
     example: "Thanks, I have attached the requested details.",
   })
-  body: string;
+  body!: string;
 }
 
 class ListTicketsQueryDto {

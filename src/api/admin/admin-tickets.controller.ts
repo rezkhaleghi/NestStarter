@@ -65,6 +65,17 @@ class AdminListTicketsQueryDto {
   sortDirection?: "ASC" | "DESC" = "DESC";
 }
 
+class AdminListCategoriesQueryDto {
+  @ApiPropertyOptional({ default: 1, minimum: 1 })
+  page?: number = 1;
+  @ApiPropertyOptional({ default: 20, minimum: 1, maximum: 100 })
+  limit?: number = 20;
+  @ApiPropertyOptional({ enum: ["createdAt", "name"], default: "createdAt" })
+  sortBy?: "createdAt" | "name" = "createdAt";
+  @ApiPropertyOptional({ enum: ["ASC", "DESC"], default: "DESC" })
+  sortDirection?: "ASC" | "DESC" = "DESC";
+}
+
 class CreateAdminReplyRequestDto {
   @ApiProperty({
     description: "Message body",
@@ -152,7 +163,7 @@ export class AdminTicketsController {
   @ApiResponse({ status: 200, description: "Ticket categories list" })
   @ApiResponse({ status: 401, description: "Authentication required" })
   @ApiResponse({ status: 403, description: "Administrator access required" })
-  async listCategories(@Query() query: any) {
+  async listCategories(@Query() query: AdminListCategoriesQueryDto) {
     return this.listTicketCategoriesUseCase.execute({
       page: query.page ?? 1,
       limit: query.limit ?? 20,
