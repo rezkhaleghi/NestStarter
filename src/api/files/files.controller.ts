@@ -1,4 +1,11 @@
-import { Controller, Get, Param, Res, StreamableFile } from "@nestjs/common";
+import {
+  BadRequestException,
+  Controller,
+  Get,
+  Param,
+  Res,
+  StreamableFile,
+} from "@nestjs/common";
 import {
   ApiOperation,
   ApiParam,
@@ -7,6 +14,7 @@ import {
   ApiTags,
 } from "@nestjs/swagger";
 import type { Response } from "express";
+
 import { FileStorage } from "../../application/interfaces/file-storage.interface";
 
 @ApiTags("Files")
@@ -16,13 +24,12 @@ export class FilesController {
 
   @Get("*")
   @ApiOperation({
-    summary: "Get a public file",
-    description:
-      "Streams a publicly accessible file from the configured file storage.",
+    summary: "Get a public avatar",
+    description: "Streams a publicly accessible avatar from file storage.",
   })
   @ApiParam({
     name: "path",
-    description: "Storage object path",
+    description: "Avatar storage object path",
     example: "avatars/da953d8a-9ee6-4c29-bf20-027bc65fad41/avatar.webp",
   })
   @ApiProduces(
@@ -34,7 +41,11 @@ export class FilesController {
   )
   @ApiResponse({
     status: 200,
-    description: "The requested file.",
+    description: "The requested avatar.",
+  })
+  @ApiResponse({
+    status: 400,
+    description: "Invalid file path.",
   })
   @ApiResponse({
     status: 404,
@@ -46,12 +57,14 @@ export class FilesController {
   ): Promise<StreamableFile> {
     const objectName = String(params["0"]);
 
+    if (!objectName.startsWith("avatars/")) {
+      throw new BadRequestException("Only public avatar files are accessible.");
+    }
+
     const file = await this.fileStorage.get(objectName);
 
     response.setHeader("Content-Type", file.contentType);
     response.setHeader("Content-Length", file.size);
-
-    // Public files may be loaded by another origin.
     response.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
 
     return new StreamableFile(file.stream);
