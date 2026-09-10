@@ -2,6 +2,11 @@ import { randomUUID } from "crypto";
 
 import { PaymentCurrency } from "../enums/payment-currency.enum";
 import { LedgerType } from "../enums/ledger-type.enum";
+import {
+  addDecimal,
+  isZeroDecimal,
+  subtractDecimal,
+} from "../utils/decimal.util";
 
 export interface CreateLedgerProps {
   id?: string;
@@ -46,6 +51,12 @@ export class Ledger {
   ) {}
 
   static create(props: CreateLedgerProps): Ledger {
+    this.assertBalanceInvariant(
+      props.amount,
+      props.balanceBefore,
+      props.balanceAfter,
+    );
+
     return new Ledger(
       props.id ?? randomUUID(),
       props.userId,
@@ -62,6 +73,12 @@ export class Ledger {
   }
 
   static restore(props: RestoreLedgerProps): Ledger {
+    this.assertBalanceInvariant(
+      props.amount,
+      props.balanceBefore,
+      props.balanceAfter,
+    );
+
     return new Ledger(
       props.id,
       props.userId,
@@ -75,5 +92,19 @@ export class Ledger {
       props.metadata,
       props.createdAt,
     );
+  }
+
+  private static assertBalanceInvariant(
+    amount: string,
+    balanceBefore: string,
+    balanceAfter: string,
+  ): void {
+    const expectedBalanceAfter = addDecimal(balanceBefore, amount);
+
+    if (!isZeroDecimal(subtractDecimal(expectedBalanceAfter, balanceAfter))) {
+      throw new Error(
+        "Invalid ledger entry: balanceBefore + amount must equal balanceAfter.",
+      );
+    }
   }
 }
