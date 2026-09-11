@@ -4,7 +4,11 @@ import { randomUUID } from "crypto";
 import { Deposit } from "@domain/entities/deposit.entity";
 import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
 import { DepositStatus } from "@domain/enums/deposit-status.enum";
-import { UserNotFoundException } from "@domain/exceptions/domain.exception";
+import {
+  InvalidDepositAmountException,
+  UnsupportedPaymentCurrencyException,
+  UserNotFoundException,
+} from "@domain/exceptions/domain.exception";
 import {
   PAYMENT_PROVIDER,
   PaymentProviderInterface,
@@ -38,13 +42,11 @@ export class CreateDepositUseCase {
         if (
           !this.paymentProvider.supportedCurrencies.includes(input.currency)
         ) {
-          throw new Error(
-            `Currency ${input.currency} is not supported by the payment provider.`,
-          );
+          throw new UnsupportedPaymentCurrencyException(input.currency);
         }
 
         if (isNegativeDecimal(input.amount) || isZeroDecimal(input.amount)) {
-          throw new Error("Deposit amount must be positive.");
+          throw new InvalidDepositAmountException();
         }
 
         const deposit = Deposit.create({

@@ -9,7 +9,11 @@ import { DepositStatus } from "@domain/enums/deposit-status.enum";
 import { LedgerType } from "@domain/enums/ledger-type.enum";
 import { AuditAction } from "@domain/enums/audit-action.enum";
 
-import { UserBalanceNotFoundException } from "@domain/exceptions/domain.exception";
+import {
+  DepositNotFoundException,
+  NotMatchException,
+  UserBalanceNotFoundException,
+} from "@domain/exceptions/domain.exception";
 import { addDecimal } from "@domain/utils/decimal.util";
 
 import {
@@ -47,7 +51,7 @@ export class VerifyDepositUseCase {
         );
 
         if (!deposit) {
-          throw new Error("Deposit not found.");
+          throw new DepositNotFoundException();
         }
 
         if (deposit.status === DepositStatus.COMPLETED) {
@@ -55,11 +59,11 @@ export class VerifyDepositUseCase {
         }
 
         if (deposit.providerPaymentId !== input.providerPaymentId) {
-          throw new Error("Provider payment ID does not match the deposit.");
+          throw new NotMatchException("Provider payment ID", "Deposit");
         }
 
         if (deposit.referenceId !== input.referenceId) {
-          throw new Error("Reference ID does not match the deposit.");
+          throw new NotMatchException("Reference ID", "Deposit");
         }
 
         const verification = await this.paymentProvider.verifyPayment({
@@ -74,7 +78,7 @@ export class VerifyDepositUseCase {
           verification.amount !== deposit.amount ||
           verification.currency !== deposit.currency
         ) {
-          throw new Error("Verified payment does not match the deposit.");
+          throw new NotMatchException("Verified payment", "Deposit");
         }
 
         const balance =

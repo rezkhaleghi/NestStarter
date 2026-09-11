@@ -12,6 +12,8 @@ import { AuditAction } from "@domain/enums/audit-action.enum";
 
 import {
   InsufficientBalanceException,
+  InvalidWithdrawalAmountException,
+  UserBalanceNotFoundException,
   UserNotFoundException,
 } from "@domain/exceptions/domain.exception";
 
@@ -50,7 +52,7 @@ export class CreateWithdrawalUseCase {
         }
 
         if (isNegativeDecimal(input.amount) || isZeroDecimal(input.amount)) {
-          throw new Error("Withdrawal amount must be positive.");
+          throw new InvalidWithdrawalAmountException();
         }
 
         const balance =
@@ -60,7 +62,7 @@ export class CreateWithdrawalUseCase {
           );
 
         if (!balance) {
-          throw new Error(`No balance exists for ${input.currency}.`);
+          throw new UserBalanceNotFoundException(input.currency);
         }
 
         const balanceBefore = balance.amount;

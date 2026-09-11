@@ -10,6 +10,12 @@ export class DomainException extends Error {
   }
 }
 
+export class NotMatchException extends DomainException {
+  constructor(field: string, entity: string) {
+    super(`Field "${field}" does not match the ${entity}.`);
+  }
+}
+
 export class InvalidOtpException extends DomainException {
   constructor() {
     super("The provided OTP is invalid or has expired.");
@@ -84,6 +90,40 @@ export class UserBalanceAlreadyExistsException extends DomainException {
 
 export class InsufficientBalanceException extends DomainException {
   constructor() {
-    super(`Insufficient Balance!`);
+    super("Insufficient Balance!");
+  }
+}
+
+export class InvalidWithdrawalAmountException extends DomainException {
+  constructor() {
+    super("Withdrawal amount must be positive.");
+  }
+}
+
+export class WithdrawalNotFoundException extends DomainException {
+  constructor() {
+    super("Withdrawal not found.");
+  }
+}
+export class WithdrawalNotPendingException extends DomainException {
+  constructor() {
+    super("Only PENDING withdrawals can be approved.");
+  }
+}
+
+export class UnsupportedPaymentCurrencyException extends DomainException {
+  constructor(currency: string) {
+    super(`Currency ${currency} is not supported by the payment provider.`);
+  }
+}
+
+export class InvalidDepositAmountException extends DomainException {
+  constructor() {
+    super("Deposit amount must be positive.");
+  }
+}
+export class DepositNotFoundException extends DomainException {
+  constructor() {
+    super("Deposit not found.");
   }
 }

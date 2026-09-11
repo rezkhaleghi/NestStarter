@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 
 import { Withdrawal } from "@domain/entities/withdrawal.entity";
 import { WithdrawalRepository } from "@domain/repositories/withdrawal.repository";
+import { WithdrawalNotFoundException } from "@domain/exceptions/domain.exception";
 
 @Injectable()
 export class GetWithdrawalUseCase {
@@ -10,7 +11,7 @@ export class GetWithdrawalUseCase {
   async execute(id: string): Promise<Withdrawal> {
     const withdrawal = await this.withdrawalRepository.findById(id);
     if (!withdrawal) {
-      throw new Error("Withdrawal not found.");
+      throw new WithdrawalNotFoundException();
     }
     return withdrawal;
   }

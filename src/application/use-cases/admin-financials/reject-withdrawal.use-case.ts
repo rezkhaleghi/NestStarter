@@ -8,6 +8,11 @@ import { AuditAction } from "@domain/enums/audit-action.enum";
 import { WithdrawalStatus } from "@domain/enums/withdrawal-status.enum";
 import { addDecimal } from "@domain/utils/decimal.util";
 import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
+import {
+  UserBalanceNotFoundException,
+  WithdrawalNotFoundException,
+  WithdrawalNotPendingException,
+} from "@domain/exceptions/domain.exception";
 
 export interface RejectWithdrawalInput {
   withdrawalId: string;
@@ -31,10 +36,10 @@ export class AdminRejectWithdrawalUseCase {
           input.withdrawalId,
         );
         if (!withdrawal) {
-          throw new Error("Withdrawal not found.");
+          throw new WithdrawalNotFoundException();
         }
         if (withdrawal.status !== WithdrawalStatus.PENDING) {
-          throw new Error("Only PENDING withdrawals can be rejected.");
+          throw new WithdrawalNotPendingException();
         }
 
         const balance =
@@ -43,7 +48,7 @@ export class AdminRejectWithdrawalUseCase {
             withdrawal.currency,
           );
         if (!balance) {
-          throw new Error(`Balance for ${withdrawal.currency} not found.`);
+          throw new UserBalanceNotFoundException(withdrawal?.currency);
         }
 
         const before = balance.amount;
