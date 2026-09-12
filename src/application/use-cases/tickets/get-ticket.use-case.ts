@@ -7,7 +7,10 @@ import { TicketRepository } from "@domain/repositories/ticket.repository";
 import { TicketMessageRepository } from "@domain/repositories/ticket-message.repository";
 import { TicketCategoryRepository } from "@domain/repositories/ticket-category.repository";
 import { UserRepository } from "@domain/repositories/user.repository";
-import { TicketNotFoundException } from "@domain/exceptions/domain.exception";
+import {
+  TicketAccessNotAllowedException,
+  TicketNotFoundException,
+} from "@domain/exceptions/domain.exception";
 
 export interface GetTicketInput {
   userId: string;
@@ -35,7 +38,7 @@ export class GetTicketUseCase {
     }
 
     if (ticket.userId !== input.userId) {
-      throw new Error("You are not allowed to access this ticket.");
+      throw new TicketAccessNotAllowedException();
     }
 
     const category = ticket.categoryId

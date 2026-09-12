@@ -1,3 +1,4 @@
+import { FieldMustExistException } from "@domain/exceptions/domain.exception";
 import { randomUUID } from "crypto";
 
 export interface CreateTicketCategoryProps {
@@ -38,7 +39,7 @@ export class TicketCategory {
     if (params.name !== undefined) {
       const value = params.name.trim();
       if (!value) {
-        throw new Error("Ticket category name cannot be empty.");
+        throw new FieldMustExistException("Ticket category name");
       }
       this.name = value;
     }

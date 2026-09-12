@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 
 import { TicketPriority } from "../enums/ticket-priority.enum";
 import { TicketStatus } from "../enums/ticket-status.enum";
+import { FieldMustExistException } from "@domain/exceptions/domain.exception";
 
 export interface CreateTicketProps {
   id?: string;
@@ -33,7 +34,7 @@ export class Ticket {
   static create(props: CreateTicketProps): Ticket {
     const subject = props.subject.trim();
     if (!subject) {
-      throw new Error("Ticket subject cannot be empty.");
+      throw new FieldMustExistException("Ticket subject");
     }
 
     return new Ticket(

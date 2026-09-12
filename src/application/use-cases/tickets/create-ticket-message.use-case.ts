@@ -5,7 +5,11 @@ import { TicketMessage } from "@domain/entities/ticket-message.entity";
 import { TicketStatus } from "@domain/enums/ticket-status.enum";
 import { AuditAction } from "@domain/enums/audit-action.enum";
 import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
-import { TicketNotFoundException } from "@domain/exceptions/domain.exception";
+import {
+  TicketAccessNotAllowedException,
+  TicketClosedException,
+  TicketNotFoundException,
+} from "@domain/exceptions/domain.exception";
 
 export interface CreateTicketMessageInput {
   userId: string;
@@ -29,12 +33,10 @@ export class CreateTicketMessageUseCase {
           throw new TicketNotFoundException();
         }
         if (ticket.userId !== input.userId) {
-          throw new Error("You cannot reply to this ticket.");
+          throw new TicketAccessNotAllowedException();
         }
         if (!ticket.canReceiveReply()) {
-          throw new Error(
-            "This ticket is closed and cannot receive new replies.",
-          );
+          throw new TicketClosedException();
         }
 
         const message = TicketMessage.create({

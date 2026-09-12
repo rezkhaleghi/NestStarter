@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 
 import { TicketCategoryRepository } from "@domain/repositories/ticket-category.repository";
+import { TicketCategoryNotFoundException } from "@domain/exceptions/domain.exception";
 
 @Injectable()
 export class DeleteTicketCategoryUseCase {
@@ -11,7 +12,7 @@ export class DeleteTicketCategoryUseCase {
   async execute(id: string): Promise<void> {
     const category = await this.ticketCategoryRepository.findById(id);
     if (!category) {
-      throw new Error("Ticket category not found.");
+      throw new TicketCategoryNotFoundException();
     }
 
     category.deactivate();

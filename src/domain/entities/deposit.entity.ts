@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 
 import { PaymentCurrency } from "../enums/payment-currency.enum";
 import { DepositStatus } from "../enums/deposit-status.enum";
+import { DepositChangeStatusNotAllowedException } from "@domain/exceptions/domain.exception";
 
 export interface CreateDepositProps {
   id?: string;
@@ -55,7 +56,7 @@ export class Deposit {
 
   markCompleted(transactionId?: string): void {
     if (this.status !== DepositStatus.PENDING) {
-      throw new Error(`Cannot complete deposit from status ${this.status}.`);
+      throw new DepositChangeStatusNotAllowedException(this.status);
     }
 
     this.status = DepositStatus.COMPLETED;

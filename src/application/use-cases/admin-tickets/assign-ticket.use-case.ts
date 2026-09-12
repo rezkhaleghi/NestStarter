@@ -4,6 +4,7 @@ import { randomUUID } from "crypto";
 import { AuditAction } from "@domain/enums/audit-action.enum";
 import { UserRole } from "@domain/enums/user-role.enum";
 import {
+  TicketMustAssignToAdminException,
   TicketNotFoundException,
   UserNotFoundException,
 } from "@domain/exceptions/domain.exception";
@@ -32,7 +33,7 @@ export class AssignTicketUseCase {
           );
           if (!targetUser) throw new UserNotFoundException();
           if (targetUser.role !== UserRole.ADMIN) {
-            throw new Error("Target user must be an admin/support user.");
+            throw new TicketMustAssignToAdminException();
           }
         }
 

@@ -1,3 +1,4 @@
+import { FieldMustExistException } from "@domain/exceptions/domain.exception";
 import { randomUUID } from "crypto";
 
 export interface CreateTicketMessageProps {
@@ -33,7 +34,7 @@ export class TicketMessage {
   updateBody(body: string): void {
     const next = body.trim();
     if (!next) {
-      throw new Error("Ticket message body cannot be empty.");
+      throw new FieldMustExistException("Ticket message body");
     }
     this.body = next;
     this.updatedAt = new Date();

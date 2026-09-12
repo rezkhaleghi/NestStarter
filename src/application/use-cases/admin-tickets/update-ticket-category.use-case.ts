@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 
 import { TicketCategory } from "@domain/entities/ticket-category.entity";
 import { TicketCategoryRepository } from "@domain/repositories/ticket-category.repository";
+import { TicketCategoryNotFoundException } from "@domain/exceptions/domain.exception";
 
 export interface UpdateTicketCategoryInput {
   id: string;
@@ -19,7 +20,7 @@ export class UpdateTicketCategoryUseCase {
   async execute(input: UpdateTicketCategoryInput): Promise<TicketCategory> {
     const category = await this.ticketCategoryRepository.findById(input.id);
     if (!category) {
-      throw new Error("Ticket category not found.");
+      throw new TicketCategoryNotFoundException();
     }
 
     category.update({

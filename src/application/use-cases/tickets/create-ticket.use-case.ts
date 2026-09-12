@@ -6,8 +6,10 @@ import { TicketMessage } from "@domain/entities/ticket-message.entity";
 import { TicketPriority } from "@domain/enums/ticket-priority.enum";
 import { TicketStatus } from "@domain/enums/ticket-status.enum";
 import { AuditAction } from "@domain/enums/audit-action.enum";
-import { UserNotFoundException } from "@domain/exceptions/domain.exception";
-import { TicketCategoryRepository } from "@domain/repositories/ticket-category.repository";
+import {
+  TicketCategoryNotFoundException,
+  UserNotFoundException,
+} from "@domain/exceptions/domain.exception";
 import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
 
 export interface CreateTicketInput {
@@ -41,7 +43,7 @@ export class CreateTicketUseCase {
             input.categoryId,
           );
           if (!category || !category.isActive) {
-            throw new Error("Ticket category not available.");
+            throw new TicketCategoryNotFoundException();
           }
         }
 
