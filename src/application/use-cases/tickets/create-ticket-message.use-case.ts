@@ -4,9 +4,8 @@ import { randomUUID } from "crypto";
 import { TicketMessage } from "@domain/entities/ticket-message.entity";
 import { TicketStatus } from "@domain/enums/ticket-status.enum";
 import { AuditAction } from "@domain/enums/audit-action.enum";
-import { TicketRepository } from "@domain/repositories/ticket.repository";
-import { TicketMessageRepository } from "@domain/repositories/ticket-message.repository";
 import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
+import { TicketNotFoundException } from "@domain/exceptions/domain.exception";
 
 export interface CreateTicketMessageInput {
   userId: string;
@@ -27,7 +26,7 @@ export class CreateTicketMessageUseCase {
       }) => {
         const ticket = await ticketRepository.findByIdForUpdate(input.ticketId);
         if (!ticket) {
-          throw new Error("Ticket not found.");
+          throw new TicketNotFoundException();
         }
         if (ticket.userId !== input.userId) {
           throw new Error("You cannot reply to this ticket.");

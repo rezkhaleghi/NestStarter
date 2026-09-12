@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 
 import { PaymentCurrency } from "../enums/payment-currency.enum";
 import { isNegativeDecimal } from "../utils/decimal.util";
+import { InvalidUserBalanceException } from "@domain/exceptions/domain.exception";
 
 export interface CreateUserBalanceProps {
   id?: string;
@@ -20,7 +21,7 @@ export class UserBalance {
 
   static create(props: CreateUserBalanceProps): UserBalance {
     if (isNegativeDecimal(props.amount)) {
-      throw new Error("User balance cannot be negative.");
+      throw new InvalidUserBalanceException();
     }
 
     return new UserBalance(

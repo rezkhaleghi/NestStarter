@@ -3,7 +3,10 @@ import { randomUUID } from "crypto";
 
 import { AuditAction } from "@domain/enums/audit-action.enum";
 import { UserRole } from "@domain/enums/user-role.enum";
-import { UserNotFoundException } from "@domain/exceptions/domain.exception";
+import {
+  TicketNotFoundException,
+  UserNotFoundException,
+} from "@domain/exceptions/domain.exception";
 import { TicketRepository } from "@domain/repositories/ticket.repository";
 import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
 
@@ -21,7 +24,7 @@ export class AssignTicketUseCase {
     await this.unitOfWork.execute(
       async ({ userRepository, ticketRepository, auditLogRepository }) => {
         const ticket = await ticketRepository.findByIdForUpdate(input.ticketId);
-        if (!ticket) throw new Error("Ticket not found.");
+        if (!ticket) throw new TicketNotFoundException();
 
         if (input.assignedToUserId) {
           const targetUser = await userRepository.findById(

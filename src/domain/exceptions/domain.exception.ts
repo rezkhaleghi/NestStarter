@@ -76,6 +76,8 @@ export class FileNotFoundException extends DomainException {
   }
 }
 
+//userBalance
+
 export class UserBalanceNotFoundException extends DomainException {
   constructor(currency: string) {
     super(`Balance for ${currency} does not exist for this user.`);
@@ -88,11 +90,25 @@ export class UserBalanceAlreadyExistsException extends DomainException {
   }
 }
 
+export class InvalidUserBalanceException extends DomainException {
+  constructor() {
+    super("User balance amount must be positive.");
+  }
+}
+
 export class InsufficientBalanceException extends DomainException {
   constructor() {
     super("Insufficient Balance!");
   }
 }
+
+export class UnsupportedPaymentCurrencyException extends DomainException {
+  constructor(currency: string) {
+    super(`Currency ${currency} is not supported by the payment provider.`);
+  }
+}
+
+//withdrawal
 
 export class InvalidWithdrawalAmountException extends DomainException {
   constructor() {
@@ -111,11 +127,7 @@ export class WithdrawalNotPendingException extends DomainException {
   }
 }
 
-export class UnsupportedPaymentCurrencyException extends DomainException {
-  constructor(currency: string) {
-    super(`Currency ${currency} is not supported by the payment provider.`);
-  }
-}
+//deposit
 
 export class InvalidDepositAmountException extends DomainException {
   constructor() {
@@ -125,5 +137,12 @@ export class InvalidDepositAmountException extends DomainException {
 export class DepositNotFoundException extends DomainException {
   constructor() {
     super("Deposit not found.");
+  }
+}
+
+//ticket
+export class TicketNotFoundException extends DomainException {
+  constructor() {
+    super("Ticket not found.");
   }
 }

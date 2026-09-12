@@ -5,6 +5,7 @@ import { TicketPriority } from "@domain/enums/ticket-priority.enum";
 import { AuditAction } from "@domain/enums/audit-action.enum";
 import { TicketRepository } from "@domain/repositories/ticket.repository";
 import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
+import { TicketNotFoundException } from "@domain/exceptions/domain.exception";
 
 export interface UpdateTicketPriorityInput {
   actorUserId: string;
@@ -20,7 +21,7 @@ export class UpdateTicketPriorityUseCase {
     await this.unitOfWork.execute(
       async ({ ticketRepository, auditLogRepository }) => {
         const ticket = await ticketRepository.findByIdForUpdate(input.ticketId);
-        if (!ticket) throw new Error("Ticket not found.");
+        if (!ticket) throw new TicketNotFoundException();
 
         const previousPriority = ticket.priority;
         ticket.setPriority(input.priority);
