@@ -7,6 +7,7 @@ import {
   isZeroDecimal,
   subtractDecimal,
 } from "../utils/decimal.util";
+import { InvalidLedgerEntryException } from "@domain/exceptions/domain.exception";
 
 export interface CreateLedgerProps {
   id?: string;
@@ -102,9 +103,7 @@ export class Ledger {
     const expectedBalanceAfter = addDecimal(balanceBefore, amount);
 
     if (!isZeroDecimal(subtractDecimal(expectedBalanceAfter, balanceAfter))) {
-      throw new Error(
-        "Invalid ledger entry: balanceBefore + amount must equal balanceAfter.",
-      );
+      throw new InvalidLedgerEntryException();
     }
   }
 }

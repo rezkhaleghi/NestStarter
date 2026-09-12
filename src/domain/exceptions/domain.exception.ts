@@ -107,6 +107,12 @@ export class InsufficientBalanceException extends DomainException {
     super("Insufficient Balance!");
   }
 }
+export class InvalidLedgerEntryException extends DomainException {
+  constructor() {
+    super(
+      "Invalid ledger entry: balanceBefore + amount must equal balanceAfter.",
+    );
+  }
 
 export class UnsupportedPaymentCurrencyException extends DomainException {
   constructor(currency: string) {
