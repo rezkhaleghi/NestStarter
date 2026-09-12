@@ -133,6 +133,12 @@ export class WithdrawalNotPendingException extends DomainException {
   }
 }
 
+export class WithdrawalStatusChangeNotAllowedException extends DomainException {
+  constructor(action: string, status: string) {
+    super(`Withdrawal cannot be ${action} from ${status} status.`);
+  }
+}
+
 //deposit
 
 export class InvalidDepositAmountException extends DomainException {
@@ -148,6 +154,18 @@ export class DepositNotFoundException extends DomainException {
 export class DepositChangeStatusNotAllowedException extends DomainException {
   constructor(status: string) {
     super(`Deposit status change is not allowed from ${status}.`);
+  }
+}
+
+export class DepositCannotCancelException extends DomainException {
+  constructor(status: string) {
+    super(`Deposit cannot be cancelled from status ${status}.`);
+  }
+}
+
+export class DepositCannotFailException extends DomainException {
+  constructor(status: string) {
+    super(`Deposit cannot be marked as failed from status ${status}.`);
   }
 }
 

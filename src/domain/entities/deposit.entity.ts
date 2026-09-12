@@ -2,7 +2,11 @@ import { randomUUID } from "crypto";
 
 import { PaymentCurrency } from "../enums/payment-currency.enum";
 import { DepositStatus } from "../enums/deposit-status.enum";
-import { DepositChangeStatusNotAllowedException } from "@domain/exceptions/domain.exception";
+import {
+  DepositCannotCancelException,
+  DepositCannotFailException,
+  DepositChangeStatusNotAllowedException,
+} from "@domain/exceptions/domain.exception";
 
 export interface CreateDepositProps {
   id?: string;
@@ -67,7 +71,7 @@ export class Deposit {
 
   markFailed(): void {
     if (this.status !== DepositStatus.PENDING) {
-      throw new Error(`Cannot fail deposit from status ${this.status}.`);
+      throw new DepositCannotFailException(this.status);
     }
 
     this.status = DepositStatus.FAILED;
@@ -76,7 +80,7 @@ export class Deposit {
 
   markCancelled(): void {
     if (this.status !== DepositStatus.PENDING) {
-      throw new Error(`Cannot cancel deposit from status ${this.status}.`);
+      throw new DepositCannotCancelException(this.status);
     }
 
     this.status = DepositStatus.CANCELLED;

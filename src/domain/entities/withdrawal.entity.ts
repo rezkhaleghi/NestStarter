@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 
 import { PaymentCurrency } from "../enums/payment-currency.enum";
 import { WithdrawalStatus } from "../enums/withdrawal-status.enum";
+import { WithdrawalStatusChangeNotAllowedException } from "../exceptions/domain.exception";
 
 export interface CreateWithdrawalProps {
   id?: string;
@@ -56,7 +57,10 @@ export class Withdrawal {
 
   approve(): void {
     if (this.status !== WithdrawalStatus.PENDING) {
-      throw new Error("Withdrawal can only be approved from PENDING status.");
+      throw new WithdrawalStatusChangeNotAllowedException(
+        "approved",
+        this.status,
+      );
     }
 
     this.status = WithdrawalStatus.APPROVED;
@@ -65,19 +69,27 @@ export class Withdrawal {
 
   startProcessing(providerWithdrawalId?: string): void {
     if (this.status !== WithdrawalStatus.APPROVED) {
-      throw new Error("Withdrawal can only move to PROCESSING from APPROVED.");
+      throw new WithdrawalStatusChangeNotAllowedException(
+        "moved to PROCESSING",
+        this.status,
+      );
     }
 
     this.status = WithdrawalStatus.PROCESSING;
+
     if (providerWithdrawalId) {
       this.providerWithdrawalId = providerWithdrawalId;
     }
+
     this.updatedAt = new Date();
   }
 
   markCompleted(transactionId?: string): void {
     if (this.status !== WithdrawalStatus.PROCESSING) {
-      throw new Error("Withdrawal can only be completed from PROCESSING.");
+      throw new WithdrawalStatusChangeNotAllowedException(
+        "completed",
+        this.status,
+      );
     }
 
     this.status = WithdrawalStatus.COMPLETED;
@@ -88,7 +100,10 @@ export class Withdrawal {
 
   reject(reason?: string): void {
     if (this.status !== WithdrawalStatus.PENDING) {
-      throw new Error("Withdrawal can only be rejected from PENDING status.");
+      throw new WithdrawalStatusChangeNotAllowedException(
+        "rejected",
+        this.status,
+      );
     }
 
     this.status = WithdrawalStatus.REJECTED;
@@ -98,7 +113,10 @@ export class Withdrawal {
 
   markFailed(reason?: string): void {
     if (this.status !== WithdrawalStatus.PROCESSING) {
-      throw new Error("Withdrawal can only fail from PROCESSING status.");
+      throw new WithdrawalStatusChangeNotAllowedException(
+        "marked as failed",
+        this.status,
+      );
     }
 
     this.status = WithdrawalStatus.FAILED;
