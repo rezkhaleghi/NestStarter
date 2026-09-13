@@ -244,7 +244,10 @@ describe("deposit use cases", () => {
     depositRepository.search.mockResolvedValue(page);
 
     await expect(
-      new GetDepositUseCase(depositRepository as any).execute(deposit.id),
+      new GetDepositUseCase(depositRepository as any).execute({
+        userId: user.id,
+        id: deposit.id,
+      }),
     ).resolves.toBe(deposit);
 
     await expect(

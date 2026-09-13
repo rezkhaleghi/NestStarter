@@ -47,10 +47,11 @@ export class DepositsController {
   @ApiOperation({ summary: "Get my deposit" })
   @ApiResponse({ status: 200, description: "Deposit record" })
   async get(@Param("id", ParseUUIDPipe) id: string, @Req() req: Request) {
-    const deposit = await this.getDepositUseCase.execute(id);
-    if (deposit.userId !== req.session.userId!) {
-      throw new Error("Forbidden.");
-    }
+    const deposit = await this.getDepositUseCase.execute({
+      userId: req.session.userId!,
+      id,
+    });
+
     return deposit;
   }
 
@@ -69,10 +70,11 @@ export class DepositsController {
   @ApiOperation({ summary: "Verify a deposit" })
   @ApiResponse({ status: 200, description: "Deposit verified" })
   async verify(@Param("id", ParseUUIDPipe) id: string, @Req() req: Request) {
-    const deposit = await this.getDepositUseCase.execute(id);
-    if (deposit.userId !== req.session.userId!) {
-      throw new Error("Forbidden.");
-    }
+    const deposit = await this.getDepositUseCase.execute({
+      userId: req.session.userId!,
+      id,
+    });
+
     if (!deposit.providerPaymentId) {
       throw new Error("Deposit has no provider payment ID.");
     }

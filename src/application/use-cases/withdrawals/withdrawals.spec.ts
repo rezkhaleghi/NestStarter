@@ -147,10 +147,10 @@ describe("withdrawal use cases", () => {
     withdrawalRepository.search.mockResolvedValue(page);
 
     await expect(
-      new GetWithdrawalUseCase(withdrawalRepository as any).execute(
-        withdrawal.id,
-        user.id,
-      ),
+      new GetWithdrawalUseCase(withdrawalRepository as any).execute({
+        userId: user.id,
+        id: withdrawal.id,
+      }),
     ).resolves.toBe(withdrawal);
     await expect(
       new ListWithdrawalsUseCase(withdrawalRepository as any).execute({

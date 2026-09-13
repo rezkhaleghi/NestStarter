@@ -8,8 +8,14 @@ import { DepositNotFoundException } from "@domain/exceptions/domain.exception";
 export class GetDepositUseCase {
   constructor(private readonly depositRepository: DepositRepository) {}
 
-  async execute(id: string): Promise<Deposit> {
-    const deposit = await this.depositRepository.findById(id);
+  async execute({
+    userId,
+    id,
+  }: {
+    userId: string;
+    id: string;
+  }): Promise<Deposit> {
+    const deposit = await this.depositRepository.findByUserIdAndId(userId, id);
     if (!deposit) {
       throw new DepositNotFoundException();
     }

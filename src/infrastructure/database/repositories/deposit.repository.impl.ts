@@ -34,6 +34,17 @@ export class DepositRepositoryImpl extends DepositRepository {
     return row ? this.toDomain(row) : null;
   }
 
+  async findByUserIdAndId(userId: string, id: string): Promise<Deposit | null> {
+    const row = await this.repository.findOne({
+      where: {
+        id,
+        userId,
+      },
+    });
+
+    return row ? this.toDomain(row) : null;
+  }
+
   async findByIdForUpdate(id: string): Promise<Deposit | null> {
     const row = await this.repository.findOne({
       where: { id },

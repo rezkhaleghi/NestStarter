@@ -8,7 +8,13 @@ import { WithdrawalRepository } from "@domain/repositories/withdrawal.repository
 export class GetWithdrawalUseCase {
   constructor(private readonly withdrawalRepository: WithdrawalRepository) {}
 
-  async execute(id: string, userId: string): Promise<Withdrawal> {
+  async execute({
+    userId,
+    id,
+  }: {
+    userId: string;
+    id: string;
+  }): Promise<Withdrawal> {
     const withdrawal = await this.withdrawalRepository.findByUserIdAndId(
       userId,
       id,

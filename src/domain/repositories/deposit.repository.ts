@@ -17,6 +17,10 @@ export abstract class DepositRepository {
   abstract create(deposit: Deposit): Promise<Deposit>;
   abstract save(deposit: Deposit): Promise<Deposit>;
   abstract findById(id: string): Promise<Deposit | null>;
+  abstract findByUserIdAndId(
+    userId: string,
+    id: string,
+  ): Promise<Deposit | null>;
   abstract findByIdForUpdate(id: string): Promise<Deposit | null>;
   abstract findByReferenceId(referenceId: string): Promise<Deposit | null>;
   abstract search(

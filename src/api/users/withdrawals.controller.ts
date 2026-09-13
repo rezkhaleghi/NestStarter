@@ -45,10 +45,10 @@ export class WithdrawalsController {
   @ApiOperation({ summary: "Get my withdrawal" })
   @ApiResponse({ status: 200, description: "Withdrawal record" })
   async get(@Param("id", ParseUUIDPipe) id: string, @Req() req: Request) {
-    const withdrawal = await this.getWithdrawalUseCase.execute(
+    const withdrawal = await this.getWithdrawalUseCase.execute({
+      userId: req.session.userId!,
       id,
-      req.session.userId!,
-    );
+    });
 
     return withdrawal;
   }
