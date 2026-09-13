@@ -149,6 +149,7 @@ describe("withdrawal use cases", () => {
     await expect(
       new GetWithdrawalUseCase(withdrawalRepository as any).execute(
         withdrawal.id,
+        user.id,
       ),
     ).resolves.toBe(withdrawal);
     await expect(
