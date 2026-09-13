@@ -32,13 +32,13 @@ export class GetTicketUseCase {
     assignedSupportUser: { id: string; email: string } | null;
     messages: TicketMessage[];
   }> {
-    const ticket = await this.ticketRepository.findById(input.ticketId);
+    const ticket = await this.ticketRepository.findByUserIdAndId(
+      input.userId,
+      input.ticketId,
+    );
+
     if (!ticket) {
       throw new TicketNotFoundException();
-    }
-
-    if (ticket.userId !== input.userId) {
-      throw new TicketAccessNotAllowedException();
     }
 
     const category = ticket.categoryId

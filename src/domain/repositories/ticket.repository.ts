@@ -20,6 +20,11 @@ export abstract class TicketRepository {
   abstract create(ticket: Ticket): Promise<Ticket>;
   abstract save(ticket: Ticket): Promise<Ticket>;
   abstract findById(id: string): Promise<Ticket | null>;
+  abstract findByUserIdAndId(
+    userId: string,
+    id: string,
+  ): Promise<Ticket | null>;
+
   abstract findByIdForUpdate(id: string): Promise<Ticket | null>;
   abstract findByUserId(
     userId: string,

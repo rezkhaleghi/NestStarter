@@ -36,6 +36,17 @@ export class TicketRepositoryImpl extends TicketRepository {
     return row ? this.toDomain(row) : null;
   }
 
+  async findByUserIdAndId(userId: string, id: string): Promise<Ticket | null> {
+    const row = await this.repository.findOne({
+      where: {
+        id,
+        userId,
+      },
+    });
+
+    return row ? this.toDomain(row) : null;
+  }
+
   async findByIdForUpdate(id: string): Promise<Ticket | null> {
     const row = await this.repository.findOne({
       where: { id },
