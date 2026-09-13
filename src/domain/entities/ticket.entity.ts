@@ -2,7 +2,10 @@ import { randomUUID } from "crypto";
 
 import { TicketPriority } from "../enums/ticket-priority.enum";
 import { TicketStatus } from "../enums/ticket-status.enum";
-import { FieldMustExistException } from "@domain/exceptions/domain.exception";
+import {
+  FieldMustExistException,
+  TicketStatusTransitionException,
+} from "@domain/exceptions/domain.exception";
 
 export interface CreateTicketProps {
   id?: string;
@@ -124,9 +127,7 @@ export class Ticket {
     };
 
     if (!allowed[current]?.includes(next)) {
-      throw new Error(
-        `Invalid ticket status transition from ${current} to ${next}.`,
-      );
+      throw new TicketStatusTransitionException(current, next);
     }
   }
 }

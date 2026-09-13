@@ -113,7 +113,7 @@ export class InvalidLedgerEntryException extends DomainException {
       "Invalid ledger entry: balanceBefore + amount must equal balanceAfter.",
     );
   }
-
+}
 export class UnsupportedPaymentCurrencyException extends DomainException {
   constructor(currency: string) {
     super(`Currency ${currency} is not supported by the payment provider.`);
@@ -202,5 +202,11 @@ export class TicketClosedException extends DomainException {
 export class TicketAccessNotAllowedException extends DomainException {
   constructor() {
     super("You cannot access this ticket.");
+  }
+}
+
+export class TicketStatusTransitionException extends DomainException {
+  constructor(current: string, next: string) {
+    super(`Invalid ticket status transition from ${current} to ${next}.`);
   }
 }
