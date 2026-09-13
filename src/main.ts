@@ -96,13 +96,18 @@ async function bootstrap() {
   app.use(passport.session()); // Enables Passport to restore the authenticated user from the existing Express session.
 
   // Swagger/OpenAPI documentation setup.
-  const config = new DocumentBuilder()
-    .setTitle("API")
-    .setDescription("Auto-generated API documentation")
-    .setVersion("1.0")
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup("api/docs", app, document);
+  const swaggerEnabled = configService.get<boolean>("SWAGGER_ENABLED");
+
+  if (swaggerEnabled) {
+    const config = new DocumentBuilder()
+      .setTitle("API")
+      .setDescription("Auto-generated API documentation")
+      .setVersion("1.0")
+      .build();
+
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup("api/docs", app, document);
+  }
 
   await app.listen(configService.get<number>("PORT", 3000)); // Start the HTTP server.
 }
