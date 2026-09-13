@@ -210,3 +210,18 @@ export class TicketStatusTransitionException extends DomainException {
     super(`Invalid ticket status transition from ${current} to ${next}.`);
   }
 }
+
+// Decimal utility exceptions
+export class InvalidDecimalValueException extends DomainException {
+  constructor(value: string) {
+    super(`Invalid decimal value: ${value}`);
+  }
+}
+
+export class DecimalScaleExceededException extends DomainException {
+  constructor(maxDecimalScale: string) {
+    super(
+      `Decimal value cannot have more than ${maxDecimalScale} decimal places.`,
+    );
+  }
+}

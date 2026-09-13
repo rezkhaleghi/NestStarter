@@ -1,3 +1,8 @@
+import {
+  DecimalScaleExceededException,
+  InvalidDecimalValueException,
+} from "@domain/exceptions/domain.exception";
+
 const MAX_DECIMAL_SCALE = 18;
 
 export function addDecimal(a: string, b: string): string {
@@ -39,7 +44,7 @@ function parseDecimal(input: string): {
   const normalized = input.trim();
 
   if (!/^-?\d+(\.\d+)?$/.test(normalized)) {
-    throw new Error(`Invalid decimal value: ${input}`);
+    throw new InvalidDecimalValueException(input);
   }
 
   const negative = normalized.startsWith("-");
@@ -48,9 +53,7 @@ function parseDecimal(input: string): {
   const [integerPart, decimalPart = ""] = unsigned.split(".");
 
   if (decimalPart.length > MAX_DECIMAL_SCALE) {
-    throw new Error(
-      `Decimal value cannot have more than ${MAX_DECIMAL_SCALE} decimal places.`,
-    );
+    throw new DecimalScaleExceededException(MAX_DECIMAL_SCALE.toString());
   }
 
   const scaledValue = BigInt(`${integerPart}${decimalPart}`);
