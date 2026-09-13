@@ -5,10 +5,7 @@ import { AuditLog } from "@domain/entities/audit-log.entity";
 import { AuditAction } from "@domain/enums/audit-action.enum";
 import { WithdrawalStatus } from "@domain/enums/withdrawal-status.enum";
 import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
-import {
-  WithdrawalNotFoundException,
-  WithdrawalNotPendingException,
-} from "@domain/exceptions/domain.exception";
+import { WithdrawalNotFoundException } from "@domain/exceptions/domain.exception";
 
 export interface ApproveWithdrawalInput {
   withdrawalId: string;
@@ -27,9 +24,6 @@ export class AdminApproveWithdrawalUseCase {
         );
         if (!withdrawal) {
           throw new WithdrawalNotFoundException();
-        }
-        if (withdrawal.status !== WithdrawalStatus.PENDING) {
-          throw new WithdrawalNotPendingException();
         }
 
         withdrawal.approve();

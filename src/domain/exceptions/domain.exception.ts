@@ -133,11 +133,6 @@ export class WithdrawalNotFoundException extends DomainException {
     super("Withdrawal not found.");
   }
 }
-export class WithdrawalNotPendingException extends DomainException {
-  constructor() {
-    super("Only PENDING withdrawals can be approved.");
-  }
-}
 
 export class WithdrawalStatusChangeNotAllowedException extends DomainException {
   constructor(action: string, status: string) {

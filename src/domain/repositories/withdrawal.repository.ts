@@ -16,8 +16,16 @@ export interface WithdrawalSearchFilters {
 export abstract class WithdrawalRepository {
   abstract create(withdrawal: Withdrawal): Promise<Withdrawal>;
   abstract save(withdrawal: Withdrawal): Promise<Withdrawal>;
+
   abstract findById(id: string): Promise<Withdrawal | null>;
+
+  abstract findByUserIdAndId(
+    userId: string,
+    id: string,
+  ): Promise<Withdrawal | null>;
+
   abstract findByIdForUpdate(id: string): Promise<Withdrawal | null>;
+
   abstract search(
     filters: WithdrawalSearchFilters,
     params: PageQuery<WithdrawalSortBy>,

@@ -34,11 +34,26 @@ export class WithdrawalRepositoryImpl extends WithdrawalRepository {
     return row ? this.toDomain(row) : null;
   }
 
+  async findByUserIdAndId(
+    userId: string,
+    id: string,
+  ): Promise<Withdrawal | null> {
+    const row = await this.repository.findOne({
+      where: {
+        id,
+        userId,
+      },
+    });
+
+    return row ? this.toDomain(row) : null;
+  }
+
   async findByIdForUpdate(id: string): Promise<Withdrawal | null> {
     const row = await this.repository.findOne({
       where: { id },
       lock: { mode: "pessimistic_write" },
     });
+
     return row ? this.toDomain(row) : null;
   }
 
@@ -50,22 +65,28 @@ export class WithdrawalRepositoryImpl extends WithdrawalRepository {
 
     if (filters.userId)
       qb.andWhere("withdrawal.userId = :userId", { userId: filters.userId });
+
     if (filters.currency)
       qb.andWhere("withdrawal.currency = :currency", {
         currency: filters.currency,
       });
+
     if (filters.status)
       qb.andWhere("withdrawal.status = :status", { status: filters.status });
+
     if (filters.referenceId)
       qb.andWhere("withdrawal.referenceId = :referenceId", {
         referenceId: filters.referenceId,
       });
+
     if (filters.providerWithdrawalId)
       qb.andWhere("withdrawal.providerWithdrawalId = :providerWithdrawalId", {
         providerWithdrawalId: filters.providerWithdrawalId,
       });
+
     if (filters.from)
       qb.andWhere("withdrawal.createdAt >= :from", { from: filters.from });
+
     if (filters.to)
       qb.andWhere("withdrawal.createdAt <= :to", { to: filters.to });
 
@@ -74,6 +95,7 @@ export class WithdrawalRepositoryImpl extends WithdrawalRepository {
     qb.take(params.limit);
 
     const [rows, total] = await qb.getManyAndCount();
+
     return {
       data: rows.map((row) => this.toDomain(row)),
       total,
@@ -103,6 +125,7 @@ export class WithdrawalRepositoryImpl extends WithdrawalRepository {
 
   private toOrm(withdrawal: Withdrawal): WithdrawalOrmEntity {
     const row = new WithdrawalOrmEntity();
+
     row.id = withdrawal.id;
     row.userId = withdrawal.userId;
     row.currency = withdrawal.currency;
@@ -116,6 +139,7 @@ export class WithdrawalRepositoryImpl extends WithdrawalRepository {
     row.createdAt = withdrawal.createdAt;
     row.updatedAt = withdrawal.updatedAt;
     row.completedAt = withdrawal.completedAt;
+
     return row;
   }
 }

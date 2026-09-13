@@ -5,13 +5,11 @@ import { Ledger } from "@domain/entities/ledger.entity";
 import { AuditLog } from "@domain/entities/audit-log.entity";
 import { LedgerType } from "@domain/enums/ledger-type.enum";
 import { AuditAction } from "@domain/enums/audit-action.enum";
-import { WithdrawalStatus } from "@domain/enums/withdrawal-status.enum";
 import { addDecimal } from "@domain/utils/decimal.util";
 import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
 import {
   UserBalanceNotFoundException,
   WithdrawalNotFoundException,
-  WithdrawalNotPendingException,
 } from "@domain/exceptions/domain.exception";
 
 export interface RejectWithdrawalInput {
@@ -37,9 +35,6 @@ export class AdminRejectWithdrawalUseCase {
         );
         if (!withdrawal) {
           throw new WithdrawalNotFoundException();
-        }
-        if (withdrawal.status !== WithdrawalStatus.PENDING) {
-          throw new WithdrawalNotPendingException();
         }
 
         const balance =
