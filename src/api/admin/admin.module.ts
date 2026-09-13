@@ -30,7 +30,7 @@ import { UpdateTicketCategoryUseCase } from "@application/use-cases/admin-ticket
 import { DeleteTicketCategoryUseCase } from "@application/use-cases/admin-tickets/delete-ticket-category.use-case";
 
 @Module({
-  imports: [ApplicationModule, InfrastructureModule],
+  imports: [ApplicationModule],
   controllers: [
     AdminUsersController,
     AdminUserBalancesController,

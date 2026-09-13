@@ -13,11 +13,11 @@ import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 
 import { AuthSessionGuard } from "../auth/auth-session.guard";
-import { CreateDepositRequestDto } from "./dtos/financial.request.dto";
 import { CreateDepositUseCase } from "@application/use-cases/deposits/create-deposit.use-case";
 import { VerifyDepositUseCase } from "@application/use-cases/deposits/verify-deposit.use-case";
 import { ListDepositsUseCase } from "@application/use-cases/deposits/list-deposits.use-case";
 import { GetDepositUseCase } from "@application/use-cases/deposits/get-deposit.use-case";
+import { CreateDepositRequestDto } from "./dtos/create-deposit.request.dto";
 
 @ApiTags("deposits")
 @Controller("deposits")
