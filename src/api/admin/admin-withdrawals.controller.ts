@@ -25,7 +25,7 @@ import { AdminRejectWithdrawalUseCase } from "@application/use-cases/admin-finan
 @ApiTags("admin-withdrawals")
 @Controller("admin/withdrawals")
 @UseGuards(AdminAuthGuard)
-export class AdminWithdrawalController {
+export class AdminWithdrawalsController {
   constructor(
     private readonly listWithdrawalsUseCase: AdminListWithdrawalsUseCase,
     private readonly getWithdrawalUseCase: AdminGetWithdrawalUseCase,

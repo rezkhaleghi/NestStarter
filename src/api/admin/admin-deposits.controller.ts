@@ -16,7 +16,7 @@ import { AdminListDepositsUseCase } from "@application/use-cases/admin-financial
 @ApiTags("admin-deposits")
 @Controller("admin/deposits")
 @UseGuards(AdminAuthGuard)
-export class AdminDepositController {
+export class AdminDepositsController {
   constructor(
     private readonly listDepositsUseCase: AdminListDepositsUseCase,
     private readonly getDepositUseCase: AdminGetDepositUseCase,

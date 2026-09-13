@@ -1,6 +1,5 @@
 import { Module } from "@nestjs/common";
 import { ApplicationModule } from "../../application/application.module";
-import { InfrastructureModule } from "../../infrastructure/infrastructure.module";
 import { AdminAuthGuard } from "./admin-auth.guard";
 import { AdminUsersController } from "./admin-users.controller";
 import { CreateAdminUserUseCase } from "../../application/use-cases/admin-users/create-user.use-case";
@@ -15,8 +14,8 @@ import { AdminUserBalancesController } from "./admin-user-balances.controller";
 import { UpdateUserBalanceUseCase } from "@application/use-cases/admin-financials/update-user-balance.use-case";
 import { AdminLedgersController } from "./admin-ledgers.controller";
 import { ListLedgersUseCase } from "@application/use-cases/admin-financials/list-ledgers.use-case";
-import { AdminDepositController } from "./admin-deposit.controller";
-import { AdminWithdrawalController } from "./admin-withdrawal.controller";
+import { AdminDepositsController } from "./admin-deposits.controller";
+import { AdminWithdrawalsController } from "./admin-withdrawals.controller";
 import { AdminTicketsController } from "./admin-tickets.controller";
 import { ListAdminTicketsUseCase } from "@application/use-cases/admin-tickets/list-admin-tickets.use-case";
 import { GetAdminTicketUseCase } from "@application/use-cases/admin-tickets/get-admin-ticket.use-case";
@@ -35,32 +34,10 @@ import { DeleteTicketCategoryUseCase } from "@application/use-cases/admin-ticket
     AdminUsersController,
     AdminUserBalancesController,
     AdminLedgersController,
-    AdminDepositController,
-    AdminWithdrawalController,
+    AdminDepositsController,
+    AdminWithdrawalsController,
     AdminTicketsController,
   ],
-  providers: [
-    AdminAuthGuard,
-    CreateAdminUserUseCase,
-    DeleteAdminUserUseCase,
-    GetUserUseCase,
-    ListUsersUseCase,
-    UpdateAdminUserUseCase,
-    DeleteAdminUserAvatarUseCase,
-    GetAdminStatisticsUseCase,
-    GetAuditLogsUseCase,
-    UpdateUserBalanceUseCase,
-    ListLedgersUseCase,
-    ListAdminTicketsUseCase,
-    GetAdminTicketUseCase,
-    CreateAdminTicketMessageUseCase,
-    AssignTicketUseCase,
-    UpdateTicketStatusUseCase,
-    UpdateTicketPriorityUseCase,
-    ListTicketCategoriesUseCase,
-    CreateTicketCategoryUseCase,
-    UpdateTicketCategoryUseCase,
-    DeleteTicketCategoryUseCase,
-  ],
+  providers: [AdminAuthGuard],
 })
 export class AdminModule {}
