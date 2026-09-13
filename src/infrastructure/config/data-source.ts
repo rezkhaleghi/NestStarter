@@ -1,11 +1,13 @@
 import "dotenv/config";
+
 import { DataSource } from "typeorm";
+
 import { UserOrmEntity } from "../database/orm-entities/user.orm-entity";
 import { AuditLogOrmEntity } from "../database/orm-entities/audit-log.orm-entity";
-import { UserBalanceOrmEntity } from "@infrastructure/database/orm-entities/user-balance.orm-entity";
-import { LedgerOrmEntity } from "@infrastructure/database/orm-entities/ledger.orm-entity";
-import { DepositOrmEntity } from "@infrastructure/database/orm-entities/deposit.orm-entity";
-import { WithdrawalOrmEntity } from "@infrastructure/database/orm-entities/withdrawal.orm-entity";
+import { UserBalanceOrmEntity } from "../database/orm-entities/user-balance.orm-entity";
+import { LedgerOrmEntity } from "../database/orm-entities/ledger.orm-entity";
+import { DepositOrmEntity } from "../database/orm-entities/deposit.orm-entity";
+import { WithdrawalOrmEntity } from "../database/orm-entities/withdrawal.orm-entity";
 import { TicketOrmEntity } from "../database/orm-entities/ticket.orm-entity";
 import { TicketMessageOrmEntity } from "../database/orm-entities/ticket-message.orm-entity";
 import { TicketCategoryOrmEntity } from "../database/orm-entities/ticket-category.orm-entity";
