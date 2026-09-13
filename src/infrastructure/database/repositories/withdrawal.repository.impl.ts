@@ -130,7 +130,7 @@ export class WithdrawalRepositoryImpl extends WithdrawalRepository {
     row.userId = withdrawal.userId;
     row.currency = withdrawal.currency;
     row.amount = withdrawal.amount;
-    row.status = withdrawal.status;
+    row.status = withdrawal.getStatus();
     row.destination = withdrawal.destination;
     row.referenceId = withdrawal.referenceId;
     row.providerWithdrawalId = withdrawal.providerWithdrawalId;

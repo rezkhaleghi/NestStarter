@@ -199,7 +199,7 @@ describe("admin financial use cases", () => {
       unitOfWork as any,
     ).execute({ withdrawalId: withdrawal.id, adminUserId: "admin-id" });
 
-    expect(result.status).toBe(WithdrawalStatus.APPROVED);
+    expect(result.getStatus()).toBe(WithdrawalStatus.APPROVED);
     expect(auditLogRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({
         actorUserId: "admin-id",
@@ -235,7 +235,7 @@ describe("admin financial use cases", () => {
       reason: "Manual review failed",
     });
 
-    expect(result.status).toBe(WithdrawalStatus.REJECTED);
+    expect(result.getStatus()).toBe(WithdrawalStatus.REJECTED);
     expect(balance.amount).toBe("100");
     expect(ledgerRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({ type: LedgerType.REFUND }),

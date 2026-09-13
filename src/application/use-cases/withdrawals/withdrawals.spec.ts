@@ -31,6 +31,7 @@ const userBalanceRepository = {
 const withdrawalRepository = {
   create: jest.fn<(value: unknown) => Promise<unknown>>(),
   findById: jest.fn<() => Promise<Withdrawal | null>>(),
+  findByUserIdAndId: jest.fn<() => Promise<Withdrawal | null>>(),
   search: jest.fn<() => Promise<unknown>>(),
 };
 const ledgerRepository = {
@@ -82,7 +83,7 @@ describe("withdrawal use cases", () => {
       },
     );
 
-    expect(result.status).toBe(WithdrawalStatus.PENDING);
+    expect(result.getStatus()).toBe(WithdrawalStatus.PENDING);
     expect(result.destination).toBe("wallet:abc123");
     expect(balance.amount).toBe("100");
     expect(ledgerRepository.create).toHaveBeenCalledWith(
@@ -143,7 +144,7 @@ describe("withdrawal use cases", () => {
       total: 1,
       totalPages: 1,
     };
-    withdrawalRepository.findById.mockResolvedValue(withdrawal);
+    withdrawalRepository.findByUserIdAndId.mockResolvedValue(withdrawal);
     withdrawalRepository.search.mockResolvedValue(page);
 
     await expect(

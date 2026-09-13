@@ -26,7 +26,7 @@ export class Withdrawal {
     public readonly userId: string,
     public readonly currency: PaymentCurrency,
     public readonly amount: string,
-    public status: WithdrawalStatus,
+    private status: WithdrawalStatus,
     public readonly destination: string,
     public readonly referenceId: string,
     public providerWithdrawalId: string | null,
@@ -36,6 +36,10 @@ export class Withdrawal {
     public completedAt: Date | null,
     public rejectionReason: string | null,
   ) {}
+
+  getStatus(): WithdrawalStatus {
+    return this.status;
+  }
 
   static create(props: CreateWithdrawalProps): Withdrawal {
     return new Withdrawal(

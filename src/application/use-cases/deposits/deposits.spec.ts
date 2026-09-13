@@ -33,6 +33,7 @@ const depositRepository = {
   create: jest.fn<(value: unknown) => Promise<unknown>>(),
   save: jest.fn<(value: unknown) => Promise<unknown>>(),
   findById: jest.fn<() => Promise<Deposit | null>>(),
+  findByUserIdAndId: jest.fn<() => Promise<Deposit | null>>(),
   findByIdForUpdate: jest.fn<() => Promise<Deposit | null>>(),
   search: jest.fn<() => Promise<unknown>>(),
 };
@@ -240,7 +241,7 @@ describe("deposit use cases", () => {
       totalPages: 1,
     };
 
-    depositRepository.findById.mockResolvedValue(deposit);
+    depositRepository.findByUserIdAndId.mockResolvedValue(deposit);
     depositRepository.search.mockResolvedValue(page);
 
     await expect(
