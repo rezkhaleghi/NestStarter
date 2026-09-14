@@ -37,6 +37,8 @@ export class AdminRejectWithdrawalUseCase {
           throw new WithdrawalNotFoundException();
         }
 
+        withdrawal.reject(input.reason);
+
         const balance =
           await userBalanceRepository.findByUserIdAndCurrencyForUpdate(
             withdrawal.userId,
@@ -68,7 +70,7 @@ export class AdminRejectWithdrawalUseCase {
           }),
         );
 
-        withdrawal.reject(input.reason);
+        // withdrawal.reject(input.reason);
         const saved = await withdrawalRepository.save(withdrawal);
 
         await auditLogRepository.create(
