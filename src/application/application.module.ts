@@ -33,6 +33,7 @@ import { AdminListWithdrawalsUseCase } from "./use-cases/admin-financials/list-w
 import { AdminGetWithdrawalUseCase } from "./use-cases/admin-financials/get-withdrawal.use-case";
 import { AdminApproveWithdrawalUseCase } from "./use-cases/admin-financials/approve-withdrawal.use-case";
 import { AdminRejectWithdrawalUseCase } from "./use-cases/admin-financials/reject-withdrawal.use-case";
+import { StartProcessingWithdrawalUseCase } from "./use-cases/admin-financials/start-processing-withdrawal.use-case";
 
 import { ListDepositsUseCase } from "./use-cases/deposits/list-deposits.use-case";
 import { GetDepositUseCase } from "./use-cases/deposits/get-deposit.use-case";
@@ -56,6 +57,7 @@ import { UpdateTicketCategoryUseCase } from "./use-cases/admin-tickets/update-ti
 import { DeleteTicketCategoryUseCase } from "./use-cases/admin-tickets/delete-ticket-category.use-case";
 
 import { InfrastructureModule } from "../infrastructure/infrastructure.module";
+import { AdminCompleteWithdrawalUseCase } from "./use-cases/admin-financials/complete-withdrawal.use-case";
 
 /**
  * Registers application use cases. Infrastructure bindings are supplied by
@@ -129,6 +131,8 @@ import { InfrastructureModule } from "../infrastructure/infrastructure.module";
     AdminGetWithdrawalUseCase,
     AdminApproveWithdrawalUseCase,
     AdminRejectWithdrawalUseCase,
+    StartProcessingWithdrawalUseCase,
+    AdminCompleteWithdrawalUseCase,
   ],
 
   exports: [
@@ -167,6 +171,8 @@ import { InfrastructureModule } from "../infrastructure/infrastructure.module";
     AdminGetWithdrawalUseCase,
     AdminApproveWithdrawalUseCase,
     AdminRejectWithdrawalUseCase,
+    StartProcessingWithdrawalUseCase,
+    AdminCompleteWithdrawalUseCase,
 
     // Deposits
     CreateDepositUseCase,
