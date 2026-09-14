@@ -21,8 +21,6 @@ import { AdminApproveWithdrawalUseCase } from "@application/use-cases/admin-fina
 import { AdminGetWithdrawalUseCase } from "@application/use-cases/admin-financials/get-withdrawal.use-case";
 import { AdminListWithdrawalsUseCase } from "@application/use-cases/admin-financials/list-withdrawals.use-case";
 import { AdminRejectWithdrawalUseCase } from "@application/use-cases/admin-financials/reject-withdrawal.use-case";
-import { StartProcessingWithdrawalUseCase } from "@application/use-cases/admin-financials/start-processing-withdrawal.use-case";
-import { AdminCompleteWithdrawalUseCase } from "@application/use-cases/admin-financials/complete-withdrawal.use-case";
 
 @ApiTags("admin-withdrawals")
 @Controller("admin/withdrawals")
@@ -33,8 +31,6 @@ export class AdminWithdrawalsController {
     private readonly getWithdrawalUseCase: AdminGetWithdrawalUseCase,
     private readonly approveWithdrawalUseCase: AdminApproveWithdrawalUseCase,
     private readonly rejectWithdrawalUseCase: AdminRejectWithdrawalUseCase,
-    private readonly startProcessingWithdrawalUseCase: StartProcessingWithdrawalUseCase,
-    private readonly completeWithdrawalUseCase: AdminCompleteWithdrawalUseCase,
   ) {}
 
   @Get()
@@ -65,26 +61,6 @@ export class AdminWithdrawalsController {
   @ApiResponse({ status: 200, description: "Withdrawal approved" })
   async approve(@Param("id", ParseUUIDPipe) id: string, @Req() req: Request) {
     return this.approveWithdrawalUseCase.execute({
-      withdrawalId: id,
-      adminUserId: req.session.userId!,
-    });
-  }
-
-  @Patch(":id/process")
-  @ApiOperation({ summary: "Start processing withdrawal" })
-  @ApiResponse({ status: 200, description: "Withdrawal processing started" })
-  async process(@Param("id", ParseUUIDPipe) id: string, @Req() req: Request) {
-    return this.startProcessingWithdrawalUseCase.execute({
-      withdrawalId: id,
-      adminUserId: req.session.userId!,
-    });
-  }
-
-  @Patch(":id/complete")
-  @ApiOperation({ summary: "Complete withdrawal" })
-  @ApiResponse({ status: 200, description: "Withdrawal completed" })
-  async complete(@Param("id", ParseUUIDPipe) id: string, @Req() req: Request) {
-    return this.completeWithdrawalUseCase.execute({
       withdrawalId: id,
       adminUserId: req.session.userId!,
     });
