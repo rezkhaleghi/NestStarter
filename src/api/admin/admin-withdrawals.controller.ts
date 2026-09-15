@@ -17,6 +17,7 @@ import {
   ListWithdrawalsQueryDto,
   RejectWithdrawalRequestDto,
 } from "./dtos/financial-query.dto";
+
 import { AdminApproveWithdrawalUseCase } from "@application/use-cases/admin-financials/approve-withdrawal.use-case";
 import { AdminGetWithdrawalUseCase } from "@application/use-cases/admin-financials/get-withdrawal.use-case";
 import { AdminListWithdrawalsUseCase } from "@application/use-cases/admin-financials/list-withdrawals.use-case";
@@ -38,14 +39,17 @@ export class AdminWithdrawalsController {
   @ApiResponse({ status: 200, description: "Withdrawals list" })
   async list(@Query() query: ListWithdrawalsQueryDto) {
     return this.listWithdrawalsUseCase.execute({
-      page: query.page ?? 1,
-      limit: query.limit ?? 20,
+      page: query.page,
+      limit: query.limit,
       userId: query.userId,
       currency: query.currency,
       status: query.status,
       referenceId: query.referenceId,
+      providerWithdrawalId: query.providerWithdrawalId,
       from: query.from ? new Date(query.from) : undefined,
       to: query.to ? new Date(query.to) : undefined,
+      sortBy: query.sortBy,
+      sortDirection: query.sortDirection,
     });
   }
 

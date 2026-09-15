@@ -10,6 +10,7 @@ import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 
 import { AdminAuthGuard } from "./admin-auth.guard";
 import { ListDepositsQueryDto } from "./dtos/financial-query.dto";
+
 import { AdminGetDepositUseCase } from "@application/use-cases/admin-financials/get-deposit.use-case";
 import { AdminListDepositsUseCase } from "@application/use-cases/admin-financials/list-deposits.use-case";
 
@@ -27,8 +28,8 @@ export class AdminDepositsController {
   @ApiResponse({ status: 200, description: "Deposits list" })
   async list(@Query() query: ListDepositsQueryDto) {
     return this.listDepositsUseCase.execute({
-      page: query.page ?? 1,
-      limit: query.limit ?? 20,
+      page: query.page,
+      limit: query.limit,
       userId: query.userId,
       currency: query.currency,
       status: query.status,
@@ -36,6 +37,8 @@ export class AdminDepositsController {
       providerPaymentId: query.providerPaymentId,
       from: query.from ? new Date(query.from) : undefined,
       to: query.to ? new Date(query.to) : undefined,
+      sortBy: query.sortBy,
+      sortDirection: query.sortDirection,
     });
   }
 
