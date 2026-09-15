@@ -30,7 +30,10 @@ export class WithdrawalRepositoryImpl extends WithdrawalRepository {
   }
 
   async findById(id: string): Promise<Withdrawal | null> {
-    const row = await this.repository.findOne({ where: { id } });
+    const row = await this.repository.findOne({
+      where: { id },
+    });
+
     return row ? this.toDomain(row) : null;
   }
 
@@ -63,34 +66,53 @@ export class WithdrawalRepositoryImpl extends WithdrawalRepository {
   ): Promise<PageResult<Withdrawal>> {
     const qb = this.repository.createQueryBuilder("withdrawal");
 
-    if (filters.userId)
-      qb.andWhere("withdrawal.userId = :userId", { userId: filters.userId });
+    if (filters.userId) {
+      qb.andWhere("withdrawal.userId = :userId", {
+        userId: filters.userId,
+      });
+    }
 
-    if (filters.currency)
+    if (filters.currency) {
       qb.andWhere("withdrawal.currency = :currency", {
         currency: filters.currency,
       });
+    }
 
-    if (filters.status)
-      qb.andWhere("withdrawal.status = :status", { status: filters.status });
+    if (filters.status) {
+      qb.andWhere("withdrawal.status = :status", {
+        status: filters.status,
+      });
+    }
 
-    if (filters.referenceId)
+    if (filters.referenceId) {
       qb.andWhere("withdrawal.referenceId = :referenceId", {
         referenceId: filters.referenceId,
       });
+    }
 
-    if (filters.providerWithdrawalId)
+    if (filters.providerWithdrawalId) {
       qb.andWhere("withdrawal.providerWithdrawalId = :providerWithdrawalId", {
         providerWithdrawalId: filters.providerWithdrawalId,
       });
+    }
 
-    if (filters.from)
-      qb.andWhere("withdrawal.createdAt >= :from", { from: filters.from });
+    if (filters.from) {
+      qb.andWhere("withdrawal.createdAt >= :from", {
+        from: filters.from,
+      });
+    }
 
-    if (filters.to)
-      qb.andWhere("withdrawal.createdAt <= :to", { to: filters.to });
+    if (filters.to) {
+      qb.andWhere("withdrawal.createdAt <= :to", {
+        to: filters.to,
+      });
+    }
 
-    qb.orderBy("withdrawal.createdAt", params.sortDirection ?? "DESC");
+    const sortColumn =
+      params.sortBy === "amount" ? "withdrawal.amount" : "withdrawal.createdAt";
+
+    qb.orderBy(sortColumn, params.sortDirection ?? "DESC");
+
     qb.skip((params.page - 1) * params.limit);
     qb.take(params.limit);
 
