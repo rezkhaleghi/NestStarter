@@ -77,7 +77,7 @@ export class AdminRejectWithdrawalUseCase {
           AuditLog.create({
             actorUserId: input.adminUserId,
             targetUserId: withdrawal.userId,
-            action: AuditAction.USER_UPDATED,
+            action: AuditAction.WITHDRAWAL_REJECTED,
             metadata: {
               type: "WITHDRAWAL_REJECTED",
               withdrawalId: saved.id,

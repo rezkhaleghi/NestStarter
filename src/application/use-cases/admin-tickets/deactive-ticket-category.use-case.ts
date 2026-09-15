@@ -1,46 +1,41 @@
 import { Injectable } from "@nestjs/common";
-import { randomUUID } from "crypto";
 
-import { TicketCategory } from "@domain/entities/ticket-category.entity";
+import { TicketCategoryNotFoundException } from "@domain/exceptions/domain.exception";
 import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
 import { AuditLog } from "@domain/entities/audit-log.entity";
 import { AuditAction } from "@domain/enums/audit-action.enum";
-
-export interface CreateTicketCategoryInput {
+export interface DeactivateTicketCategoryInput {
   actorUserId: string;
-  name: string;
-  description?: string | null;
+  id: string;
 }
-
 @Injectable()
-export class CreateTicketCategoryUseCase {
+export class DeactivateTicketCategoryUseCase {
   constructor(private readonly unitOfWork: UnitOfWork) {}
 
-  async execute(input: CreateTicketCategoryInput): Promise<TicketCategory> {
-    return this.unitOfWork.execute(
+  async execute(input: DeactivateTicketCategoryInput): Promise<void> {
+    await this.unitOfWork.execute(
       async ({ ticketCategoryRepository, auditLogRepository }) => {
-        const category = TicketCategory.create({
-          id: randomUUID(),
-          name: input.name,
-          description: input.description,
-          isActive: true,
-        });
+        const category = await ticketCategoryRepository.findById(input.id);
 
-        const saved = await ticketCategoryRepository.create(category);
+        if (!category) {
+          throw new TicketCategoryNotFoundException();
+        }
+
+        category.deactivate();
+
+        const saved = await ticketCategoryRepository.save(category);
 
         await auditLogRepository.create(
           AuditLog.create({
             actorUserId: input.actorUserId,
             targetUserId: null,
-            action: AuditAction.TICKET_CATEGORY_CREATED,
+            action: AuditAction.TICKET_CATEGORY_DEACTIVATED,
             metadata: {
               categoryId: saved.id,
               name: saved.name,
             },
           }),
         );
-
-        return saved;
       },
     );
   }

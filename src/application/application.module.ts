@@ -53,7 +53,7 @@ import { UpdateTicketPriorityUseCase } from "./use-cases/admin-tickets/update-ti
 import { ListTicketCategoriesUseCase } from "./use-cases/admin-tickets/list-ticket-categories.use-case";
 import { CreateTicketCategoryUseCase } from "./use-cases/admin-tickets/create-ticket-category.use-case";
 import { UpdateTicketCategoryUseCase } from "./use-cases/admin-tickets/update-ticket-category.use-case";
-import { DeleteTicketCategoryUseCase } from "./use-cases/admin-tickets/delete-ticket-category.use-case";
+import { DeactivateTicketCategoryUseCase } from "./use-cases/admin-tickets/deactive-ticket-category.use-case";
 
 import { InfrastructureModule } from "../infrastructure/infrastructure.module";
 
@@ -108,7 +108,7 @@ import { InfrastructureModule } from "../infrastructure/infrastructure.module";
     ListTicketCategoriesUseCase,
     CreateTicketCategoryUseCase,
     UpdateTicketCategoryUseCase,
-    DeleteTicketCategoryUseCase,
+    DeactivateTicketCategoryUseCase,
 
     // Admin users
     ListUsersUseCase,
@@ -195,7 +195,7 @@ import { InfrastructureModule } from "../infrastructure/infrastructure.module";
     ListTicketCategoriesUseCase,
     CreateTicketCategoryUseCase,
     UpdateTicketCategoryUseCase,
-    DeleteTicketCategoryUseCase,
+    DeactivateTicketCategoryUseCase,
   ],
 })
 export class ApplicationModule {}

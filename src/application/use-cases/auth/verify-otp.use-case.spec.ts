@@ -21,7 +21,7 @@ describe("VerifyOtpUseCase", () => {
       }),
     ).resolves.toBeUndefined();
 
-    expect(verify).toHaveBeenCalledWith("USER@example.com", "123456");
+    expect(verify).toHaveBeenCalledWith("user@example.com", "123456");
   });
 
   it("rejects an invalid OTP", async () => {

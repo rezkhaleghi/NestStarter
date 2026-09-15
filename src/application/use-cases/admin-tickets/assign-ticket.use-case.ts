@@ -8,8 +8,8 @@ import {
   TicketNotFoundException,
   UserNotFoundException,
 } from "@domain/exceptions/domain.exception";
-import { TicketRepository } from "@domain/repositories/ticket.repository";
 import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
+import { UserStatus } from "@domain/enums/user-status.enum";
 
 export interface AssignTicketInput {
   actorUserId: string;
@@ -32,7 +32,10 @@ export class AssignTicketUseCase {
             input.assignedToUserId,
           );
           if (!targetUser) throw new UserNotFoundException();
-          if (targetUser.role !== UserRole.ADMIN) {
+          if (
+            targetUser.role !== UserRole.ADMIN ||
+            targetUser.status !== UserStatus.ACTIVE
+          ) {
             throw new TicketMustAssignToAdminException();
           }
         }

@@ -8,7 +8,6 @@ import {
 } from "typeorm";
 
 @Entity("ticket_categories")
-@Index(["name"], { unique: true })
 @Index(["isActive"])
 export class TicketCategoryOrmEntity {
   @PrimaryColumn("uuid")

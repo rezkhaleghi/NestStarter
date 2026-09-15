@@ -41,7 +41,7 @@ import { UpdateTicketPriorityUseCase } from "@application/use-cases/admin-ticket
 import { ListTicketCategoriesUseCase } from "@application/use-cases/admin-tickets/list-ticket-categories.use-case";
 import { CreateTicketCategoryUseCase } from "@application/use-cases/admin-tickets/create-ticket-category.use-case";
 import { UpdateTicketCategoryUseCase } from "@application/use-cases/admin-tickets/update-ticket-category.use-case";
-import { DeleteTicketCategoryUseCase } from "@application/use-cases/admin-tickets/delete-ticket-category.use-case";
+import { DeactivateTicketCategoryUseCase } from "@application/use-cases/admin-tickets/deactive-ticket-category.use-case";
 
 @ApiTags("admin-tickets")
 @Controller("admin/tickets")
@@ -57,7 +57,7 @@ export class AdminTicketsController {
     private readonly listTicketCategoriesUseCase: ListTicketCategoriesUseCase,
     private readonly createTicketCategoryUseCase: CreateTicketCategoryUseCase,
     private readonly updateTicketCategoryUseCase: UpdateTicketCategoryUseCase,
-    private readonly deleteTicketCategoryUseCase: DeleteTicketCategoryUseCase,
+    private readonly deactivateTicketCategoryUseCase: DeactivateTicketCategoryUseCase,
   ) {}
 
   @Get()
@@ -98,8 +98,12 @@ export class AdminTicketsController {
   @ApiBody({ type: CreateTicketCategoryRequestDto })
   @ApiResponse({ status: 201, description: "Ticket category created" })
   @ApiResponse({ status: 409, description: "Ticket category already exists" })
-  async createCategory(@Body() dto: CreateTicketCategoryRequestDto) {
+  async createCategory(
+    @Body() dto: CreateTicketCategoryRequestDto,
+    @Req() req: Request,
+  ) {
     return this.createTicketCategoryUseCase.execute({
+      actorUserId: req.session.userId!,
       name: dto.name,
       description: dto.description ?? null,
     });
@@ -114,8 +118,10 @@ export class AdminTicketsController {
   async updateCategory(
     @Param("id", ParseUUIDPipe) id: string,
     @Body() dto: UpdateTicketCategoryRequestDto,
+    @Req() req: Request,
   ) {
     return this.updateTicketCategoryUseCase.execute({
+      actorUserId: req.session.userId!,
       id,
       name: dto.name,
       description: dto.description,
@@ -128,8 +134,14 @@ export class AdminTicketsController {
   @ApiParam({ name: "id", description: "Ticket category UUID", format: "uuid" })
   @ApiResponse({ status: 200, description: "Ticket category deactivated" })
   @ApiResponse({ status: 404, description: "Ticket category not found" })
-  async deactivateCategory(@Param("id", ParseUUIDPipe) id: string) {
-    return this.deleteTicketCategoryUseCase.execute(id);
+  async deactivateCategory(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Req() req: Request,
+  ) {
+    return this.deactivateTicketCategoryUseCase.execute({
+      actorUserId: req.session.userId!,
+      id,
+    });
   }
 
   @Get(":id")

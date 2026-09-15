@@ -5,5 +5,5 @@ export enum WithdrawalStatus {
   COMPLETED = "COMPLETED",
   FAILED = "FAILED",
   REJECTED = "REJECTED",
-  CANCELLED = "CANCELLED",
+  // CANCELLED = "CANCELLED", reserverd for future use
 }

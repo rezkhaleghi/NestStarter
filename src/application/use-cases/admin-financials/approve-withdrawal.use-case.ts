@@ -33,7 +33,7 @@ export class AdminApproveWithdrawalUseCase {
           AuditLog.create({
             actorUserId: input.adminUserId,
             targetUserId: withdrawal.userId,
-            action: AuditAction.USER_UPDATED,
+            action: AuditAction.WITHDRAWAL_APPROVED,
             metadata: {
               type: "WITHDRAWAL_APPROVED",
               withdrawalId: saved.id,

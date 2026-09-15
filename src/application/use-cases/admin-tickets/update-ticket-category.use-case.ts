@@ -1,10 +1,13 @@
 import { Injectable } from "@nestjs/common";
 
 import { TicketCategory } from "@domain/entities/ticket-category.entity";
-import { TicketCategoryRepository } from "@domain/repositories/ticket-category.repository";
 import { TicketCategoryNotFoundException } from "@domain/exceptions/domain.exception";
+import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
+import { AuditLog } from "@domain/entities/audit-log.entity";
+import { AuditAction } from "@domain/enums/audit-action.enum";
 
 export interface UpdateTicketCategoryInput {
+  actorUserId: string;
   id: string;
   name?: string;
   description?: string | null;
@@ -13,22 +16,50 @@ export interface UpdateTicketCategoryInput {
 
 @Injectable()
 export class UpdateTicketCategoryUseCase {
-  constructor(
-    private readonly ticketCategoryRepository: TicketCategoryRepository,
-  ) {}
+  constructor(private readonly unitOfWork: UnitOfWork) {}
 
   async execute(input: UpdateTicketCategoryInput): Promise<TicketCategory> {
-    const category = await this.ticketCategoryRepository.findById(input.id);
-    if (!category) {
-      throw new TicketCategoryNotFoundException();
-    }
+    return this.unitOfWork.execute(
+      async ({ ticketCategoryRepository, auditLogRepository }) => {
+        const category = await ticketCategoryRepository.findById(input.id);
 
-    category.update({
-      name: input.name,
-      description: input.description,
-      isActive: input.isActive,
-    });
+        if (!category) {
+          throw new TicketCategoryNotFoundException();
+        }
 
-    return this.ticketCategoryRepository.save(category);
+        const previous = {
+          name: category.name,
+          description: category.description,
+          isActive: category.isActive,
+        };
+
+        category.update({
+          name: input.name,
+          description: input.description,
+          isActive: input.isActive,
+        });
+
+        const saved = await ticketCategoryRepository.save(category);
+
+        await auditLogRepository.create(
+          AuditLog.create({
+            actorUserId: input.actorUserId,
+            targetUserId: null,
+            action: AuditAction.TICKET_CATEGORY_UPDATED,
+            metadata: {
+              categoryId: saved.id,
+              previous,
+              current: {
+                name: saved.name,
+                description: saved.description,
+                isActive: saved.isActive,
+              },
+            },
+          }),
+        );
+
+        return saved;
+      },
+    );
   }
 }

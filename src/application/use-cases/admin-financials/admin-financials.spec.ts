@@ -203,7 +203,7 @@ describe("admin financial use cases", () => {
     expect(auditLogRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({
         actorUserId: "admin-id",
-        action: AuditAction.USER_UPDATED,
+        action: AuditAction.WITHDRAWAL_APPROVED,
       }),
     );
   });
