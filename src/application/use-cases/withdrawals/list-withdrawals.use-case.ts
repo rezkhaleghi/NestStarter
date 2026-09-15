@@ -7,7 +7,7 @@ import { PageQuery, PageResult } from "src/shared/pagination/page-query";
 export interface ListWithdrawalsInput extends PageQuery<
   "createdAt" | "amount"
 > {
-  userId?: string;
+  userId: string;
   currency?: string;
   status?: string;
   referenceId?: string;

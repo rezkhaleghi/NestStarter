@@ -13,6 +13,11 @@ describe("CreateUserUseCase", () => {
 
   const hash = jest.fn<(password: string) => Promise<string>>();
 
+  const configService = {
+    get: jest.fn(),
+    getOrThrow: jest.fn(),
+  };
+
   const unitOfWork = {
     execute: jest.fn(),
   };
@@ -40,7 +45,11 @@ describe("CreateUserUseCase", () => {
     save.mockImplementation(async (user) => user);
     createBalance.mockImplementation(async (balance) => balance);
 
-    const useCase = new CreateUserUseCase({ hash } as any, unitOfWork as any);
+    const useCase = new CreateUserUseCase(
+      { hash } as any,
+      unitOfWork as any,
+      configService as any,
+    );
 
     const result = await useCase.execute({
       email: " USER@example.com ",
@@ -83,7 +92,11 @@ describe("CreateUserUseCase", () => {
       }),
     );
 
-    const useCase = new CreateUserUseCase({ hash } as any, unitOfWork as any);
+    const useCase = new CreateUserUseCase(
+      { hash } as any,
+      unitOfWork as any,
+      configService as any,
+    );
 
     await expect(
       useCase.execute({
