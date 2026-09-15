@@ -109,7 +109,7 @@ export class CreateWithdrawalUseCase {
           AuditLog.create({
             actorUserId: input.userId,
             targetUserId: input.userId,
-            action: AuditAction.USER_BALANCE_UPDATED,
+            action: AuditAction.WITHDRAWAL_REQUESTED,
             metadata: {
               type: "WITHDRAWAL_REQUESTED",
               withdrawalId: savedWithdrawal.id,

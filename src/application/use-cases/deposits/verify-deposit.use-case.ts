@@ -24,10 +24,11 @@ import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
 
 export interface VerifyDepositInput {
   depositId: string;
-  providerPaymentId: string;
-  referenceId: string;
-  amount: string;
-  currency: PaymentCurrency;
+  userId: string;
+  // providerPaymentId: string;
+  // referenceId: string;
+  // amount: string;
+  // currency: PaymentCurrency;
 }
 
 @Injectable()
@@ -46,7 +47,8 @@ export class VerifyDepositUseCase {
         ledgerRepository,
         auditLogRepository,
       }) => {
-        const deposit = await depositRepository.findByIdForUpdate(
+        const deposit = await depositRepository.findByUserIdAndId(
+          input.userId,
           input.depositId,
         );
 
@@ -58,17 +60,21 @@ export class VerifyDepositUseCase {
           return deposit;
         }
 
-        if (deposit.providerPaymentId !== input.providerPaymentId) {
+        if (!deposit.providerPaymentId) {
           throw new NotMatchException("Provider payment ID", "Deposit");
         }
 
-        if (deposit.referenceId !== input.referenceId) {
-          throw new NotMatchException("Reference ID", "Deposit");
-        }
+        // if (deposit.providerPaymentId !== input.providerPaymentId) {
+        //   throw new NotMatchException("Provider payment ID", "Deposit");
+        // }
+
+        // if (deposit.referenceId !== input.referenceId) {
+        //   throw new NotMatchException("Reference ID", "Deposit");
+        // }
 
         const verification = await this.paymentProvider.verifyPayment({
-          providerPaymentId: input.providerPaymentId,
-          referenceId: input.referenceId,
+          providerPaymentId: deposit.providerPaymentId,
+          referenceId: deposit.referenceId,
           amount: deposit.amount,
           currency: deposit.currency,
         });
@@ -124,7 +130,7 @@ export class VerifyDepositUseCase {
           AuditLog.create({
             actorUserId: deposit.userId,
             targetUserId: deposit.userId,
-            action: AuditAction.USER_BALANCE_UPDATED,
+            action: AuditAction.DEPOSIT_COMPLETED,
             metadata: {
               type: "DEPOSIT_COMPLETED",
               depositId: deposit.id,

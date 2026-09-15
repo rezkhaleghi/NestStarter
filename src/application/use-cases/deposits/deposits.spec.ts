@@ -165,10 +165,7 @@ describe("deposit use cases", () => {
       unitOfWork as any,
     ).execute({
       depositId: deposit.id,
-      providerPaymentId: "provider-payment-id",
-      referenceId: "reference-id",
-      amount: "100",
-      currency: PaymentCurrency.USD,
+      userId: deposit.userId,
     });
 
     expect(result.status).toBe(DepositStatus.COMPLETED);
@@ -209,10 +206,7 @@ describe("deposit use cases", () => {
       unitOfWork as any,
     ).execute({
       depositId: deposit.id,
-      providerPaymentId: "provider-payment-id",
-      referenceId: "reference-id",
-      amount: "100",
-      currency: PaymentCurrency.USD,
+      userId: deposit.userId,
     });
 
     expect(result.status).toBe(DepositStatus.COMPLETED);
