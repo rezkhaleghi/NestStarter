@@ -74,7 +74,7 @@ export class UserRepositoryImpl implements UserRepository {
     };
   }
 
-  async countByRole(role: string): Promise<number> {
+  async countByRole(role: UserRole): Promise<number> {
     return this.repo.count({ where: { role: role as UserRole } });
   }
 

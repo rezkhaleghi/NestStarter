@@ -27,7 +27,7 @@ export class DeleteAdminUserAvatarUseCase {
     private readonly fileStorage: FileStorage,
   ) {}
 
-  async execute(userId: string, actorUserId?: string): Promise<User> {
+  async execute(userId: string, actorUserId: string): Promise<User> {
     let avatarKey: string | null = null;
 
     const saved = await this.unitOfWork.execute(

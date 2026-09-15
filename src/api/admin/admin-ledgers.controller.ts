@@ -1,11 +1,13 @@
-import { Controller, Get, Query } from "@nestjs/common";
+import { Controller, Get, Query, UseGuards } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 
 import { ListLedgersUseCase } from "../../application/use-cases/admin-financials/list-ledgers.use-case";
 import { ListLedgersQueryDto } from "./dtos/list-ledgers-query.dto";
+import { AdminAuthGuard } from "./admin-auth.guard";
 
 @ApiTags("admin - Ledgers")
 @Controller("admin/ledgers")
+@UseGuards(AdminAuthGuard)
 export class AdminLedgersController {
   constructor(private readonly listLedgersUseCase: ListLedgersUseCase) {}
 
