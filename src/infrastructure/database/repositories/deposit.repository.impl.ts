@@ -128,7 +128,11 @@ export class DepositRepositoryImpl extends DepositRepository {
       });
     }
 
-    qb.orderBy("deposit.createdAt", params.sortDirection ?? "DESC");
+    const sortColumn =
+      params.sortBy === "amount" ? "deposit.amount" : "deposit.createdAt";
+
+    qb.orderBy(sortColumn, params.sortDirection ?? "DESC");
+
     qb.skip((params.page - 1) * params.limit);
     qb.take(params.limit);
 

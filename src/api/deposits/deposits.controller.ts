@@ -18,7 +18,7 @@ import { VerifyDepositUseCase } from "@application/use-cases/deposits/verify-dep
 import { ListDepositsUseCase } from "@application/use-cases/deposits/list-deposits.use-case";
 import { GetDepositUseCase } from "@application/use-cases/deposits/get-deposit.use-case";
 import { CreateDepositRequestDto } from "./dtos/create-deposit.request.dto";
-
+import { ListDepositsQueryDto } from "./dtos/list-deposits.query.dto";
 @ApiTags("deposits")
 @Controller("deposits")
 @UseGuards(AuthSessionGuard)
@@ -33,13 +33,13 @@ export class DepositsController {
   @Get()
   @ApiOperation({ summary: "List my deposits" })
   @ApiResponse({ status: 200, description: "Deposit list" })
-  async list(@Req() req: Request, @Query() query: any) {
+  async list(@Req() req: Request, @Query() query: ListDepositsQueryDto) {
     return this.listDepositsUseCase.execute({
       userId: req.session.userId!,
-      page: query.page ?? 1,
-      limit: query.limit ?? 20,
-      sortBy: query.sortBy ?? "createdAt",
-      sortDirection: query.sortDirection ?? "DESC",
+      page: query.page,
+      limit: query.limit,
+      sortBy: query.sortBy,
+      sortDirection: query.sortDirection,
     });
   }
 
@@ -47,12 +47,10 @@ export class DepositsController {
   @ApiOperation({ summary: "Get my deposit" })
   @ApiResponse({ status: 200, description: "Deposit record" })
   async get(@Param("id", ParseUUIDPipe) id: string, @Req() req: Request) {
-    const deposit = await this.getDepositUseCase.execute({
+    return this.getDepositUseCase.execute({
       userId: req.session.userId!,
       id,
     });
-
-    return deposit;
   }
 
   @Post()

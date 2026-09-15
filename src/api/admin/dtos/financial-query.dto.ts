@@ -36,9 +36,12 @@ export class ListDepositsQueryDto {
   @IsUUID()
   referenceId?: string;
 
-  @ApiPropertyOptional({ format: "uuid" })
+  @ApiPropertyOptional({
+    description: "Provider payment identifier.",
+    example: "payment_123456789",
+  })
   @IsOptional()
-  @IsUUID()
+  @IsString()
   providerPaymentId?: string;
 
   @ApiPropertyOptional({ example: "2026-09-01T00:00:00.000Z" })
@@ -50,6 +53,22 @@ export class ListDepositsQueryDto {
   @IsOptional()
   @IsDateString()
   to?: string;
+
+  @ApiPropertyOptional({
+    enum: ["createdAt", "amount"],
+    default: "createdAt",
+  })
+  @IsOptional()
+  @IsEnum(["createdAt", "amount"])
+  sortBy: "createdAt" | "amount" = "createdAt";
+
+  @ApiPropertyOptional({
+    enum: ["ASC", "DESC"],
+    default: "DESC",
+  })
+  @IsOptional()
+  @IsEnum(["ASC", "DESC"])
+  sortDirection: "ASC" | "DESC" = "DESC";
 
   @ApiPropertyOptional({ default: 1, minimum: 1 })
   @IsOptional()
@@ -85,8 +104,16 @@ export class ListWithdrawalsQueryDto {
 
   @ApiPropertyOptional({ format: "uuid" })
   @IsOptional()
-  @IsString()
+  @IsUUID()
   referenceId?: string;
+
+  @ApiPropertyOptional({
+    description: "Provider withdrawal identifier.",
+    example: "withdrawal_123456789",
+  })
+  @IsOptional()
+  @IsString()
+  providerWithdrawalId?: string;
 
   @ApiPropertyOptional({ example: "2026-09-01T00:00:00.000Z" })
   @IsOptional()
@@ -97,6 +124,22 @@ export class ListWithdrawalsQueryDto {
   @IsOptional()
   @IsDateString()
   to?: string;
+
+  @ApiPropertyOptional({
+    enum: ["createdAt", "amount"],
+    default: "createdAt",
+  })
+  @IsOptional()
+  @IsEnum(["createdAt", "amount"])
+  sortBy: "createdAt" | "amount" = "createdAt";
+
+  @ApiPropertyOptional({
+    enum: ["ASC", "DESC"],
+    default: "DESC",
+  })
+  @IsOptional()
+  @IsEnum(["ASC", "DESC"])
+  sortDirection: "ASC" | "DESC" = "DESC";
 
   @ApiPropertyOptional({ default: 1, minimum: 1 })
   @IsOptional()
