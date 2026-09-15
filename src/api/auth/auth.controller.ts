@@ -214,6 +214,7 @@ export class AuthController {
 
   @Post("change-password")
   @UseGuards(AuthSessionGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({
     summary: "Change the current user's password",
   })
