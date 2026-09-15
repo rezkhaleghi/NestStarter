@@ -37,7 +37,7 @@ export default registerAs(
       TicketCategoryOrmEntity,
     ],
     // synchronize: process.env.NODE_ENV === "development",
-    synchronize: false,
+    synchronize: true, // Set to false in production to avoid data loss
     extra: {
       max: 10,
     },
