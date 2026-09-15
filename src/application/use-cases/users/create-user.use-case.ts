@@ -9,12 +9,14 @@ import { normalizeEmail } from "../../utils/normalize-email";
 import { UserBalance } from "@domain/entities/user-balance.entity";
 import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
 import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
+import { ConfigService } from "@nestjs/config";
 
 @Injectable()
 export class CreateUserUseCase {
   constructor(
     private readonly passwordHasher: PasswordHasher,
     private readonly unitOfWork: UnitOfWork,
+    private readonly configService: ConfigService,
   ) {}
 
   async execute(input: CreateUserInput): Promise<User> {
@@ -38,11 +40,14 @@ export class CreateUserUseCase {
 
         user.verifyEmail();
 
+        const defaultCurrency = this.configService.get<PaymentCurrency>(
+          "DEFAULT_CURRENCY",
+          PaymentCurrency.USD,
+        );
+
         const balance = UserBalance.create({
           userId: user.id,
-          currency:
-            (process.env.DEFAULT_CURRENCY as PaymentCurrency) ||
-            PaymentCurrency.USD,
+          currency: defaultCurrency,
           amount: "0",
         });
 

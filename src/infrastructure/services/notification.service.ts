@@ -12,6 +12,7 @@ export class SmtpNotificationService implements NotificationPort, OnModuleInit {
   private readonly smtpHost: string;
   private readonly smtpPort: number;
   private readonly smtpSecure: boolean;
+  private readonly smtpPassword: string;
 
   constructor(private readonly configService: ConfigService) {
     this.smtpHost = this.configService.getOrThrow<string>("SMTP_HOST");
@@ -19,6 +20,7 @@ export class SmtpNotificationService implements NotificationPort, OnModuleInit {
     const configuredSecure = this.configService.get<boolean | string>(
       "SMTP_SECURE",
     );
+    this.smtpPassword = this.configService.getOrThrow<string>("SMTP_PASSWORD");
     this.smtpSecure =
       configuredSecure === undefined
         ? this.smtpPort === 465
@@ -32,7 +34,7 @@ export class SmtpNotificationService implements NotificationPort, OnModuleInit {
       secure: this.smtpSecure,
       auth: {
         user: this.smtpUser,
-        pass: this.configService.getOrThrow<string>("SMTP_PASSWORD"),
+        pass: this.smtpPassword,
       },
     });
   }
