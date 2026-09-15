@@ -1,10 +1,9 @@
-import { Injectable, Inject } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 
 import { Deposit } from "@domain/entities/deposit.entity";
 import { AuditLog } from "@domain/entities/audit-log.entity";
 import { Ledger } from "@domain/entities/ledger.entity";
 
-import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
 import { DepositStatus } from "@domain/enums/deposit-status.enum";
 import { LedgerType } from "@domain/enums/ledger-type.enum";
 import { AuditAction } from "@domain/enums/audit-action.enum";
@@ -25,10 +24,6 @@ import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
 export interface VerifyDepositInput {
   depositId: string;
   userId: string;
-  // providerPaymentId: string;
-  // referenceId: string;
-  // amount: string;
-  // currency: PaymentCurrency;
 }
 
 @Injectable()
@@ -40,6 +35,53 @@ export class VerifyDepositUseCase {
   ) {}
 
   async execute(input: VerifyDepositInput): Promise<Deposit> {
+    const deposit = await this.unitOfWork.execute(
+      async ({ depositRepository }) => {
+        const currentDeposit =
+          await depositRepository.findByUserIdAndIdForUpdate(
+            input.userId,
+            input.depositId,
+          );
+
+        if (!currentDeposit) {
+          throw new DepositNotFoundException();
+        }
+
+        if (currentDeposit.status === DepositStatus.COMPLETED) {
+          return currentDeposit;
+        }
+
+        if (!currentDeposit.providerPaymentId) {
+          throw new NotMatchException("Provider payment ID", "Deposit");
+        }
+
+        return currentDeposit;
+      },
+    );
+
+    if (deposit.status === DepositStatus.COMPLETED) {
+      return deposit;
+    }
+
+    if (!deposit.providerPaymentId) {
+      throw new NotMatchException("Provider payment ID", "Deposit");
+    }
+
+    const verification = await this.paymentProvider.verifyPayment({
+      providerPaymentId: deposit.providerPaymentId,
+      referenceId: deposit.referenceId,
+      amount: deposit.amount,
+      currency: deposit.currency,
+    });
+
+    if (
+      verification.providerPaymentId !== deposit.providerPaymentId ||
+      verification.amount !== deposit.amount ||
+      verification.currency !== deposit.currency
+    ) {
+      throw new NotMatchException("Verified payment", "Deposit");
+    }
+
     return this.unitOfWork.execute(
       async ({
         depositRepository,
@@ -47,59 +89,42 @@ export class VerifyDepositUseCase {
         ledgerRepository,
         auditLogRepository,
       }) => {
-        const deposit = await depositRepository.findByUserIdAndId(
-          input.userId,
-          input.depositId,
-        );
+        const currentDeposit =
+          await depositRepository.findByUserIdAndIdForUpdate(
+            input.userId,
+            input.depositId,
+          );
 
-        if (!deposit) {
+        if (!currentDeposit) {
           throw new DepositNotFoundException();
         }
 
-        if (deposit.status === DepositStatus.COMPLETED) {
-          return deposit;
+        if (currentDeposit.status === DepositStatus.COMPLETED) {
+          return currentDeposit;
         }
 
-        if (!deposit.providerPaymentId) {
+        if (!currentDeposit.providerPaymentId) {
           throw new NotMatchException("Provider payment ID", "Deposit");
         }
 
-        // if (deposit.providerPaymentId !== input.providerPaymentId) {
-        //   throw new NotMatchException("Provider payment ID", "Deposit");
-        // }
-
-        // if (deposit.referenceId !== input.referenceId) {
-        //   throw new NotMatchException("Reference ID", "Deposit");
-        // }
-
-        const verification = await this.paymentProvider.verifyPayment({
-          providerPaymentId: deposit.providerPaymentId,
-          referenceId: deposit.referenceId,
-          amount: deposit.amount,
-          currency: deposit.currency,
-        });
-
         if (
-          verification.providerPaymentId !== deposit.providerPaymentId ||
-          verification.amount !== deposit.amount ||
-          verification.currency !== deposit.currency
+          currentDeposit.providerPaymentId !== verification.providerPaymentId
         ) {
-          throw new NotMatchException("Verified payment", "Deposit");
+          throw new NotMatchException("Provider payment ID", "Deposit");
         }
 
         const balance =
           await userBalanceRepository.findByUserIdAndCurrencyForUpdate(
-            deposit.userId,
-            deposit.currency,
+            currentDeposit.userId,
+            currentDeposit.currency,
           );
 
         if (!balance) {
-          throw new UserBalanceNotFoundException(deposit.currency);
+          throw new UserBalanceNotFoundException(currentDeposit.currency);
         }
 
         const balanceBefore = balance.amount;
-
-        const balanceAfter = addDecimal(balanceBefore, deposit.amount);
+        const balanceAfter = addDecimal(balanceBefore, currentDeposit.amount);
 
         balance.amount = balanceAfter;
 
@@ -107,41 +132,40 @@ export class VerifyDepositUseCase {
 
         await ledgerRepository.create(
           Ledger.create({
-            userId: deposit.userId,
-            currency: deposit.currency,
-            amount: deposit.amount,
+            userId: currentDeposit.userId,
+            currency: currentDeposit.currency,
+            amount: currentDeposit.amount,
             balanceBefore,
             balanceAfter: savedBalance.amount,
             type: LedgerType.DEPOSIT,
-            referenceId: deposit.referenceId,
+            referenceId: currentDeposit.referenceId,
             metadata: {
-              depositId: deposit.id,
+              depositId: currentDeposit.id,
               providerPaymentId: verification.providerPaymentId,
               transactionId: verification.transactionId,
             },
           }),
         );
 
-        deposit.markCompleted(verification.transactionId);
+        currentDeposit.markCompleted(verification.transactionId);
 
-        await depositRepository.save(deposit);
+        await depositRepository.save(currentDeposit);
 
         await auditLogRepository.create(
           AuditLog.create({
-            actorUserId: deposit.userId,
-            targetUserId: deposit.userId,
+            actorUserId: currentDeposit.userId,
+            targetUserId: currentDeposit.userId,
             action: AuditAction.DEPOSIT_COMPLETED,
             metadata: {
-              type: "DEPOSIT_COMPLETED",
-              depositId: deposit.id,
-              referenceId: deposit.referenceId,
-              amount: deposit.amount,
-              currency: deposit.currency,
+              depositId: currentDeposit.id,
+              referenceId: currentDeposit.referenceId,
+              amount: currentDeposit.amount,
+              currency: currentDeposit.currency,
             },
           }),
         );
 
-        return deposit;
+        return currentDeposit;
       },
     );
   }

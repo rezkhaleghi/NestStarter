@@ -35,6 +35,7 @@ const depositRepository = {
   findById: jest.fn<() => Promise<Deposit | null>>(),
   findByUserIdAndId: jest.fn<() => Promise<Deposit | null>>(),
   findByIdForUpdate: jest.fn<() => Promise<Deposit | null>>(),
+  findByUserIdAndIdForUpdate: jest.fn<() => Promise<Deposit | null>>(),
   search: jest.fn<() => Promise<unknown>>(),
 };
 
@@ -76,7 +77,10 @@ beforeEach(() => {
 
   userRepository.findById.mockResolvedValue(user);
 
-  depositRepository.create.mockImplementation(async (value: unknown) => value);
+  depositRepository.create.mockImplementation(async (value: unknown) => {
+    depositRepository.findByIdForUpdate.mockResolvedValue(value as Deposit);
+    return value;
+  });
 
   depositRepository.save.mockImplementation(async (value: unknown) => value);
 
@@ -113,7 +117,15 @@ describe("deposit use cases", () => {
       }),
     );
 
-    expect(depositRepository.create).toHaveBeenCalledWith(result);
+    expect(depositRepository.create).toHaveBeenCalledTimes(1);
+
+    expect(depositRepository.findByIdForUpdate).toHaveBeenCalledTimes(1);
+    expect(depositRepository.findByIdForUpdate).toHaveBeenCalledWith(result.id);
+
+    expect(depositRepository.save).toHaveBeenCalledTimes(1);
+    expect(depositRepository.save).toHaveBeenCalledWith(result);
+
+    expect(unitOfWork.execute).toHaveBeenCalledTimes(2);
   });
 
   it("rejects deposits for missing users", async () => {
@@ -128,6 +140,8 @@ describe("deposit use cases", () => {
     ).rejects.toBeInstanceOf(UserNotFoundException);
 
     expect(provider.createPayment).not.toHaveBeenCalled();
+    expect(depositRepository.create).not.toHaveBeenCalled();
+    expect(unitOfWork.execute).toHaveBeenCalledTimes(1);
   });
 
   it("verifies a deposit, credits balance, and writes ledger and audit records", async () => {
@@ -147,7 +161,7 @@ describe("deposit use cases", () => {
       amount: "25",
     });
 
-    depositRepository.findByIdForUpdate.mockResolvedValue(deposit);
+    depositRepository.findByUserIdAndIdForUpdate.mockResolvedValue(deposit);
 
     userBalanceRepository.findByUserIdAndCurrencyForUpdate.mockResolvedValue(
       balance,
@@ -171,6 +185,17 @@ describe("deposit use cases", () => {
     expect(result.status).toBe(DepositStatus.COMPLETED);
     expect(balance.amount).toBe("125");
 
+    expect(provider.verifyPayment).toHaveBeenCalledWith({
+      providerPaymentId: "provider-payment-id",
+      referenceId: "reference-id",
+      amount: "100",
+      currency: PaymentCurrency.USD,
+    });
+
+    expect(depositRepository.findByUserIdAndIdForUpdate).toHaveBeenCalledTimes(
+      2,
+    );
+
     expect(ledgerRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({
         amount: "100",
@@ -182,9 +207,11 @@ describe("deposit use cases", () => {
 
     expect(auditLogRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        action: AuditAction.USER_BALANCE_UPDATED,
+        action: AuditAction.DEPOSIT_COMPLETED,
       }),
     );
+
+    expect(unitOfWork.execute).toHaveBeenCalledTimes(2);
   });
 
   it("does not verify or credit an already completed deposit", async () => {
@@ -199,7 +226,7 @@ describe("deposit use cases", () => {
 
     deposit.markCompleted("transaction-id");
 
-    depositRepository.findByIdForUpdate.mockResolvedValue(deposit);
+    depositRepository.findByUserIdAndIdForUpdate.mockResolvedValue(deposit);
 
     const result = await new VerifyDepositUseCase(
       provider as any,
@@ -218,6 +245,7 @@ describe("deposit use cases", () => {
     expect(userBalanceRepository.save).not.toHaveBeenCalled();
     expect(ledgerRepository.create).not.toHaveBeenCalled();
     expect(auditLogRepository.create).not.toHaveBeenCalled();
+    expect(unitOfWork.execute).toHaveBeenCalledTimes(1);
   });
 
   it("lists and gets deposits through their repositories", async () => {

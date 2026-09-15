@@ -30,7 +30,10 @@ export class DepositRepositoryImpl extends DepositRepository {
   }
 
   async findById(id: string): Promise<Deposit | null> {
-    const row = await this.repository.findOne({ where: { id } });
+    const row = await this.repository.findOne({
+      where: { id },
+    });
+
     return row ? this.toDomain(row) : null;
   }
 
@@ -50,11 +53,30 @@ export class DepositRepositoryImpl extends DepositRepository {
       where: { id },
       lock: { mode: "pessimistic_write" },
     });
+
+    return row ? this.toDomain(row) : null;
+  }
+
+  async findByUserIdAndIdForUpdate(
+    userId: string,
+    id: string,
+  ): Promise<Deposit | null> {
+    const row = await this.repository.findOne({
+      where: {
+        id,
+        userId,
+      },
+      lock: { mode: "pessimistic_write" },
+    });
+
     return row ? this.toDomain(row) : null;
   }
 
   async findByReferenceId(referenceId: string): Promise<Deposit | null> {
-    const row = await this.repository.findOne({ where: { referenceId } });
+    const row = await this.repository.findOne({
+      where: { referenceId },
+    });
+
     return row ? this.toDomain(row) : null;
   }
 
@@ -64,31 +86,54 @@ export class DepositRepositoryImpl extends DepositRepository {
   ): Promise<PageResult<Deposit>> {
     const qb = this.repository.createQueryBuilder("deposit");
 
-    if (filters.userId)
-      qb.andWhere("deposit.userId = :userId", { userId: filters.userId });
-    if (filters.currency)
+    if (filters.userId) {
+      qb.andWhere("deposit.userId = :userId", {
+        userId: filters.userId,
+      });
+    }
+
+    if (filters.currency) {
       qb.andWhere("deposit.currency = :currency", {
         currency: filters.currency,
       });
-    if (filters.status)
-      qb.andWhere("deposit.status = :status", { status: filters.status });
-    if (filters.referenceId)
+    }
+
+    if (filters.status) {
+      qb.andWhere("deposit.status = :status", {
+        status: filters.status,
+      });
+    }
+
+    if (filters.referenceId) {
       qb.andWhere("deposit.referenceId = :referenceId", {
         referenceId: filters.referenceId,
       });
-    if (filters.providerPaymentId)
+    }
+
+    if (filters.providerPaymentId) {
       qb.andWhere("deposit.providerPaymentId = :providerPaymentId", {
         providerPaymentId: filters.providerPaymentId,
       });
-    if (filters.from)
-      qb.andWhere("deposit.createdAt >= :from", { from: filters.from });
-    if (filters.to) qb.andWhere("deposit.createdAt <= :to", { to: filters.to });
+    }
+
+    if (filters.from) {
+      qb.andWhere("deposit.createdAt >= :from", {
+        from: filters.from,
+      });
+    }
+
+    if (filters.to) {
+      qb.andWhere("deposit.createdAt <= :to", {
+        to: filters.to,
+      });
+    }
 
     qb.orderBy("deposit.createdAt", params.sortDirection ?? "DESC");
     qb.skip((params.page - 1) * params.limit);
     qb.take(params.limit);
 
     const [rows, total] = await qb.getManyAndCount();
+
     return {
       data: rows.map((row) => this.toDomain(row)),
       total,
@@ -116,6 +161,7 @@ export class DepositRepositoryImpl extends DepositRepository {
 
   private toOrm(deposit: Deposit): DepositOrmEntity {
     const row = new DepositOrmEntity();
+
     row.id = deposit.id;
     row.userId = deposit.userId;
     row.currency = deposit.currency;
@@ -127,6 +173,7 @@ export class DepositRepositoryImpl extends DepositRepository {
     row.createdAt = deposit.createdAt;
     row.updatedAt = deposit.updatedAt;
     row.completedAt = deposit.completedAt;
+
     return row;
   }
 }
