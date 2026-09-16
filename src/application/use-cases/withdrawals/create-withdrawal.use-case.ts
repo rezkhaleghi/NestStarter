@@ -109,7 +109,6 @@ export class CreateWithdrawalUseCase {
             targetUserId: input.userId,
             action: AuditAction.WITHDRAWAL_REQUESTED,
             metadata: {
-              type: "WITHDRAWAL_REQUESTED",
               withdrawalId: savedWithdrawal.id,
               referenceId: savedWithdrawal.referenceId,
               amount: input.amount,

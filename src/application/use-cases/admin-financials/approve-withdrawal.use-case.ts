@@ -34,7 +34,6 @@ export class AdminApproveWithdrawalUseCase {
             targetUserId: withdrawal.userId,
             action: AuditAction.WITHDRAWAL_APPROVED,
             metadata: {
-              type: "WITHDRAWAL_APPROVED",
               withdrawalId: saved.id,
               referenceId: saved.referenceId,
               amount: saved.amount,

@@ -70,7 +70,6 @@ export class AdminRejectWithdrawalUseCase {
           }),
         );
 
-        // withdrawal.reject(input.reason);
         const saved = await withdrawalRepository.save(withdrawal);
 
         await auditLogRepository.create(
@@ -79,7 +78,6 @@ export class AdminRejectWithdrawalUseCase {
             targetUserId: withdrawal.userId,
             action: AuditAction.WITHDRAWAL_REJECTED,
             metadata: {
-              type: "WITHDRAWAL_REJECTED",
               withdrawalId: saved.id,
               referenceId: saved.referenceId,
               amount: saved.amount,
