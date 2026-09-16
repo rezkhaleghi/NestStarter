@@ -2,6 +2,7 @@ import { User } from "../entities/user.entity";
 import { UserSearchResult } from "./user-search-result";
 import { AdminUserSearchFilters } from "./admin-user-search-filters";
 import { PageQuery, PageResult } from "@shared/pagination/page-query";
+import { UserRole } from "@domain/enums/user-role.enum";
 
 export abstract class UserRepository {
   abstract findById(id: string): Promise<User | null>;
@@ -29,7 +30,7 @@ export abstract class UserRepository {
     params: PageQuery<"createdAt" | "email" | "role">,
   ): Promise<PageResult<User>>;
 
-  abstract countByRole(role: string): Promise<number>;
+  abstract countByRole(role: UserRole): Promise<number>;
 
   abstract save(user: User): Promise<User>;
 

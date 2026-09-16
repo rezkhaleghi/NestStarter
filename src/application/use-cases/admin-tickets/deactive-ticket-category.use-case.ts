@@ -15,7 +15,9 @@ export class DeactivateTicketCategoryUseCase {
   async execute(input: DeactivateTicketCategoryInput): Promise<void> {
     await this.unitOfWork.execute(
       async ({ ticketCategoryRepository, auditLogRepository }) => {
-        const category = await ticketCategoryRepository.findById(input.id);
+        const category = await ticketCategoryRepository.findByIdForUpdate(
+          input.id,
+        );
 
         if (!category) {
           throw new TicketCategoryNotFoundException();

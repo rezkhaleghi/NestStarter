@@ -22,6 +22,7 @@ import { UpdateAdminUserUseCase } from "./update-user.use-case";
 describe("admin user use cases", () => {
   const repository = {
     findById: jest.fn<() => Promise<User | null>>(),
+    findByIdForUpdate: jest.fn<() => Promise<User | null>>(),
     findByEmail: jest.fn<() => Promise<User | null>>(),
     findByUserName: jest.fn<() => Promise<User | null>>(),
     findPage: jest.fn<() => Promise<unknown>>(),
@@ -223,7 +224,7 @@ describe("admin user use cases", () => {
 
   describe("DeleteAdminUserUseCase", () => {
     it("rejects deleting yourself", async () => {
-      repository.findById.mockResolvedValue(
+      repository.findByIdForUpdate.mockResolvedValue(
         new User("id", "admin@example.com", "hashed", UserRole.ADMIN),
       );
 
@@ -238,7 +239,7 @@ describe("admin user use cases", () => {
     });
 
     it("rejects deleting the last admin", async () => {
-      repository.findById.mockResolvedValue(
+      repository.findByIdForUpdate.mockResolvedValue(
         new User("id", "admin@example.com", "hashed", UserRole.ADMIN),
       );
 
@@ -262,7 +263,7 @@ describe("admin user use cases", () => {
         UserRole.USER,
       );
 
-      repository.findById.mockResolvedValue(user);
+      repository.findByIdForUpdate.mockResolvedValue(user);
       repository.deleteAdminUser.mockResolvedValue(true);
 
       const useCase = new DeleteAdminUserUseCase(unitOfWork as any);
@@ -297,7 +298,7 @@ describe("admin user use cases", () => {
         true,
       );
 
-      repository.findById.mockResolvedValue(user);
+      repository.findByIdForUpdate.mockResolvedValue(user);
       repository.findByUserName.mockResolvedValue(null);
 
       repository.saveAdminMutation.mockImplementation(
@@ -365,7 +366,7 @@ describe("admin user use cases", () => {
         true,
       );
 
-      repository.findById.mockResolvedValue(user);
+      repository.findByIdForUpdate.mockResolvedValue(user);
 
       repository.findByUserName.mockResolvedValue(
         new User("other", "other@example.com", "old-hash", UserRole.USER),
@@ -399,7 +400,7 @@ describe("admin user use cases", () => {
         true,
       );
 
-      repository.findById.mockResolvedValue(user);
+      repository.findByIdForUpdate.mockResolvedValue(user);
 
       repository.findByEmail.mockResolvedValue(
         new User("other", "other@example.com", "old-hash", UserRole.USER),
@@ -433,7 +434,7 @@ describe("admin user use cases", () => {
         true,
       );
 
-      repository.findById.mockResolvedValue(user);
+      repository.findByIdForUpdate.mockResolvedValue(user);
 
       repository.saveAdminMutation.mockImplementation(
         async (updated) => updated,
@@ -478,7 +479,7 @@ describe("admin user use cases", () => {
         true,
       );
 
-      repository.findById.mockResolvedValue(user);
+      repository.findByIdForUpdate.mockResolvedValue(user);
 
       repository.saveAdminMutation.mockImplementation(
         async (updated) => updated,
@@ -523,7 +524,7 @@ describe("admin user use cases", () => {
         true,
       );
 
-      repository.findById.mockResolvedValue(user);
+      repository.findByIdForUpdate.mockResolvedValue(user);
 
       repository.saveAdminMutation.mockResolvedValue(null);
 
@@ -556,7 +557,7 @@ describe("admin user use cases", () => {
         true,
       );
 
-      repository.findById.mockResolvedValue(user);
+      repository.findByIdForUpdate.mockResolvedValue(user);
 
       repository.saveAdminMutation.mockImplementation(
         async (updated) => updated,
@@ -612,7 +613,7 @@ describe("admin user use cases", () => {
         "Old bio",
       );
 
-      repository.findById.mockResolvedValue(user);
+      repository.findByIdForUpdate.mockResolvedValue(user);
 
       repository.saveAdminMutation.mockImplementation(
         async (updated) => updated,
@@ -683,7 +684,7 @@ describe("admin user use cases", () => {
         true,
       );
 
-      repository.findById.mockResolvedValue(user);
+      repository.findByIdForUpdate.mockResolvedValue(user);
 
       repository.saveAdminMutation.mockImplementation(
         async (updated) => updated,

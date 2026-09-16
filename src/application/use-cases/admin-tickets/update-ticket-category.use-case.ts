@@ -21,8 +21,9 @@ export class UpdateTicketCategoryUseCase {
   async execute(input: UpdateTicketCategoryInput): Promise<TicketCategory> {
     return this.unitOfWork.execute(
       async ({ ticketCategoryRepository, auditLogRepository }) => {
-        const category = await ticketCategoryRepository.findById(input.id);
-
+        const category = await ticketCategoryRepository.findByIdForUpdate(
+          input.id,
+        );
         if (!category) {
           throw new TicketCategoryNotFoundException();
         }

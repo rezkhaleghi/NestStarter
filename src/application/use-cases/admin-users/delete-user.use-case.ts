@@ -16,7 +16,7 @@ export class DeleteAdminUserUseCase {
   async execute(id: string, requesterId: string): Promise<void> {
     return this.unitOfWork.execute(
       async ({ userRepository, auditLogRepository }) => {
-        const user = await userRepository.findById(id);
+        const user = await userRepository.findByIdForUpdate(id);
 
         if (!user) {
           throw new UserNotFoundException();

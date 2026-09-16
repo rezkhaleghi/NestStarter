@@ -1,5 +1,4 @@
 import { Injectable } from "@nestjs/common";
-import { randomUUID } from "crypto";
 
 import { TicketPriority } from "@domain/enums/ticket-priority.enum";
 import { AuditAction } from "@domain/enums/audit-action.enum";

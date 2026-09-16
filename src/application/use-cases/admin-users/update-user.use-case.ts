@@ -45,7 +45,7 @@ export class UpdateAdminUserUseCase {
   ): Promise<User> {
     return this.unitOfWork.execute(
       async ({ userRepository, auditLogRepository }) => {
-        const user = await userRepository.findById(input.id);
+        const user = await userRepository.findByIdForUpdate(input.id);
 
         if (!user) {
           throw new UserNotFoundException();

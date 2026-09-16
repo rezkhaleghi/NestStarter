@@ -5,6 +5,7 @@ export abstract class TicketCategoryRepository {
   abstract create(category: TicketCategory): Promise<TicketCategory>;
   abstract save(category: TicketCategory): Promise<TicketCategory>;
   abstract findById(id: string): Promise<TicketCategory | null>;
+  abstract findByIdForUpdate(id: string): Promise<TicketCategory | null>;
   abstract findPage(
     params: PageQuery<"createdAt" | "name">,
   ): Promise<PageResult<TicketCategory>>;

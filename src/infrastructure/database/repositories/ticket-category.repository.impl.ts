@@ -31,6 +31,14 @@ export class TicketCategoryRepositoryImpl extends TicketCategoryRepository {
     return row ? this.toDomain(row) : null;
   }
 
+  async findByIdForUpdate(id: string): Promise<TicketCategory | null> {
+    const row = await this.repository.findOne({
+      where: { id },
+      lock: { mode: "pessimistic_write" },
+    });
+    return row ? this.toDomain(row) : null;
+  }
+
   async findPage(
     params: PageQuery<"createdAt" | "name">,
   ): Promise<PageResult<TicketCategory>> {
