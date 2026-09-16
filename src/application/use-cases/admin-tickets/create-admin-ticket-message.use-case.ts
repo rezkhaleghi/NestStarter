@@ -9,6 +9,7 @@ import {
   TicketClosedException,
   TicketNotFoundException,
 } from "@domain/exceptions/domain.exception";
+import { AuditLog } from "@domain/entities/audit-log.entity";
 
 export interface CreateAdminTicketMessageInput {
   actorUserId: string;
@@ -50,13 +51,17 @@ export class CreateAdminTicketMessageUseCase {
           await ticketRepository.save(ticket);
         }
 
-        await auditLogRepository.create({
-          id: randomUUID(),
-          actorUserId: input.actorUserId,
-          action: AuditAction.TICKET_MESSAGE_CREATED,
-          targetUserId: ticket.userId,
-          metadata: { ticketId: ticket.id, messageId: saved.id },
-        } as any);
+        await auditLogRepository.create(
+          AuditLog.create({
+            actorUserId: input.actorUserId,
+            action: AuditAction.TICKET_MESSAGE_CREATED,
+            targetUserId: ticket.userId,
+            metadata: {
+              ticketId: ticket.id,
+              messageId: saved.id,
+            },
+          }),
+        );
 
         return saved;
       },

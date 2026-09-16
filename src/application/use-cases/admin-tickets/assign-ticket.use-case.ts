@@ -1,5 +1,4 @@
 import { Injectable } from "@nestjs/common";
-import { randomUUID } from "crypto";
 
 import { AuditAction } from "@domain/enums/audit-action.enum";
 import { UserRole } from "@domain/enums/user-role.enum";
@@ -10,6 +9,7 @@ import {
 } from "@domain/exceptions/domain.exception";
 import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
 import { UserStatus } from "@domain/enums/user-status.enum";
+import { AuditLog } from "@domain/entities/audit-log.entity";
 
 export interface AssignTicketInput {
   actorUserId: string;
@@ -43,18 +43,19 @@ export class AssignTicketUseCase {
         ticket.assignTo(input.assignedToUserId);
         await ticketRepository.save(ticket);
 
-        await auditLogRepository.create({
-          id: randomUUID(),
-          actorUserId: input.actorUserId,
-          action: input.assignedToUserId
-            ? AuditAction.TICKET_ASSIGNED
-            : AuditAction.TICKET_UNASSIGNED,
-          targetUserId: ticket.userId,
-          metadata: {
-            ticketId: ticket.id,
-            assignedToUserId: input.assignedToUserId,
-          },
-        } as any);
+        await auditLogRepository.create(
+          AuditLog.create({
+            actorUserId: input.actorUserId,
+            action: input.assignedToUserId
+              ? AuditAction.TICKET_ASSIGNED
+              : AuditAction.TICKET_UNASSIGNED,
+            targetUserId: ticket.userId,
+            metadata: {
+              ticketId: ticket.id,
+              assignedToUserId: input.assignedToUserId,
+            },
+          }),
+        );
       },
     );
   }

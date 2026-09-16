@@ -3,9 +3,9 @@ import { randomUUID } from "crypto";
 
 import { TicketPriority } from "@domain/enums/ticket-priority.enum";
 import { AuditAction } from "@domain/enums/audit-action.enum";
-import { TicketRepository } from "@domain/repositories/ticket.repository";
 import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
 import { TicketNotFoundException } from "@domain/exceptions/domain.exception";
+import { AuditLog } from "@domain/entities/audit-log.entity";
 
 export interface UpdateTicketPriorityInput {
   actorUserId: string;
@@ -27,17 +27,18 @@ export class UpdateTicketPriorityUseCase {
         ticket.setPriority(input.priority);
         await ticketRepository.save(ticket);
 
-        await auditLogRepository.create({
-          id: randomUUID(),
-          actorUserId: input.actorUserId,
-          action: AuditAction.TICKET_PRIORITY_CHANGED,
-          targetUserId: ticket.userId,
-          metadata: {
-            ticketId: ticket.id,
-            previousPriority,
-            newPriority: ticket.priority,
-          },
-        } as any);
+        await auditLogRepository.create(
+          AuditLog.create({
+            actorUserId: input.actorUserId,
+            action: AuditAction.TICKET_PRIORITY_CHANGED,
+            targetUserId: ticket.userId,
+            metadata: {
+              ticketId: ticket.id,
+              previousPriority,
+              newPriority: ticket.priority,
+            },
+          }),
+        );
       },
     );
   }

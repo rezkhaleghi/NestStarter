@@ -1,11 +1,11 @@
 import { Injectable } from "@nestjs/common";
-import { randomUUID } from "crypto";
 
 import { AuditAction } from "@domain/enums/audit-action.enum";
 import { TicketStatus } from "@domain/enums/ticket-status.enum";
-import { TicketRepository } from "@domain/repositories/ticket.repository";
+
 import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
 import { TicketNotFoundException } from "@domain/exceptions/domain.exception";
+import { AuditLog } from "@domain/entities/audit-log.entity";
 
 export interface UpdateTicketStatusInput {
   actorUserId: string;
@@ -27,26 +27,30 @@ export class UpdateTicketStatusUseCase {
         ticket.setStatus(input.status);
         await ticketRepository.save(ticket);
 
-        await auditLogRepository.create({
-          id: randomUUID(),
-          actorUserId: input.actorUserId,
-          action: AuditAction.TICKET_STATUS_CHANGED,
-          targetUserId: ticket.userId,
-          metadata: {
-            ticketId: ticket.id,
-            previousStatus,
-            newStatus: ticket.status,
-          },
-        } as any);
+        await auditLogRepository.create(
+          AuditLog.create({
+            actorUserId: input.actorUserId,
+            action: AuditAction.TICKET_STATUS_CHANGED,
+            targetUserId: ticket.userId,
+            metadata: {
+              ticketId: ticket.id,
+              previousStatus,
+              newStatus: ticket.status,
+            },
+          }),
+        );
 
         if (ticket.status === TicketStatus.CLOSED) {
-          await auditLogRepository.create({
-            id: randomUUID(),
-            actorUserId: input.actorUserId,
-            action: AuditAction.TICKET_CLOSED,
-            targetUserId: ticket.userId,
-            metadata: { ticketId: ticket.id },
-          } as any);
+          await auditLogRepository.create(
+            AuditLog.create({
+              actorUserId: input.actorUserId,
+              action: AuditAction.TICKET_CLOSED,
+              targetUserId: ticket.userId,
+              metadata: {
+                ticketId: ticket.id,
+              },
+            }),
+          );
         }
       },
     );

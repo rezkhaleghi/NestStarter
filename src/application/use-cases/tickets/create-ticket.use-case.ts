@@ -11,6 +11,7 @@ import {
   UserNotFoundException,
 } from "@domain/exceptions/domain.exception";
 import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
+import { AuditLog } from "@domain/entities/audit-log.entity";
 
 export interface CreateTicketInput {
   userId: string;
@@ -67,30 +68,31 @@ export class CreateTicketUseCase {
 
         const createdMessage = await ticketMessageRepository.create(message);
 
-        await auditLogRepository.create({
-          id: randomUUID(),
-          actorUserId: input.userId,
-          action: AuditAction.TICKET_CREATED,
-          targetUserId: input.userId,
-          metadata: {
-            ticketId: createdTicket.id,
-            categoryId: createdTicket.categoryId,
-            subject: createdTicket.subject,
-            status: createdTicket.status,
-          },
-        } as any);
+        await auditLogRepository.create(
+          AuditLog.create({
+            actorUserId: input.userId,
+            action: AuditAction.TICKET_CREATED,
+            targetUserId: input.userId,
+            metadata: {
+              ticketId: createdTicket.id,
+              categoryId: createdTicket.categoryId,
+              subject: createdTicket.subject,
+              status: createdTicket.status,
+            },
+          }),
+        );
 
-        await auditLogRepository.create({
-          id: randomUUID(),
-          actorUserId: input.userId,
-          action: AuditAction.TICKET_MESSAGE_CREATED,
-          targetUserId: input.userId,
-          metadata: {
-            ticketId: createdTicket.id,
-            messageId: createdMessage.id,
-          },
-        } as any);
-
+        await auditLogRepository.create(
+          AuditLog.create({
+            actorUserId: input.userId,
+            action: AuditAction.TICKET_MESSAGE_CREATED,
+            targetUserId: input.userId,
+            metadata: {
+              ticketId: createdTicket.id,
+              messageId: createdMessage.id,
+            },
+          }),
+        );
         return { ticket: createdTicket, message: createdMessage };
       },
     );
