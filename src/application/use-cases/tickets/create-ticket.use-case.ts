@@ -1,5 +1,4 @@
 import { Injectable } from "@nestjs/common";
-import { randomUUID } from "crypto";
 
 import { Ticket } from "@domain/entities/ticket.entity";
 import { TicketMessage } from "@domain/entities/ticket-message.entity";
@@ -49,7 +48,6 @@ export class CreateTicketUseCase {
         }
 
         const ticket = Ticket.create({
-          id: randomUUID(),
           userId: input.userId,
           categoryId: input.categoryId ?? null,
           subject: input.subject,
@@ -60,7 +58,6 @@ export class CreateTicketUseCase {
         const createdTicket = await ticketRepository.create(ticket);
 
         const message = TicketMessage.create({
-          id: randomUUID(),
           ticketId: createdTicket.id,
           senderUserId: input.userId,
           body: input.message,

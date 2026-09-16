@@ -1,5 +1,4 @@
 import { Injectable } from "@nestjs/common";
-import { randomUUID } from "crypto";
 
 import { User } from "../../../domain/entities/user.entity";
 import { UserBalance } from "../../../domain/entities/user-balance.entity";
@@ -43,7 +42,6 @@ export class CreateAdminUserUseCase {
         }
 
         const user = User.create({
-          id: randomUUID(),
           email,
           hashedPassword,
           role: input.role,

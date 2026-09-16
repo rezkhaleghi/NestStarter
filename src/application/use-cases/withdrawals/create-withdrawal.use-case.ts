@@ -1,5 +1,4 @@
 import { Injectable } from "@nestjs/common";
-import { randomUUID } from "crypto";
 
 import { Withdrawal } from "@domain/entities/withdrawal.entity";
 import { Ledger } from "@domain/entities/ledger.entity";
@@ -78,13 +77,12 @@ export class CreateWithdrawalUseCase {
         const savedBalance = await userBalanceRepository.save(balance);
 
         const withdrawal = Withdrawal.create({
-          id: randomUUID(),
           userId: input.userId,
           currency: input.currency,
           amount: input.amount,
           status: WithdrawalStatus.PENDING,
           destination: input.destination,
-          referenceId: randomUUID(),
+          // referenceId: randomUUID(),
         });
 
         const savedWithdrawal = await withdrawalRepository.create(withdrawal);

@@ -1,5 +1,4 @@
 import { Injectable } from "@nestjs/common";
-import { randomUUID } from "crypto";
 import { UserRepository } from "../../../domain/repositories/user.repository";
 import { User } from "../../../domain/entities/user.entity";
 import { GoogleAuthInput } from "../../dtos/google-auth.input";
@@ -40,7 +39,6 @@ export class GoogleAuthUseCase {
     }
 
     const user = User.create({
-      id: randomUUID(),
       email,
       hashedPassword: null,
       googleId: input.googleId,

@@ -1,5 +1,4 @@
 import { Injectable } from "@nestjs/common";
-import { randomUUID } from "crypto";
 
 import { User } from "../../../domain/entities/user.entity";
 import { PasswordHasher } from "../../interfaces/password-hasher.interface";
@@ -33,7 +32,6 @@ export class CreateUserUseCase {
         }
 
         const user = User.create({
-          id: randomUUID(),
           email,
           hashedPassword,
         });

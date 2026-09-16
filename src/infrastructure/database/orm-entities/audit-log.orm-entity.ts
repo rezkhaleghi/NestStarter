@@ -3,7 +3,7 @@ import {
   CreateDateColumn,
   Entity,
   Index,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
 } from "typeorm";
 import { AuditAction } from "../../../domain/enums/audit-action.enum";
 
@@ -13,7 +13,7 @@ import { AuditAction } from "../../../domain/enums/audit-action.enum";
 @Index(["action"])
 @Index(["createdAt"])
 export class AuditLogOrmEntity {
-  @PrimaryGeneratedColumn("uuid")
+  @PrimaryColumn("uuid")
   id!: string;
 
   @Column({ type: "uuid" })

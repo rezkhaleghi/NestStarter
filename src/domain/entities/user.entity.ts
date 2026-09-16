@@ -1,6 +1,7 @@
 import { UserStatus } from "@domain/enums/user-status.enum";
 import { UserRole } from "../enums/user-role.enum";
 import { GoogleAccountConflictException } from "../exceptions/domain.exception";
+import { randomUUID } from "crypto";
 
 /**
  * Fields that can be updated as ordinary user profile data.
@@ -204,7 +205,7 @@ export class User {
    * the constructor's internal argument order or default values.
    */
   static create(params: {
-    id: string;
+    id?: string;
     email: string;
     hashedPassword: string | null;
     role?: UserRole;
@@ -212,7 +213,7 @@ export class User {
     googleId?: string;
   }): User {
     return new User(
-      params.id,
+      params.id ?? randomUUID(),
       params.email,
       params.hashedPassword,
       params.role ?? UserRole.USER,

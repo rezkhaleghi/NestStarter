@@ -1,5 +1,4 @@
 import { Injectable } from "@nestjs/common";
-import { randomUUID } from "crypto";
 
 import { TicketCategory } from "@domain/entities/ticket-category.entity";
 import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
@@ -20,7 +19,6 @@ export class CreateTicketCategoryUseCase {
     return this.unitOfWork.execute(
       async ({ ticketCategoryRepository, auditLogRepository }) => {
         const category = TicketCategory.create({
-          id: randomUUID(),
           name: input.name,
           description: input.description,
           isActive: true,

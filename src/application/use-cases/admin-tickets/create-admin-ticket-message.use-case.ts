@@ -1,5 +1,4 @@
 import { Injectable } from "@nestjs/common";
-import { randomUUID } from "crypto";
 
 import { TicketMessage } from "@domain/entities/ticket-message.entity";
 import { AuditAction } from "@domain/enums/audit-action.enum";
@@ -35,7 +34,6 @@ export class CreateAdminTicketMessageUseCase {
         }
 
         const message = TicketMessage.create({
-          id: randomUUID(),
           ticketId: ticket.id,
           senderUserId: input.actorUserId,
           body: input.body,

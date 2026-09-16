@@ -1,5 +1,4 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { randomUUID } from "crypto";
 
 import { Deposit } from "@domain/entities/deposit.entity";
 import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
@@ -48,12 +47,11 @@ export class CreateDepositUseCase {
         }
 
         const newDeposit = Deposit.create({
-          id: randomUUID(),
           userId: input.userId,
           currency: input.currency,
           amount: input.amount,
           status: DepositStatus.PENDING,
-          referenceId: randomUUID(),
+          // referenceId: randomUUID(),
         });
 
         return depositRepository.create(newDeposit);

@@ -3,7 +3,7 @@ import {
   CreateDateColumn,
   Entity,
   Index,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
   UpdateDateColumn,
 } from "typeorm";
 
@@ -12,7 +12,7 @@ import { PaymentCurrency } from "../../../domain/enums/payment-currency.enum";
 @Entity("user_balances")
 @Index(["userId", "currency"], { unique: true })
 export class UserBalanceOrmEntity {
-  @PrimaryGeneratedColumn("uuid")
+  @PrimaryColumn("uuid")
   id: string;
 
   @Column({ type: "uuid" })
