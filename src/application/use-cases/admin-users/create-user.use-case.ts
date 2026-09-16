@@ -12,7 +12,7 @@ import { UserAlreadyExistsException } from "../../../domain/exceptions/domain.ex
 
 import { PasswordHasher } from "../../interfaces/password-hasher.interface";
 import { UnitOfWork } from "../../interfaces/unit-of-work.interface";
-import { normalizeEmail } from "../../utils/normalize-email";
+import { normalizeEmail } from "../../../domain/utils/normalize-email";
 
 export interface CreateAdminUserInput {
   email: string;

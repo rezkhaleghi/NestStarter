@@ -1,10 +1,10 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { randomInt } from "crypto";
-import { OtpService } from "../../application/interfaces/otp.service.interface";
-import { NotificationService } from "../../application/interfaces/notification.service.interface";
+import { OtpService } from "@application/interfaces/otp.service.interface";
+import { NotificationService } from "@application/interfaces/notification.service.interface";
 import { RedisOtpStore } from "./redis-otp.store";
-import { normalizeEmail } from "../../application/utils/normalize-email";
+import { normalizeEmail } from "@domain/utils/normalize-email";
 
 @Injectable()
 export class OtpServiceImpl implements OtpService {

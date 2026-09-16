@@ -1,13 +1,13 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { User } from "../../../domain/entities/user.entity";
+import { User } from "@domain/entities/user.entity";
 import { UserOrmEntity } from "../orm-entities/user.orm-entity";
-import { UserRole } from "../../../domain/enums/user-role.enum";
+import { UserRole } from "@domain/enums/user-role.enum";
 
-import { UserSearchResult } from "../../../domain/repositories/user-search-result";
-import { UserRepository } from "../../../domain/repositories/user.repository";
-import { AdminUserSearchFilters } from "../../../domain/repositories/admin-user-search-filters";
+import { UserSearchResult } from "@domain/repositories/user-search-result";
+import { UserRepository } from "@domain/repositories/user.repository";
+import { AdminUserSearchFilters } from "@domain/repositories/admin-user-search-filters";
 import { PageQuery, PageResult } from "src/shared/pagination/page-query";
 
 /**

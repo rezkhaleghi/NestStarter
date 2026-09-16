@@ -3,8 +3,6 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
 import { Ticket } from "@domain/entities/ticket.entity";
-import { TicketPriority } from "@domain/enums/ticket-priority.enum";
-import { TicketStatus } from "@domain/enums/ticket-status.enum";
 import {
   TicketRepository,
   TicketSearchFilters,

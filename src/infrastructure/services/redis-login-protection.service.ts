@@ -1,7 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import type { RedisClientType } from "redis";
-import { LoginProtection } from "../../application/interfaces/login-protection.interface";
+import { LoginProtection } from "@application/interfaces/login-protection.interface";
 
 @Injectable()
 export class RedisLoginProtectionService implements LoginProtection {

@@ -6,8 +6,8 @@ import {
   PrimaryColumn,
 } from "typeorm";
 
-import { LedgerType } from "../../../domain/enums/ledger-type.enum";
-import { PaymentCurrency } from "../../../domain/enums/payment-currency.enum";
+import { LedgerType } from "@domain/enums/ledger-type.enum";
+import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
 
 @Entity("ledgers")
 @Index(["userId", "createdAt"])

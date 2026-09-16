@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import * as nodemailer from "nodemailer";
-import { NotificationService as NotificationPort } from "../../application/interfaces/notification.service.interface";
+import { NotificationService as NotificationPort } from "@application/interfaces/notification.service.interface";
 
 @Injectable()
 export class SmtpNotificationService implements NotificationPort, OnModuleInit {

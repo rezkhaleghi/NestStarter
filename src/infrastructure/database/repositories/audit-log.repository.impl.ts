@@ -1,13 +1,12 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { randomUUID } from "crypto";
 
-import { AuditLog } from "../../../domain/entities/audit-log.entity";
+import { AuditLog } from "@domain/entities/audit-log.entity";
 import {
   AuditLogFilters,
   AuditLogRepository,
-} from "../../../domain/repositories/audit-log.repository";
+} from "@domain/repositories/audit-log.repository";
 
 import { AuditLogOrmEntity } from "../orm-entities/audit-log.orm-entity";
 import { PageQuery, PageResult } from "src/shared/pagination/page-query";

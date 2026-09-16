@@ -5,7 +5,7 @@ import {
   Index,
   PrimaryColumn,
 } from "typeorm";
-import { AuditAction } from "../../../domain/enums/audit-action.enum";
+import { AuditAction } from "@domain/enums/audit-action.enum";
 
 @Entity("audit_logs")
 @Index(["actorUserId"])

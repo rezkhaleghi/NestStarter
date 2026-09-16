@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { RedisOtpStore } from "./redis-otp.store";
-import { OtpCooldownException } from "../../domain/exceptions/domain.exception";
+import { OtpCooldownException } from "@domain/exceptions/domain.exception";
 
 describe("RedisOtpStore", () => {
   const redis = {

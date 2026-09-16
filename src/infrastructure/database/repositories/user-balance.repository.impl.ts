@@ -2,14 +2,14 @@ import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
-import { UserBalance } from "../../../domain/entities/user-balance.entity";
-import { PaymentCurrency } from "../../../domain/enums/payment-currency.enum";
+import { UserBalance } from "@domain/entities/user-balance.entity";
+import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
 import {
   UserBalanceRepository,
   UserBalanceSortBy,
-} from "../../../domain/repositories/user-balance.repository";
+} from "@domain/repositories/user-balance.repository";
 import { UserBalanceOrmEntity } from "../orm-entities/user-balance.orm-entity";
-import { PageQuery, PageResult } from "../../../shared/pagination/page-query";
+import { PageQuery, PageResult } from "src/shared/pagination/page-query";
 
 @Injectable()
 export class UserBalanceRepositoryImpl implements UserBalanceRepository {

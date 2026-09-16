@@ -1,61 +1,113 @@
 import { Global, Module } from "@nestjs/common";
+
 import { ConfigModule, ConfigService } from "@nestjs/config";
+
 import { TypeOrmModule } from "@nestjs/typeorm";
+
 import { createClient } from "redis";
+
 import typeormConfig from "./config/typeorm.config";
+
 import { UserOrmEntity } from "./database/orm-entities/user.orm-entity";
+
 import { UserRepositoryImpl } from "./database/repositories/user.repository.impl";
-import { UserRepository } from "../domain/repositories/user.repository";
+
+import { UserRepository } from "@domain/repositories/user.repository";
+
 import { BcryptPasswordHasher } from "./services/bcrypt-password-hasher.service";
-import { PasswordHasher } from "../application/interfaces/password-hasher.interface";
+
+import { PasswordHasher } from "@application/interfaces/password-hasher.interface";
+
 import { OtpServiceImpl } from "./services/otp.service.impl";
+
 import { RedisOtpStore } from "./services/redis-otp.store";
-import { OtpService } from "../application/interfaces/otp.service.interface";
+
+import { OtpService } from "@application/interfaces/otp.service.interface";
+
 import { GoogleStrategy } from "./auth/google.strategy";
+
 import { SessionSerializer } from "./auth/session.serializer";
+
 import { SeedAdminService } from "./database/seed-admin.service";
+
 import * as Joi from "joi";
+
 import { RedisLoginProtectionService } from "./services/redis-login-protection.service";
-import { LoginProtection } from "../application/interfaces/login-protection.interface";
-import { NotificationService } from "../application/interfaces/notification.service.interface";
+
+import { LoginProtection } from "@application/interfaces/login-protection.interface";
+
+import { NotificationService } from "@application/interfaces/notification.service.interface";
+
 import { SmtpNotificationService } from "./services/notification.service";
+
 import { RedisClientLifecycle } from "./services/redis-client.lifecycle";
+
 import { MinioService } from "./services/minio.service";
-import { FileStorage } from "../application/interfaces/file-storage.interface";
+
+import { FileStorage } from "@application/interfaces/file-storage.interface";
+
 import { ImageProcessingService } from "./services/image-processing.service";
+
 import { ImageProcessing } from "@application/interfaces/image-processing.interface";
+
 import { AdminStatisticsServiceImpl } from "./services/admin-statistics.service";
-import { AdminStatisticsService } from "../application/interfaces/admin-statistics.interface";
+
+import { AdminStatisticsService } from "@application/interfaces/admin-statistics.interface";
+
 import { AuditLogOrmEntity } from "./database/orm-entities/audit-log.orm-entity";
+
 import { AuditLogRepositoryImpl } from "./database/repositories/audit-log.repository.impl";
-import { AuditLogRepository } from "../domain/repositories/audit-log.repository";
+
+import { AuditLogRepository } from "@domain/repositories/audit-log.repository";
+
 import { UserBalanceRepository } from "@domain/repositories/user-balance.repository";
+
 import { UserBalanceOrmEntity } from "./database/orm-entities/user-balance.orm-entity";
+
 import { UserBalanceRepositoryImpl } from "./database/repositories/user-balance.repository.impl";
+
 import { TypeOrmUnitOfWork } from "./database/unit-of-work.typeorm";
+
 import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
+
 import { LedgerOrmEntity } from "./database/orm-entities/ledger.orm-entity";
+
 import { LedgerRepository } from "@domain/repositories/ledger.repository";
+
 import { LedgerRepositoryImpl } from "./database/repositories/ledger.repository.impl";
+
 import { DepositOrmEntity } from "./database/orm-entities/deposit.orm-entity";
+
 import { WithdrawalOrmEntity } from "./database/orm-entities/withdrawal.orm-entity";
+
 import { DepositRepository } from "@domain/repositories/deposit.repository";
+
 import { WithdrawalRepository } from "@domain/repositories/withdrawal.repository";
+
 import { DepositRepositoryImpl } from "./database/repositories/deposit.repository.impl";
+
 import { WithdrawalRepositoryImpl } from "./database/repositories/withdrawal.repository.impl";
+
 import { TicketRepository } from "@domain/repositories/ticket.repository";
+
 import { TicketMessageRepository } from "@domain/repositories/ticket-message.repository";
+
 import { TicketCategoryRepository } from "@domain/repositories/ticket-category.repository";
+
 import { TicketRepositoryImpl } from "./database/repositories/ticket.repository.impl";
+
 import { TicketMessageRepositoryImpl } from "./database/repositories/ticket-message.repository.impl";
+
 import { TicketCategoryRepositoryImpl } from "./database/repositories/ticket-category.repository.impl";
+
 import { TicketOrmEntity } from "./database/orm-entities/ticket.orm-entity";
+
 import { TicketMessageOrmEntity } from "./database/orm-entities/ticket-message.orm-entity";
+
 import { TicketCategoryOrmEntity } from "./database/orm-entities/ticket-category.orm-entity";
-import {
-  PAYMENT_PROVIDER,
-  PaymentProviderInterface,
-} from "@application/interfaces/payment-provider.interface";
+
+import { PAYMENT_PROVIDER } from "@application/interfaces/payment-provider.interface";
+
 import { FakePaymentProvider } from "./services/fake-payment-provider.service";
 
 /**

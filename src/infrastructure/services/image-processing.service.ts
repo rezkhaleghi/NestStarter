@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import sharp = require("sharp");
 
-import { ImageProcessing } from "../../application/interfaces/image-processing.interface";
+import { ImageProcessing } from "@application/interfaces/image-processing.interface";
 
 const MAX_AVATAR_DIMENSION = 4096;
 const MAX_AVATAR_PIXELS = 16_777_216; // 4096 × 4096

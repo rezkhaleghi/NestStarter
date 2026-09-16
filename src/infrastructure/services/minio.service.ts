@@ -1,7 +1,7 @@
 import { Injectable, OnModuleInit } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Client } from "minio";
-import { FileStorage } from "../../application/interfaces/file-storage.interface";
+import { FileStorage } from "@application/interfaces/file-storage.interface";
 import { Readable } from "stream";
 
 @Injectable()

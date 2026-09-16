@@ -6,7 +6,7 @@ import {
   PrimaryColumn,
   UpdateDateColumn,
 } from "typeorm";
-import { UserRole } from "../../../domain/enums/user-role.enum";
+import { UserRole } from "@domain/enums/user-role.enum";
 import { UserStatus } from "@domain/enums/user-status.enum";
 
 /**

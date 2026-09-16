@@ -2,7 +2,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { createHash } from "crypto";
 import type { RedisClientType } from "redis";
-import { OtpCooldownException } from "../../domain/exceptions/domain.exception";
+import { OtpCooldownException } from "@domain/exceptions/domain.exception";
 
 @Injectable()
 export class RedisOtpStore {

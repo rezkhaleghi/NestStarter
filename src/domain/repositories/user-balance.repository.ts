@@ -1,6 +1,6 @@
 import { UserBalance } from "../entities/user-balance.entity";
 import { PaymentCurrency } from "../enums/payment-currency.enum";
-import { PageQuery, PageResult } from "../../shared/pagination/page-query";
+import { PageQuery, PageResult } from "src/shared/pagination/page-query";
 
 export type UserBalanceSortBy = "currency" | "amount" | "createdAt";
 

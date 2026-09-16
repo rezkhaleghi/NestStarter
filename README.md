@@ -2,7 +2,30 @@
 
 A production-oriented **NestJS backend boilerplate built around Clean Architecture**.
 
-NestStarter provides the infrastructure and application foundations that most backend projects repeatedly need: authentication, authorization, user management, sessions, Redis, PostgreSQL, object storage, image processing, email/OTP, validation, rate limiting, health checks, auditing, transactional workflows, financial balance tracking, immutable ledgers, Swagger/OpenAPI, Docker, migrations, and testing.
+NestStarter provides the backend foundations that many applications repeatedly need:
+
+- Clean Architecture
+- Authentication and authorization
+- Session-based authentication with Redis
+- Password and OTP authentication
+- Google OAuth
+- User management
+- Administrative user management
+- File storage and image processing
+- PostgreSQL and TypeORM
+- Transactional workflows through Unit of Work
+- Financial balances and immutable ledgers
+- Deposits and withdrawals
+- Payment-provider abstraction
+- Customer support tickets
+- Ticket categories
+- Administrative auditing
+- Validation and rate limiting
+- Health checks
+- Swagger/OpenAPI
+- Docker and Docker Compose
+- TypeORM migrations
+- Automated tests
 
 The goal is simple:
 
@@ -12,40 +35,48 @@ The goal is simple:
 
 # Why NestStarter?
 
-Most NestJS projects start with a collection of modules, controllers, services, and database entities. That works initially, but as the application grows, business logic tends to become coupled to NestJS, TypeORM, Redis, HTTP, and other infrastructure concerns.
+Most NestJS applications begin with controllers, services, database entities, and modules. As the application grows, business logic can become tightly coupled to NestJS, TypeORM, Redis, HTTP, and other infrastructure concerns.
 
 NestStarter takes a different approach.
 
-The application is organized around **business rules and use cases**, while frameworks and external services are treated as replaceable implementation details.
+The application is organized around **domain rules and use cases**, while frameworks and external services are treated as implementation details.
 
-This gives the project:
+This provides:
 
 - Clear separation of responsibilities
-- Testable business logic
+- Framework-independent domain logic
+- Focused use cases
 - Explicit dependencies
 - Replaceable infrastructure
-- Framework-independent domain logic
-- Focused use cases instead of large generic services
-- A predictable structure for adding new features
-- Production-oriented authentication and security foundations
-- Dedicated abstractions for external services
-- Dedicated file-storage and image-processing capabilities
-- Transactional workflows through Unit of Work
+- Transactional workflows
 - Centralized error handling
-- Global request validation
+- Global validation
+- Authentication and authorization foundations
 - Administrative auditing
-- Current balance tracking
-- Immutable financial history through a ledger
+- Financial balance and ledger tracking
+- Deposit and withdrawal workflows
+- Ticket/support workflows
+- File-storage and image-processing abstractions
 
-NestStarter is intentionally **not a complete application**. It provides the foundation on which an application can be built.
+NestStarter is intentionally **not a complete application**. It provides a reusable backend foundation on which a product can be built.
 
 ---
 
-# Core Goals
+# Architecture
 
-## 1. Clean Architecture
+NestStarter follows a four-layer Clean Architecture structure:
 
-Business rules should not depend on PostgreSQL, Redis, MinIO, Express, or NestJS.
+```text
+src/
+
+├── api/
+│
+├── application/
+│
+├── domain/
+│
+└── infrastructure/
+```
 
 The dependency direction is:
 
@@ -58,39 +89,44 @@ Application
  ▼
 Domain
 
-Infrastructure ───────► Application / Domain
+Infrastructure
+      │
+      └──────► Application / Domain
 ```
 
-The important rule is that dependencies point **toward the domain**.
+The important rule is that business logic does not depend on infrastructure.
 
 For example:
 
 ```text
 Controller
-   │
-   ▼
+    │
+    ▼
 Use Case
-   │
-   ▼
-UserRepository
-   ▲
-   │
-TypeORM Repository
+    │
+    ▼
+Repository Interface
+    ▲
+    │
+Repository Implementation
+    │
+    ▼
+TypeORM / PostgreSQL
 ```
 
-The use case knows about `UserRepository`.
+The application knows about the repository contract.
 
-It does not know that the repository happens to use TypeORM or PostgreSQL.
-
-This makes infrastructure replaceable without rewriting business logic.
+It does not need to know that PostgreSQL and TypeORM are being used underneath.
 
 ---
 
-# Architecture
+# Project Structure
+
+The major source directories are:
 
 ```text
 src/
-│
+
 ├── api/
 │   ├── admin/
 │   ├── auth/
@@ -102,10 +138,14 @@ src/
 │   ├── dtos/
 │   ├── interfaces/
 │   └── use-cases/
-│       ├── admin-ledgers/
+│       ├── admin-financials/
+│       ├── admin-tickets/
 │       ├── admin-users/
 │       ├── auth/
-│       └── users/
+│       ├── deposits/
+│       ├── tickets/
+│       ├── users/
+│       └── withdrawals/
 │
 ├── domain/
 │   ├── entities/
@@ -118,6 +158,9 @@ src/
 │   ├── auth/
 │   ├── config/
 │   ├── database/
+│   │   ├── migrations/
+│   │   ├── orm-entities/
+│   │   └── repositories/
 │   └── services/
 │
 ├── shared/
@@ -130,7 +173,7 @@ src/
 
 # Domain Layer
 
-The domain contains business concepts and rules.
+The domain contains business concepts, state, rules, enums, exceptions, repository contracts, and domain utilities.
 
 ```text
 domain/
@@ -142,46 +185,77 @@ domain/
 └── utils/
 ```
 
-## Entities
+The domain does not depend on NestJS, TypeORM, Express, Redis, MinIO, or PostgreSQL.
 
-Domain entities represent business objects without depending on TypeORM or NestJS.
+---
 
-Current domain entities include:
+# Domain Entities
+
+The current domain contains the following major entities:
 
 ```text
 User
 UserBalance
 Ledger
 AuditLog
+
+Deposit
+Withdrawal
+
+Ticket
+TicketMessage
+TicketCategory
 ```
 
-### User
+## User
 
-The `User` domain entity contains user-related business state such as:
+The `User` entity represents application users.
+
+Important state includes:
 
 ```text
 id
-firstName
-lastName
-userName
 email
 hashedPassword
-dateOfBirth
-avatar
-bio
 role
 status
 emailVerified
 googleId
+
+firstName
+lastName
+userName
+dateOfBirth
+avatar
+bio
+
 createdAt
 updatedAt
 ```
 
-The domain entity remains independent from the database ORM.
+The entity contains domain operations for changing business state, including:
 
-### UserBalance
+```text
+update()
+changeEmail()
+changeRole()
+setEmailVerified()
+changePassword()
+verifyEmail()
+linkGoogleAccount()
+activate()
+restrict()
+```
 
-`UserBalance` represents the **current balance** of a user for a specific payment currency.
+Ordinary profile fields are updated through the domain update operation, while fields with special business meaning use dedicated domain methods.
+
+The domain entity is independent from the database ORM.
+
+---
+
+# UserBalance
+
+`UserBalance` represents the current balance of a user for a specific payment currency.
 
 ```text
 UserBalance
@@ -192,21 +266,17 @@ UserBalance
 └── amount
 ```
 
-The entity is created through a domain factory:
+The balance represents **current state**.
 
-```ts
-UserBalance.create({
-  userId,
-  currency,
-  amount,
-});
-```
+It is not intended to be the historical record of financial activity.
 
-`UserBalance.amount` represents the current state of the user's balance.
+Balances are stored using decimal strings rather than JavaScript floating-point numbers.
 
-### Ledger
+---
 
-`Ledger` represents an **immutable financial record** describing a balance movement.
+# Ledger
+
+`Ledger` represents an immutable financial record describing a balance movement.
 
 ```text
 Ledger
@@ -224,17 +294,15 @@ Ledger
 └── createdAt
 ```
 
-The ledger stores both the signed financial movement and the balance state before and after the operation.
-
 For example:
 
 ```text
-Balance before:  1500.50
-Adjustment:      -500.00
-Balance after:   1000.50
+Balance before: 1500.50
+Movement:        -500.00
+Balance after:  1000.50
 ```
 
-The corresponding ledger records:
+The ledger records:
 
 ```text
 amount        = -500.00
@@ -242,23 +310,21 @@ balanceBefore = 1500.50
 balanceAfter  = 1000.50
 ```
 
-Ledger records are immutable. They provide historical evidence of balance changes instead of relying on the current `UserBalance` value as historical information.
+The current balance and historical ledger intentionally have different responsibilities:
 
-Ledger entries are created through the domain factory:
+```text
+UserBalance
+    │
+    └── Current financial state
 
-```ts
-Ledger.create({
-  userId,
-  currency,
-  amount,
-  balanceBefore,
-  balanceAfter,
-  type,
-  actorUserId,
-});
+Ledger
+    │
+    └── Historical financial movements
 ```
 
-### AuditLog
+---
+
+# AuditLog
 
 `AuditLog` represents an immutable record of an important application or administrative action.
 
@@ -269,7 +335,8 @@ AuditLog
 ├── actorUserId
 ├── targetUserId
 ├── action
-└── metadata
+├── metadata
+└── createdAt
 ```
 
 Audit logs are created through the domain factory:
@@ -283,28 +350,229 @@ AuditLog.create({
 });
 ```
 
-Domain entities therefore own their construction and business state while persistence remains outside the domain.
+Transactional operations can create audit records through the transaction-scoped `AuditLogRepository`.
+
+---
+
+# Deposit
+
+`Deposit` represents an incoming payment.
+
+```text
+Deposit
+
+├── id
+├── userId
+├── currency
+├── amount
+├── status
+├── referenceId
+├── providerPaymentId
+├── transactionId
+├── createdAt
+├── updatedAt
+└── completedAt
+```
+
+Deposit statuses currently include:
+
+```text
+PENDING
+COMPLETED
+FAILED
+CANCELLED
+```
+
+The domain controls valid state changes such as:
+
+```text
+PENDING → COMPLETED
+PENDING → FAILED
+PENDING → CANCELLED
+```
+
+A deposit has both an application-generated `referenceId` and an optional provider payment identifier.
+
+---
+
+# Withdrawal
+
+`Withdrawal` represents a user's withdrawal request.
+
+```text
+Withdrawal
+
+├── id
+├── userId
+├── currency
+├── amount
+├── status
+├── destination
+├── referenceId
+├── providerWithdrawalId
+├── transactionId
+├── rejectionReason
+├── createdAt
+├── updatedAt
+└── completedAt
+```
+
+Current withdrawal statuses are:
+
+```text
+PENDING
+APPROVED
+PROCESSING
+COMPLETED
+FAILED
+REJECTED
+CANCELLED
+```
+
+The domain controls valid state transitions.
+
+The current administrative workflow is intentionally simple:
+
+```text
+User creates withdrawal
+        │
+        ▼
+     PENDING
+      /    \
+     /      \
+APPROVED   REJECTED
+             │
+             ▼
+          REFUND
+```
+
+The future provider-oriented lifecycle can support:
+
+```text
+APPROVED
+    │
+    ▼
+PROCESSING
+    │
+    ├──► COMPLETED
+    │
+    └──► FAILED
+```
+
+The provider-specific processing workflow can be extended when a real payment provider is integrated.
+
+---
+
+# Ticket
+
+`Ticket` represents a customer-support request.
+
+```text
+Ticket
+
+├── id
+├── userId
+├── categoryId
+├── subject
+├── status
+├── priority
+├── assignedToUserId
+├── createdAt
+├── updatedAt
+└── closedAt
+```
+
+Ticket status currently includes:
+
+```text
+OPEN
+IN_PROGRESS
+WAITING_FOR_USER
+WAITING_FOR_SUPPORT
+RESOLVED
+CLOSED
+```
+
+The domain enforces valid status transitions.
+
+For example:
+
+```text
+OPEN
+  │
+  ├──► IN_PROGRESS
+  ├──► WAITING_FOR_SUPPORT
+  └──► CLOSED
+```
+
+and:
+
+```text
+IN_PROGRESS
+  │
+  ├──► WAITING_FOR_USER
+  ├──► WAITING_FOR_SUPPORT
+  ├──► RESOLVED
+  └──► CLOSED
+```
+
+Invalid transitions are rejected by the domain.
+
+---
+
+# TicketMessage
+
+`TicketMessage` represents a message belonging to a support ticket.
+
+Messages can be created by users or administrators through their respective application workflows.
+
+The ticket domain also exposes whether a ticket can currently receive replies.
+
+---
+
+# TicketCategory
+
+`TicketCategory` represents a support-ticket category.
+
+```text
+TicketCategory
+
+├── id
+├── name
+├── description
+├── isActive
+├── createdAt
+└── updatedAt
+```
+
+Categories can be:
+
+```text
+created
+updated
+activated
+deactivated
+```
+
+Deactivation is used instead of removing a category from the system when the category should no longer be available for normal use.
 
 ---
 
 # Domain Entity Factories
 
-Entities that require controlled construction use factory methods instead of exposing positional constructors.
+Domain entities use factory methods for normal creation.
 
 For example:
 
 ```ts
-const user = User.create({
-  id,
+User.create({
   email,
   hashedPassword,
-  role,
-  emailVerified,
 });
 ```
 
 ```ts
-const balance = UserBalance.create({
+UserBalance.create({
   userId,
   currency,
   amount,
@@ -312,53 +580,79 @@ const balance = UserBalance.create({
 ```
 
 ```ts
-const ledger = Ledger.create({
+Ledger.create({
   userId,
   currency,
   amount,
   balanceBefore,
   balanceAfter,
   type,
-  actorUserId,
 });
 ```
 
-This provides several advantages:
+```ts
+Deposit.create({
+  userId,
+  currency,
+  amount,
+});
+```
 
-- Named properties instead of positional arguments
-- Easier-to-read construction
-- Safer evolution of entities
-- Encapsulation of internal constructors
-- A clear place for future creation rules
+```ts
+Withdrawal.create({
+  userId,
+  currency,
+  amount,
+  destination,
+});
+```
 
-The domain remains responsible for its own object creation while the application layer remains responsible for orchestration.
+```ts
+Ticket.create({
+  userId,
+  subject,
+  categoryId,
+});
+```
+
+```ts
+TicketCategory.create({
+  name,
+  description,
+});
+```
+
+Factories provide named construction parameters, sensible defaults, and a central place for creation rules.
+
+Entity IDs are generated by the domain when an ID is not explicitly supplied.
+
+This keeps identity generation consistent across the domain and persistence layers.
 
 ---
 
-# Enums
+# Domain Enums
 
-Current domain enumerations include:
+Important domain enums include:
 
 ```text
 UserRole
 UserStatus
+
 AuditAction
+
 PaymentCurrency
+PaymentProvider
+
 LedgerType
+
+DepositStatus
+WithdrawalStatus
+
+TicketStatus
+TicketPriority
 ```
 
-For example:
-
-```text
-UserRole
-
-USER
-ADMIN
-```
-
-User lifecycle/state is represented separately through `UserStatus`.
-
-Ledger operations are represented through `LedgerType`:
+Ledger types currently include:
 
 ```text
 ADMIN_ADJUSTMENT
@@ -369,70 +663,89 @@ TRANSFER_OUT
 REFUND
 ```
 
+User roles currently include:
+
+```text
+USER
+ADMIN
+```
+
 ---
 
-# Exceptions
+# Domain Exceptions
 
-Business errors live in the domain instead of the HTTP layer.
+Business errors are represented by domain exceptions rather than HTTP exceptions.
 
-Current domain exceptions include:
+Examples include:
 
 ```text
+InvalidCredentialsException
 InvalidOtpException
 OtpCooldownException
+
 UserAlreadyExistsException
 UsernameAlreadyExistsException
-InvalidCredentialsException
-GoogleAccountConflictException
 UserNotFoundException
+
 UserBalanceAlreadyExistsException
+UserBalanceNotFoundException
 InsufficientBalanceException
+
+InvalidDepositAmountException
+InvalidWithdrawalAmountException
+UnsupportedPaymentCurrencyException
+
+DepositNotFoundException
+WithdrawalNotFoundException
+
+WithdrawalStatusChangeNotAllowedException
+DepositChangeStatusNotAllowedException
+
 CannotRemoveLastAdminException
 CannotDeleteSelfException
+
+TicketNotFoundException
+TicketMessageNotFoundException
+TicketStatusTransitionException
+
+TicketCategoryNotFoundException
+
+GoogleAccountConflictException
 ```
 
-All domain exceptions inherit from:
+All domain exceptions inherit from the application's domain exception base.
 
-```text
-DomainException
-```
+The domain does not know about HTTP status codes.
 
-For example:
-
-```ts
-throw new UserNotFoundException();
-```
-
-or:
-
-```ts
-throw new InsufficientBalanceException();
-```
-
-The domain does not know anything about HTTP status codes, Express, or NestJS exception classes.
-
-The API layer is responsible for translating domain exceptions into HTTP responses.
+The API layer translates application/domain failures into HTTP responses.
 
 ---
 
 # Repository Contracts
 
-Repositories are defined as contracts in the domain.
+Repository contracts live outside the infrastructure implementation.
 
-Current repository contracts include:
+Current repository responsibilities cover:
 
 ```text
 UserRepository
 UserBalanceRepository
 LedgerRepository
 AuditLogRepository
+
+DepositRepository
+WithdrawalRepository
+
+TicketRepository
+TicketMessageRepository
+TicketCategoryRepository
 ```
 
-The domain defines the persistence operations required by the application.
+Infrastructure provides TypeORM-based implementations.
 
-The infrastructure layer provides the actual implementations.
+Repositories are responsible for persistence and data access.
 
-This keeps persistence technology out of the domain.
+Business workflows remain in the application layer and domain entities.
 
 ---
 
@@ -440,141 +753,115 @@ This keeps persistence technology out of the domain.
 
 Financial values are represented as strings rather than JavaScript floating-point numbers.
 
-NestStarter provides decimal utilities for safe arithmetic:
+The project provides decimal utilities including:
 
 ```text
 addDecimal()
 subtractDecimal()
 isNegativeDecimal()
+isZeroDecimal()
 ```
 
-These utilities use `BigInt` internally to avoid floating-point precision problems.
+The arithmetic implementation uses `BigInt` internally to avoid JavaScript floating-point precision problems.
 
 For example:
 
 ```ts
 addDecimal("1500.50", "-500.25");
+
 // "1000.25"
 ```
 
 and:
 
 ```ts
-addDecimal("2000", "-5500");
-// "-3500"
+subtractDecimal("2000", "550.25");
+
+// "1449.75"
 ```
 
-This is particularly important for balances and ledger calculations where precision must not depend on JavaScript floating-point behavior.
+This is particularly important for balances, deposits, withdrawals, refunds, and ledger calculations.
 
 ---
 
 # Application Layer
 
-The application layer contains **use cases**.
-
-A use case represents an action the system can perform.
-
-Current user-related use cases include:
+The application layer contains use cases and interfaces.
 
 ```text
-CreateUser
-GetCurrentUser
-UpdateCurrentUser
-ChangeUserPassword
-SearchUsers
-UpdateUserAvatar
-DeleteUserAvatar
+application/
+
+├── dtos/
+├── interfaces/
+└── use-cases/
 ```
 
-Balance operations include:
-
-```text
-UpdateUserBalance
-```
-
-`UpdateUserBalanceUseCase` is responsible for applying a signed balance adjustment.
-
-For example:
-
-```text
-+1500.00 → increase balance by 1500
--500.00  → decrease balance by 500
-```
-
-The use case:
-
-1. Loads the current balance
-2. Calculates the resulting balance
-3. Rejects negative resulting balances
-4. Updates or creates the balance
-5. Creates an immutable ledger record
-6. Creates the audit record
-
-These operations execute inside a single transaction.
-
-Authentication use cases include:
-
-```text
-LoginWithPassword
-LoginWithOtp
-VerifyOtp
-GoogleAuth
-```
-
-Administrative use cases include:
-
-```text
-CreateUser
-DeleteUser
-GetUser
-ListUsers
-UpdateUser
-UpdateUserBalance
-GetAuditLogs
-ListLedgers
-GetStatistics
-DeleteUserAvatar
-```
-
-The application layer contains the business workflow rather than HTTP-specific logic.
+A use case represents a meaningful operation the application can perform.
 
 ---
 
 # Use-Case-Oriented Design
 
-Instead of creating a large generic:
+Instead of a large generic service containing unrelated operations, NestStarter uses focused use cases.
+
+Examples include:
 
 ```text
-UserService
-```
-
-with dozens of unrelated responsibilities, important operations are represented by focused use cases.
-
-For example:
-
-```text
+CreateUserUseCase
+GetCurrentUserUseCase
 UpdateCurrentUserUseCase
+ChangeUserPasswordUseCase
+
+SearchUsersUseCase
+
 UpdateUserAvatarUseCase
 DeleteUserAvatarUseCase
-ChangeUserPasswordUseCase
-SearchUsersUseCase
+
 UpdateUserBalanceUseCase
-ListLedgersUseCase
 ```
 
-This makes each operation:
+Financial use cases include:
 
-- Easier to understand
-- Easier to test
-- Easier to authorize
-- Easier to audit
-- Easier to replace or extend
+```text
+CreateDepositUseCase
+VerifyDepositUseCase
+
+CreateWithdrawalUseCase
+
+AdminApproveWithdrawalUseCase
+AdminRejectWithdrawalUseCase
+
+AdminListDepositsUseCase
+AdminGetDepositUseCase
+
+AdminListWithdrawalsUseCase
+AdminGetWithdrawalUseCase
+```
+
+Ticket use cases include operations for:
+
+```text
+Creating tickets
+Viewing tickets
+Listing tickets
+Creating messages
+Assigning tickets
+Changing ticket status
+Changing priority
+
+Creating categories
+Updating categories
+Deactivating categories
+Listing categories
+```
+
+This structure makes individual operations easier to understand, authorize, test, and audit.
 
 ---
 
 # Unit of Work
 
-NestStarter provides a `UnitOfWork` abstraction for application workflows that require multiple related database operations to succeed or fail together.
+NestStarter provides a `UnitOfWork` abstraction for workflows that require multiple related database operations to succeed or fail together.
 
 The application depends on:
 
@@ -584,176 +871,346 @@ UnitOfWork
 
 rather than directly depending on TypeORM transactions.
 
-The Unit of Work exposes transaction-scoped repository implementations:
+A transaction exposes transaction-scoped repositories:
 
 ```text
 UnitOfWork
-
     │
     ▼
-
-┌─────────────────────────────────┐
-│ Transaction-scoped repositories │
-├─────────────────────────────────┤
-│ UserRepository                  │
-│ UserBalanceRepository           │
-│ LedgerRepository                │
-│ AuditLogRepository              │
-└─────────────────────────────────┘
+TypeOrmUnitOfWork
+    │
+    ▼
+TypeORM EntityManager
+    │
+    ├── UserRepository
+    ├── UserBalanceRepository
+    ├── LedgerRepository
+    ├── AuditLogRepository
+    ├── DepositRepository
+    ├── WithdrawalRepository
+    ├── TicketRepository
+    ├── TicketMessageRepository
+    └── TicketCategoryRepository
 ```
 
-For example:
+Example:
 
 ```ts
 return this.unitOfWork.execute(
-  async ({ userRepository, userBalanceRepository, ledgerRepository }) => {
+  async ({
+    userRepository,
+    userBalanceRepository,
+    ledgerRepository,
+    auditLogRepository,
+  }) => {
     // transactional workflow
   },
 );
 ```
 
-The infrastructure layer provides the concrete implementation:
-
-```text
-UnitOfWork
-    ▲
-    │
-TypeOrmUnitOfWork
-    │
-    ▼
-TypeORM EntityManager
-```
-
-`TypeOrmUnitOfWork` creates transaction-scoped repositories using the TypeORM `EntityManager`.
-
-This keeps transaction management and TypeORM-specific behavior inside infrastructure.
+The concrete transaction implementation remains inside infrastructure.
 
 ---
 
 # Transactional Workflows
 
-Operations involving multiple related writes can use a single database transaction.
+Financial mutations use transaction boundaries around related database operations.
 
-A balance adjustment is one example:
-
-```text
-Update Balance
-
-     │
-     ├── Update UserBalance
-     │
-     ├── Create Ledger
-     │
-     └── Create AuditLog
-```
-
-The complete workflow runs inside one transaction:
+For example, a withdrawal request performs:
 
 ```text
 BEGIN
 
-  │
-  ├── Load user
-  ├── Load current balance
-  ├── Calculate resulting balance
-  ├── Validate resulting balance
-  ├── Update/create UserBalance
-  ├── Create Ledger
-  └── Create AuditLog
+  Load user
+  Lock balance
+  Validate amount
+  Validate sufficient balance
 
-  │
+  Decrease balance
+  Create withdrawal
+  Create ledger
+  Create audit log
 
 COMMIT
 ```
 
-If any transactional database operation fails:
+If any database operation fails:
 
 ```text
 ROLLBACK
 ```
 
-This prevents partially completed financial operations.
-
-For example, if an administrator attempts:
-
-```text
-Current balance:  $2,000
-Adjustment:       -$5,500
-Result:           -$3,500
-```
-
-the operation is rejected with `InsufficientBalanceException`.
-
-No balance, ledger, or audit record is written.
+This prevents partially completed financial mutations.
 
 ---
 
-# Balance Adjustment and Ledger
+# Row Locking and Concurrent Financial Operations
 
-Administrative balance changes use signed adjustments.
+Mutable financial records are loaded with database locks where concurrent operations could otherwise race.
 
 For example:
 
 ```text
-Current balance:  2000
-Adjustment:       +500
-Result:            2500
+findByUserIdAndCurrencyForUpdate()
 ```
 
-creates:
+is used when modifying a user's balance.
+
+Withdrawal and deposit operations also lock the relevant financial records before applying state changes.
+
+This is important for scenarios such as:
 
 ```text
-Ledger amount:        +500
-Balance before:       2000
-Balance after:        2500
+Request A ──┐
+            ├──► same user balance
+Request B ──┘
 ```
 
-A negative adjustment works the same way:
+The transaction and row-locking strategy prevents both requests from incorrectly operating on the same stale balance.
+
+---
+
+# User Balance Operations
+
+Administrative balance adjustments use signed amounts.
+
+For example:
 
 ```text
-Current balance:  2000
-Adjustment:       -500
-Result:            1500
+Current balance: 2000
+
+Adjustment: +500
+
+Result: 2500
 ```
 
-creates:
+or:
 
 ```text
-Ledger amount:        -500
-Balance before:       2000
-Balance after:        1500
+Current balance: 2000
+
+Adjustment: -500
+
+Result: 1500
 ```
 
-If the resulting balance would be negative, the operation is rejected.
+The adjustment is a movement, not a target balance.
+
+The workflow:
+
+1. Validates the target user
+2. Loads/locks the balance
+3. Calculates the resulting balance
+4. Rejects a negative resulting balance
+5. Creates or updates the balance
+6. Creates a ledger record
+7. Creates an audit record
+
+The financial database writes occur inside one transaction.
+
+---
+
+# Withdrawals
+
+A user can create a withdrawal request.
+
+The request contains:
 
 ```text
-Current balance:  2000
-Adjustment:       -5500
-Result:           -3500
-
-                    ↓
-
-            InsufficientBalanceException
+currency
+amount
+destination
 ```
 
-This prevents accidental negative user balances.
+When created:
 
-The ledger amount is the signed movement itself. It is not calculated by treating the requested adjustment as the new balance.
+```text
+User Balance
+     │
+     └── amount is reserved/deducted
+
+Withdrawal
+     │
+     └── PENDING
+
+Ledger
+     │
+     └── WITHDRAWAL
+
+AuditLog
+     │
+     └── WITHDRAWAL_REQUESTED
+```
+
+The user's balance is reduced when the withdrawal is created.
+
+---
+
+# Administrative Withdrawal Workflow
+
+The current administrative workflow intentionally has two actions:
+
+```text
+Approve
+Reject
+```
+
+## Approve
+
+An administrator can approve a pending withdrawal:
+
+```text
+PENDING
+   │
+   ▼
+APPROVED
+```
+
+The approval is transactional and audit logged.
+
+The current implementation does **not** require an additional administrator "processing" or "failed" action.
+
+Those states exist in the domain to support a future real provider workflow.
+
+---
+
+## Reject
+
+When an administrator rejects a pending withdrawal:
+
+```text
+PENDING
+   │
+   ▼
+REJECTED
+   │
+   ▼
+REFUND
+```
+
+The rejection workflow:
+
+1. Locks the withdrawal
+2. Changes its state to `REJECTED`
+3. Locks the user's balance
+4. Refunds the withdrawal amount
+5. Creates a `REFUND` ledger entry
+6. Saves the withdrawal
+7. Creates an audit record
+
+All database operations execute in one transaction.
+
+---
+
+# Deposits
+
+Deposits use a provider abstraction rather than coupling the application directly to a payment provider SDK.
+
+The basic flow is:
+
+```text
+Create Deposit
+      │
+      ▼
+   PENDING
+      │
+      ▼
+Payment Provider
+      │
+      ▼
+Provider Payment ID
+      │
+      ▼
+Verify Payment
+      │
+      ▼
+   COMPLETED
+      │
+      ├── Update Balance
+      ├── Create Ledger
+      └── Create AuditLog
+```
+
+Deposit creation stores the application deposit first.
+
+The external provider operation happens outside the database transaction.
+
+After the provider returns a payment identifier, the deposit is updated in a separate transaction.
+
+This prevents a slow external provider call from keeping a database transaction open.
+
+---
+
+# Payment Provider Abstraction
+
+The application uses:
+
+```text
+PaymentProviderInterface
+```
+
+instead of directly depending on a provider SDK.
+
+The abstraction supports operations such as:
+
+```text
+createPayment()
+verifyPayment()
+
+createWithdrawal()
+getWithdrawalStatus()
+```
+
+Provider results contain provider-specific identifiers while the application keeps its own `referenceId`.
+
+This makes it possible to replace the provider implementation without rewriting the application workflows.
+
+The current repository includes a fake payment provider for development/testing.
+
+It is intentionally not a real payment gateway.
+
+A real provider can later implement the same application interface.
+
+---
+
+# Financial Provider Integration
+
+The payment abstraction is designed to support providers such as:
+
+```text
+Bank/payment gateway
+Crypto payment provider
+International payment provider
+Other external payment service
+```
+
+The provider implementation belongs in infrastructure.
+
+The application layer should only depend on the provider interface.
+
+A production integration should additionally account for provider-specific:
+
+- Idempotency
+- Webhooks/callbacks
+- Reconciliation
+- Provider failures
+- Provider timeouts
+- Duplicate callbacks
+- Transaction verification
+- Provider-side withdrawal state
 
 ---
 
 # Ledger
 
-The ledger provides immutable financial history for balance changes.
+Every financial balance mutation should have a corresponding ledger movement.
 
-Current ledger types include:
+Examples:
 
 ```text
 ADMIN_ADJUSTMENT
 DEPOSIT
 WITHDRAWAL
-TRANSFER_IN
-TRANSFER_OUT
 REFUND
 ```
 
@@ -765,9 +1222,7 @@ balanceBefore
 balanceAfter
 ```
 
-This allows the system to reconstruct the effect of each financial operation.
-
-For example:
+Example:
 
 ```text
 Ledger #1
@@ -787,251 +1242,571 @@ balanceBefore = 1500
 balanceAfter  = 1000
 ```
 
-The current `UserBalance` stores:
+The current balance is:
 
 ```text
 1000
 ```
 
-while the ledger stores the historical movements.
-
-The balance and ledger are deliberately separate concerns:
-
-```text
-UserBalance
-    │
-    └── Current state
-
-Ledger
-    │
-    └── Historical financial movements
-```
+while the ledger retains the historical movements.
 
 ---
 
-# Admin Ledger API
+# Admin Financial APIs
 
-Administrative users can inspect ledger history through:
+Administrators can inspect financial records.
+
+Deposit administration provides:
 
 ```text
-GET /admin/ledgers
+GET /admin/deposits
+GET /admin/deposits/:id
 ```
 
-The endpoint supports filtering by:
+Withdrawal administration provides:
+
+```text
+GET /admin/withdrawals
+GET /admin/withdrawals/:id
+
+PATCH /admin/withdrawals/:id/approve
+PATCH /admin/withdrawals/:id/reject
+```
+
+Administrative financial listings support filtering, pagination, and sorting.
+
+Typical filters include:
 
 ```text
 userId
 currency
-type
-actorUserId
+status
 referenceId
+providerPaymentId
+providerWithdrawalId
 from
 to
 ```
 
-Pagination and sorting are also supported.
-
-Supported sorting fields include:
+Sorting supports fields such as:
 
 ```text
 createdAt
 amount
 ```
 
-Example:
-
-```text
-GET /admin/ledgers?userId=<user-id>&currency=USD&type=ADMIN_ADJUSTMENT
-```
-
-The response follows the shared pagination format:
-
-```json
-{
-  "data": [],
-  "total": 0,
-  "page": 1,
-  "limit": 20,
-  "totalPages": 0
-}
-```
-
-The endpoint is documented through Swagger/OpenAPI and protected by administrative authorization.
+Administrative financial routes are protected by `AdminAuthGuard`.
 
 ---
 
-# Application Interfaces
+# Tickets and Customer Support
 
-External capabilities are represented through application-level abstractions.
+NestStarter includes a complete support-ticket foundation.
 
-Current interfaces include:
+Users can create and interact with their own tickets.
+
+Administrators can manage tickets globally.
+
+The ticket system supports:
 
 ```text
-AdminStatistics
-AuditLogger
-FileStorage
-ImageProcessing
-LoginProtection
-NotificationService
-OtpService
-PasswordHasher
-UnitOfWork
+Tickets
+Ticket messages
+Ticket categories
+Assignment
+Priority
+Status transitions
+Administrative replies
+Category management
 ```
 
-The application depends on these abstractions.
+---
 
-Infrastructure provides their implementations.
+# User Ticket Operations
+
+The user-side ticket workflow supports operations such as:
+
+```text
+Create ticket
+List own tickets
+Get own ticket
+Create ticket message
+```
+
+User ticket access is scoped to the authenticated user's session.
+
+A user cannot retrieve another user's ticket simply by changing a ticket ID.
+
+---
+
+# Administrative Ticket Operations
+
+Administrators can:
+
+```text
+List tickets
+View ticket details
+Reply to tickets
+Assign tickets
+Change ticket status
+Change ticket priority
+
+List categories
+Create categories
+Update categories
+Deactivate categories
+```
+
+The administrator's authenticated session is used as the audit actor.
 
 For example:
 
 ```text
-Application
-    │
-    ▼
-PasswordHasher
-    ▲
-    │
-BcryptPasswordHasherService
-```
-
-Another example:
-
-```text
-Application
-    │
-    ▼
-FileStorage
-    ▲
-    │
-MinioService
-```
-
-And for transactional workflows:
-
-```text
-Application
-    │
-    ▼
-UnitOfWork
-    ▲
-    │
-TypeOrmUnitOfWork
-```
-
-This allows infrastructure technologies to be replaced without changing application use cases.
-
----
-
-# Infrastructure Layer
-
-Infrastructure contains implementations of external concerns.
-
-```text
-infrastructure/
-
-├── auth/
-├── config/
-├── database/
-└── services/
-```
-
-Infrastructure is where NestJS, TypeORM, PostgreSQL, Redis, MinIO, SMTP, bcrypt, Sharp, and other external technologies are integrated.
-
----
-
-# Database
-
-PostgreSQL is accessed through TypeORM.
-
-The infrastructure layer contains:
-
-- ORM entities
-- Repository implementations
-- Database configuration
-- TypeORM migrations
-- Database seed/bootstrap logic
-- Transaction management
-
-The ORM entities are intentionally separate from domain entities.
-
-```text
-Domain User
-     ▲
-     │ mapping
-     ▼
-UserOrmEntity
+Admin session
      │
      ▼
-PostgreSQL
+AdminTicketsController
+     │
+     ▼
+UseCase(actorUserId)
+     │
+     ▼
+Domain operation
+     │
+     ▼
+AuditLog
 ```
-
-Current database ORM entities include:
-
-```text
-UserOrmEntity
-UserBalanceOrmEntity
-LedgerOrmEntity
-AuditLogOrmEntity
-```
-
-The `LedgerOrmEntity` uses PostgreSQL `numeric(30,18)` fields for:
-
-```text
-amount
-balanceBefore
-balanceAfter
-```
-
-This provides sufficient precision for payment and crypto-related balances.
 
 ---
 
-# Database Migrations
+# Ticket Status Rules
 
-The project uses TypeORM migrations for schema changes.
+Ticket status changes are controlled by the domain entity.
 
-Current migrations include:
+The current states are:
 
 ```text
-InitialUsers
-CreateAuditLogs
-AddUserProfileFields
-AddUserStatus
-CreateLedgers1788355062580
+OPEN
+IN_PROGRESS
+WAITING_FOR_USER
+WAITING_FOR_SUPPORT
+RESOLVED
+CLOSED
 ```
 
-The ledger migration creates:
+The entity validates transitions instead of allowing arbitrary status changes.
+
+This prevents invalid state changes from being implemented accidentally in controllers.
+
+---
+
+# Ticket Categories
+
+Administrators can manage support categories.
+
+Available operations include:
 
 ```text
-ledgers
+GET    /admin/tickets/categories
+POST   /admin/tickets/categories
+PATCH  /admin/tickets/categories/:id
+PATCH  /admin/tickets/categories/:id/deactivate
 ```
 
-with support for:
+Category mutations include the administrator's session ID so that the action can be audited.
+
+---
+
+# Audit Logging
+
+Administrative and important application operations are audit logged.
+
+The audit system contains:
 
 ```text
-id
-userId
-currency
-amount
-balanceBefore
-balanceAfter
-type
+AuditLog entity
+AuditLogRepository
+AuditAction enum
+AuditLogger abstraction
+```
+
+Important financial and administrative workflows create audit records as part of their transaction when appropriate.
+
+Current audit actions include categories such as:
+
+```text
+USER_CREATED
+USER_UPDATED
+USER_DELETED
+USER_PASSWORD_CHANGED
+USER_AVATAR_DELETED
+USER_ROLE_CHANGED
+
+USER_BALANCE_CREATED
+USER_BALANCE_UPDATED
+
+DEPOSIT_CREATED
+DEPOSIT_COMPLETED
+DEPOSIT_FAILED
+DEPOSIT_CANCELLED
+
+WITHDRAWAL_REQUESTED
+WITHDRAWAL_APPROVED
+WITHDRAWAL_REJECTED
+WITHDRAWAL_PROCESSING
+WITHDRAWAL_COMPLETED
+WITHDRAWAL_FAILED
+WITHDRAWAL_REFUNDED
+
+TICKET_CREATED
+TICKET_MESSAGE_CREATED
+TICKET_STATUS_CHANGED
+TICKET_PRIORITY_CHANGED
+TICKET_ASSIGNED
+TICKET_UNASSIGNED
+TICKET_CLOSED
+
+TICKET_CATEGORY_CREATED
+TICKET_CATEGORY_UPDATED
+TICKET_CATEGORY_DEACTIVATED
+```
+
+Audit records can contain:
+
+```text
 actorUserId
-referenceId
+targetUserId
+action
 metadata
 createdAt
 ```
 
-Production deployments should use migrations rather than relying on TypeORM schema synchronization.
+The actor is taken from the authenticated session for administrative operations rather than from client-provided actor IDs.
 
-Available commands:
+---
 
-```bash
-npm run migration:generate
-npm run migration:run
-npm run migration:revert
-npm run migration:run:prod
+# Authentication
+
+NestStarter supports:
+
+```text
+Email + Password
+OTP
+Google OAuth
 ```
+
+Authentication uses server-side sessions.
+
+---
+
+# Password Authentication
+
+Password authentication uses bcrypt for password hashing.
+
+Repeated failed password attempts are protected through Redis-backed login protection.
+
+The authentication flow includes:
+
+```text
+Credentials
+    │
+    ▼
+Login protection
+    │
+    ▼
+Password verification
+    │
+    ▼
+Session creation
+```
+
+Passwords are never stored in plaintext.
+
+---
+
+# OTP Authentication
+
+OTP functionality supports authentication flows such as:
+
+```text
+Signup
+Passwordless login
+Email verification
+```
+
+OTP security includes:
+
+- Cryptographically generated codes
+- Hashing before storage
+- Expiration
+- Attempt limits
+- Resend cooldowns
+- Single-use verification
+- Rate limiting
+
+OTP state is stored in Redis rather than PostgreSQL.
+
+The application uses an OTP abstraction so OTP delivery/storage details remain outside the domain.
+
+---
+
+# Google OAuth
+
+Google OAuth is implemented using Passport.
+
+The application supports Google authentication and account linking through the application layer.
+
+Google account identifiers are kept separate from password authentication.
+
+The domain prevents a different Google account from silently replacing an already-linked Google account.
+
+---
+
+# Sessions
+
+NestStarter uses cookie-based server-side sessions.
+
+```text
+Browser
+   │
+   │ HTTP-only session cookie
+   ▼
+NestJS
+   │
+   ▼
+Redis
+   │
+   └── session state
+```
+
+The browser stores only the session identifier.
+
+Session state is stored server-side in Redis.
+
+This allows multiple application instances to share session state when they use the same Redis infrastructure.
+
+---
+
+# Authorization
+
+Authorization is based on the authenticated user's domain role.
+
+Current roles:
+
+```text
+USER
+ADMIN
+```
+
+Authenticated routes use session authentication.
+
+Administrative routes additionally use:
+
+```text
+AdminAuthGuard
+```
+
+The general flow is:
+
+```text
+Request
+   │
+   ▼
+Session authentication
+   │
+   ▼
+Authenticated user
+   │
+   ▼
+Admin authorization
+   │
+   ▼
+ADMIN?
+```
+
+The authenticated session is also used as the actor identity for administrative mutations and audit records.
+
+---
+
+# User Management
+
+User functionality includes:
+
+```text
+Create user
+Get current user
+Update current user
+Change password
+Search users
+Update avatar
+Delete avatar
+```
+
+Administrative functionality additionally includes:
+
+```text
+Create users
+Get users
+List users
+Update users
+Delete users
+
+Change roles
+Change status
+Change/reset passwords
+
+Manage avatars
+Update balances
+
+View audit logs
+View financial ledgers
+View statistics
+```
+
+Sensitive fields such as password hashes are not exposed through API response DTOs.
+
+---
+
+# Admin User Management
+
+Administrative user mutations use the authenticated administrator as the actor.
+
+For mutations, the general pattern is:
+
+```text
+Admin Controller
+      │
+      ▼
+extract actorUserId from session
+      │
+      ▼
+Admin Use Case
+      │
+      ▼
+UnitOfWork
+      │
+      ▼
+load / lock entity
+      │
+      ▼
+domain operation
+      │
+      ▼
+persist
+      │
+      ▼
+AuditLog
+      │
+      ▼
+commit
+```
+
+This keeps authorization, transaction boundaries, domain rules, persistence, and auditing separated.
+
+---
+
+# File Storage
+
+File storage is represented by an application abstraction:
+
+```text
+FileStorage
+```
+
+The application does not depend directly on MinIO.
+
+The abstraction supports operations such as:
+
+```text
+upload()
+delete()
+get()
+getUrl()
+healthCheck()
+```
+
+The current infrastructure implementation is:
+
+```text
+MinioService
+```
+
+This allows the object-storage implementation to be replaced without changing application business logic.
+
+---
+
+# MinIO
+
+MinIO provides S3-compatible object storage.
+
+Binary files are stored outside PostgreSQL.
+
+For example:
+
+```text
+avatars/<user-id>/avatar.webp
+```
+
+The database stores the file reference while the binary object remains in object storage.
+
+Files can be streamed through the application rather than loading the complete object into memory.
+
+---
+
+# Image Processing
+
+Image processing is represented by:
+
+```text
+ImageProcessing
+```
+
+The current implementation uses:
+
+```text
+Sharp
+```
+
+The responsibilities are deliberately separated:
+
+```text
+ImageProcessing
+       │
+       ▼
+Processed image
+       │
+       ▼
+FileStorage
+       │
+       ▼
+MinIO
+```
+
+This keeps image transformation independent from object storage.
+
+---
+
+# Avatar Management
+
+Avatars are handled separately from ordinary profile updates.
+
+User operations include:
+
+```text
+UpdateUserAvatar
+DeleteUserAvatar
+```
+
+Administrative avatar operations are also supported.
+
+The avatar workflow can handle:
+
+- Image validation
+- Image processing
+- Object storage
+- Existing-avatar replacement
+- Avatar deletion
+- Avatar references
 
 ---
 
@@ -1049,475 +1824,152 @@ Current uses include:
 - Login protection
 - Failed-login tracking
 
-The application interacts with Redis through abstractions where appropriate rather than coupling business logic directly to the Redis client.
+Redis is also used by the session store so application instances can share authentication state.
 
 ---
 
-# Sessions
+# Database
 
-NestStarter uses **cookie-based server-side sessions**.
+PostgreSQL is accessed through TypeORM.
+
+The infrastructure database layer contains:
 
 ```text
-Browser
-   │
-   │ HTTP-only session cookie
-   ▼
-NestJS
-   │
-   ▼
-Redis
-   │
-   └── session data / userId
+ORM entities
+Repository implementations
+Migrations
+Database configuration
+Transaction management
 ```
 
-The browser receives the session identifier through an HTTP-only cookie.
+Domain entities and ORM entities remain separate.
 
-Session state is stored server-side.
-
-This allows multiple application instances to share session state when they use the same Redis infrastructure.
-
----
-
-# Authentication
-
-NestStarter supports multiple authentication flows.
-
-## Email + Password
-
-Password authentication is handled through an application use case.
-
-Passwords are hashed using bcrypt.
-
-Repeated failed password attempts are protected through Redis-backed login protection.
-
----
-
-## OTP Authentication
-
-OTP authentication is supported for authentication flows such as:
-
-- Signup
-- Passwordless login
-
-OTP security includes:
-
-- Hashing before storage
-- Expiration
-- Maximum verification attempts
-- Resend cooldown
-- Single-use verification
-- Rate limiting
-
-OTP data is stored in Redis rather than PostgreSQL.
-
-The application uses an `OtpService` abstraction so OTP implementation details remain outside the domain.
-
----
-
-## Google OAuth
-
-Google OAuth is implemented using Passport.
-
-The application supports:
-
-- Google login
-- Google signup
-- Linking Google accounts
-- Existing local accounts
-- Provider ID uniqueness
-
-Authentication decisions remain in application use cases rather than being embedded inside the Passport strategy.
-
----
-
-# Authorization
-
-Authorization is based on the user's domain role.
-
-Currently:
+For example:
 
 ```text
-USER
-ADMIN
+Domain User
+     ▲
+     │ mapping
+     ▼
+UserOrmEntity
+     │
+     ▼
+PostgreSQL
 ```
 
-Authenticated routes use the session authentication guard.
-
-Administrative routes additionally use the admin authorization guard.
+Current ORM entities include:
 
 ```text
-Request
-   │
-   ▼
-Session Guard
-   │
-   ▼
-Authenticated User
-   │
-   ▼
-Admin Guard
-   │
-   ▼
-ADMIN role?
-```
+UserOrmEntity
+UserBalanceOrmEntity
+LedgerOrmEntity
+AuditLogOrmEntity
 
-The domain user remains the source of truth for authorization.
+DepositOrmEntity
+WithdrawalOrmEntity
+
+TicketOrmEntity
+TicketMessageOrmEntity
+TicketCategoryOrmEntity
+```
 
 ---
 
-# User Management
+# Database Identity
 
-The boilerplate provides a complete foundation for user management.
+Domain entities generate UUIDs when an ID is not supplied.
 
-Supported operations include:
-
-- Create user
-- Get current user
-- Update current user
-- Change password
-- Search users
-- Update avatar
-- Delete avatar
-
-Profile data is deliberately separated from avatar storage.
-
-A normal profile update can modify fields such as:
-
-```text
-firstName
-lastName
-userName
-dateOfBirth
-bio
-```
-
-Avatar operations use dedicated use cases because they involve external object storage and image processing.
-
----
-
-# User Balance
-
-NestStarter provides a domain-level `UserBalance` model for representing a user's current balance in a specific currency.
-
-```text
-User
- │
- └── UserBalance
-       ├── currency
-       └── amount
-```
-
-Balance adjustments are handled through:
-
-```text
-UpdateUserBalanceUseCase
-```
-
-The `amount` field represents a **signed adjustment**, not a target balance.
-
-```text
-+1000 → increase by 1000
--250  → decrease by 250
-```
-
-The operation:
-
-- Validates that the target user exists
-- Loads the existing balance
-- Calculates the resulting balance
-- Rejects negative resulting balances
-- Creates the balance if it does not already exist
-- Updates the balance when it already exists
-- Creates a ledger record
-- Creates an audit record
-
-The complete workflow executes through `UnitOfWork`.
-
-A negative balance is never persisted by this workflow.
-
----
-
-# User Search
-
-Users can be searched through the user API.
-
-Search functionality is represented through a dedicated application use case and request/response DTOs.
-
-The search layer is separated from the general user retrieval flow so that search-specific filtering and pagination can evolve independently.
-
----
-
-# File Storage
-
-NestStarter provides an abstraction for object/file storage:
-
-```text
-FileStorage
-```
-
-The application layer does not depend directly on MinIO.
-
-The abstraction provides:
+The ORM entities use application-assigned UUID primary columns:
 
 ```ts
-upload(
-  objectName: string,
-  buffer: Buffer,
-  contentType: string,
-): Promise<void>;
-
-delete(objectName: string): Promise<void>;
-
-get(objectName: string): Promise<{
-  stream: Readable;
-  contentType: string;
-  size: number;
-}>;
-
-getUrl(objectName: string): string;
-
-healthCheck(): Promise<void>;
+@PrimaryColumn("uuid")
+id!: string;
 ```
 
-The current infrastructure implementation is:
-
-```text
-MinioService
-```
-
-This means MinIO can be replaced with another object-storage implementation without changing application use cases.
+This keeps identity generation consistent between the domain and persistence layers.
 
 ---
 
-# MinIO
+# Financial Database Constraints
 
-MinIO provides S3-compatible object storage.
-
-Files are stored outside PostgreSQL.
-
-For example, an avatar can be stored using an object path such as:
-
-```text
-avatars/<user-id>/avatar.webp
-```
-
-The application stores the avatar reference while the actual binary file remains in object storage.
-
-The file API streams stored objects rather than loading the entire file into the HTTP response layer.
-
-```text
-Client
-  │
-  ▼
-FilesController
-  │
-  ▼
-FileStorage
-  │
-  ▼
-MinioService
-  │
-  ▼
-MinIO
-```
-
----
-
-# File API
-
-Files are exposed through:
-
-```text
-GET /files/*
-```
+Financial records use PostgreSQL decimal/numeric columns with high precision.
 
 For example:
 
 ```text
-GET /files/avatars/<user-id>/avatar.webp
+numeric(30,18)
 ```
 
-The Files API:
+is used for financial amounts and balances.
 
-- Resolves the object path
-- Retrieves the object from storage
-- Preserves the stored content type
-- Preserves the object size
-- Streams the object to the client
+User balances also enforce uniqueness for:
 
-The file endpoint is documented through Swagger/OpenAPI.
+```text
+(userId, currency)
+```
+
+Deposits and withdrawals have unique application reference IDs.
+
+Deposit provider payment IDs are also uniquely constrained.
+
+These database constraints provide a second layer of protection in addition to application/domain rules.
 
 ---
 
-# Image Processing
+# Database Migrations
 
-Image processing is represented by an application-level abstraction:
+The project uses TypeORM migrations for database schema changes.
 
-```text
-ImageProcessing
-```
-
-The infrastructure implementation uses:
+Migrations are stored under:
 
 ```text
-Sharp
+src/infrastructure/database/migrations/
 ```
 
-Image processing is kept separate from file storage.
+Migration commands are provided through the project's npm scripts.
 
-This gives the architecture a clear distinction between:
+Generate a migration:
 
-```text
-Image transformation
+```bash
+npm run migration:generate -- src/infrastructure/database/migrations/YourMigrationName
 ```
 
-and:
+Run migrations:
 
-```text
-Object storage
+```bash
+npm run migration:run
 ```
 
-For example:
+Revert the latest migration:
 
-```text
-Avatar Upload
-     │
-     ▼
-Image Processing
-     │
-     ▼
-Processed Image
-     │
-     ▼
-File Storage
-     │
-     ▼
-MinIO
+```bash
+npm run migration:revert
 ```
+
+Production migrations:
+
+```bash
+npm run build
+npm run migration:run:prod
+```
+
+Production deployments should use explicit migrations rather than relying on schema synchronization.
 
 ---
 
-# Avatar Management
+# Development Schema Synchronization
 
-Avatars are treated as a separate concern from ordinary profile updates.
-
-User avatar operations include:
+The NestJS TypeORM configuration currently enables:
 
 ```text
-UpdateUserAvatar
-DeleteUserAvatar
+synchronize: process.env.NODE_ENV === "development"
 ```
 
-Administrative avatar operations are also supported.
+This means application-level schema synchronization is available during development.
 
-This prevents object-storage concerns from leaking into normal profile-management logic.
+Production deployments should disable schema synchronization and use migrations.
 
-The avatar flow can independently handle:
-
-- Image validation
-- Image processing
-- Object storage
-- Existing-avatar replacement
-- Avatar deletion
-- Avatar references
-
----
-
-# Admin Management
-
-Administrators can manage users through dedicated application use cases.
-
-Supported operations include:
-
-- Create users
-- Update users
-- Delete users
-- Get individual users
-- List users
-- Update user balances
-- Change/reset passwords
-- Manage roles
-- Manage user profiles
-- Manage user status
-- Manage avatars
-- View audit logs
-- List audit logs
-- List financial ledgers
-- View user statistics
-
-Administrative operations are protected by the admin authorization guard.
-
-Sensitive fields such as password hashes are never exposed through API response DTOs.
-
----
-
-# Audit Logging
-
-Administrative actions are audit logged.
-
-Audit logging is implemented through an application-level abstraction:
-
-```text
-AuditLogger
-```
-
-with an infrastructure implementation responsible for persistence.
-
-Transactional workflows that require the audit record to be committed atomically with other database changes can use the transaction-scoped:
-
-```text
-AuditLogRepository
-```
-
-provided by `UnitOfWork`.
-
-For example, a balance adjustment records:
-
-```text
-actorUserId
-targetUserId
-action
-currency
-from
-to
-```
-
-The audit system records information such as:
-
-```text
-Who performed the action?
-
-What action was performed?
-
-Which user/resource was affected?
-
-When did it happen?
-```
-
-Audit logs have their own domain entity, repository contract, ORM entity, and application use cases.
-
-Available audit operations include:
-
-```text
-GetAuditLogs
-ListAuditLogs
-```
-
-This keeps audit functionality separate from the HTTP controllers and database implementation.
-
----
-
-# Admin Statistics
-
-Administrative statistics are exposed through an application abstraction:
-
-```text
-AdminStatistics
-```
-
-The infrastructure implementation provides the actual statistics.
-
-This allows statistics to be calculated without coupling the administrative application layer directly to TypeORM queries.
+The TypeORM CLI has a separate `DataSource` configuration, so migration behavior should always be verified against the environment being deployed.
 
 ---
 
@@ -1537,91 +1989,48 @@ api/
 
 Controllers should remain thin.
 
-Their job is primarily to:
+Their primary responsibilities are:
 
-1. Receive the HTTP request
-2. Validate/transform input
-3. Call the appropriate use case or application abstraction
-4. Return the result
+1. Receive HTTP input
+2. Validate/transform DTOs
+3. Extract authenticated actor information where required
+4. Call the appropriate use case
+5. Return the result
 
-Business rules belong in the application/domain layers.
+Business rules belong in the domain/application layers.
 
 ---
 
 # DTOs
 
-API request and response contracts are represented through dedicated DTOs.
+API request and response contracts are represented through DTOs.
 
-Examples include:
+DTOs are responsible for:
 
-```text
-AuthRequestDto
-AuthenticatedUserResponseDto
-ChangePasswordRequestDto
-UpdateProfileRequestDto
-SearchUsersRequestDto
-UserSearchResponseDto
+- HTTP input validation
+- Transformation
+- Serialization
+- Swagger documentation
 
-AdminUserRequestDto
-AdminUserResponseDto
-AdminUserListResponseDto
+DTOs are not domain entities.
 
-AuditLogRequestDto
-AuditLogResponseDto
-GetAuditLogsQueryDto
-
-ChangeUserPasswordRequestDto
-ListLedgersQueryDto
-```
-
-DTOs belong to the API layer and should not be used as domain entities.
-
-This keeps HTTP-specific validation and serialization concerns at the API boundary.
-
----
-
-# Swagger / OpenAPI
-
-Swagger/OpenAPI documentation is available during development.
-
-```text
-http://localhost:3000/api/docs
-```
-
-Controllers are documented using NestJS Swagger decorators.
-
-The API documentation includes:
-
-- Endpoint descriptions
-- Operation summaries
-- Request parameters
-- Request bodies
-- Response types
-- HTTP response codes
-- Authentication-related responses
-- Multipart file-upload documentation
-- File endpoint documentation
-- Ledger filtering and pagination documentation
-
-The goal is for **all API controllers and endpoints to be explicitly documented**, rather than relying only on generated route information.
+This keeps HTTP-specific concerns at the API boundary.
 
 ---
 
 # Validation
 
-Global request validation is enabled using:
+Global request validation uses:
 
-- `class-validator`
-- `class-transformer`
-- NestJS `ValidationPipe`
+```text
+class-validator
+class-transformer
+NestJS ValidationPipe
+```
 
-DTOs define the API contract.
+The application validates HTTP input before it reaches business workflows.
 
-Validation therefore happens at the API boundary before data reaches application logic.
-
-This keeps invalid HTTP input away from application and domain logic.
-
-Global validation is configured centrally rather than repeatedly implemented inside individual controllers.
+The validation configuration is centralized rather than repeatedly implemented inside controllers.
 
 ---
 
@@ -1641,9 +2050,11 @@ or:
 throw new InsufficientBalanceException();
 ```
 
-The API layer translates the exception into an appropriate HTTP response.
+The API layer translates domain/application failures into HTTP responses.
 
-Example:
+The application also uses centralized exception handling and request IDs for tracing.
+
+A typical error response can contain:
 
 ```json
 {
@@ -1654,17 +2065,34 @@ Example:
 }
 ```
 
-HTTP exceptions are also handled consistently.
+---
 
-The API includes centralized exception handling so controllers and use cases do not need repetitive HTTP error formatting.
+# Swagger / OpenAPI
 
-A request ID is included in error responses for tracing.
+Swagger/OpenAPI documentation is available during development.
+
+```text
+http://localhost:3000/api/docs
+```
+
+Controllers use NestJS Swagger decorators to document endpoints, parameters, request bodies, and responses.
+
+The documentation covers the API surface including:
+
+- Authentication
+- User management
+- Administrative operations
+- Financial operations
+- Tickets
+- Ticket categories
+- File endpoints
+- Pagination and filtering
 
 ---
 
 # Security
 
-NestStarter includes several security foundations:
+NestStarter includes security foundations such as:
 
 - HTTP-only session cookies
 - Server-side Redis sessions
@@ -1672,7 +2100,7 @@ NestStarter includes several security foundations:
 - OTP hashing
 - OTP expiration
 - OTP attempt limits
-- OTP resend cooldown
+- OTP resend cooldowns
 - Redis-backed login protection
 - Global throttling
 - Helmet
@@ -1681,10 +2109,10 @@ NestStarter includes several security foundations:
 - Role-based authorization
 - Sensitive response filtering
 - Environment validation
+- UUID route validation
+- Database row locking for concurrent financial mutations
 
-Security-sensitive configuration is provided through environment variables.
-
-Secrets should never be committed to the repository.
+Security configuration remains deployment-specific and should be reviewed before production use.
 
 ---
 
@@ -1696,19 +2124,35 @@ The application exposes:
 GET /health
 ```
 
-The health module provides a centralized health-check endpoint for the application and its required infrastructure.
+The health module provides a centralized health-check endpoint for application infrastructure.
 
-This endpoint can be used by Docker, container orchestrators, monitoring systems, or deployment infrastructure to determine whether the application is healthy.
+It can be used by:
+
+- Docker
+- Container orchestrators
+- Monitoring systems
+- Deployment infrastructure
 
 ---
 
 # Configuration
 
-Configuration is environment-based.
+Configuration is environment-based and validated during startup.
 
-Joi validates the application's environment variables during startup.
+Important configuration areas include:
 
-Example:
+```text
+PostgreSQL
+Redis
+Sessions
+SMTP
+MinIO
+Application URL
+CORS
+Authentication
+```
+
+Example environment variables:
 
 ```env
 DB_HOST=localhost
@@ -1735,26 +2179,28 @@ MINIO_SECRET_KEY=your-secret-key
 MINIO_BUCKET=app
 ```
 
-See:
+Refer to:
 
 ```text
 .env.example
 .env.production.example
 ```
 
-for the supported configuration.
+for the repository's supported configuration.
+
+Secrets should never be committed to Git.
 
 ---
 
 # Docker
 
-Development infrastructure can be started with Docker Compose.
+Development infrastructure can be started with Docker Compose:
 
 ```bash
 docker compose up --build
 ```
 
-A production-oriented Compose configuration is also included:
+The project also contains a production-oriented Compose configuration:
 
 ```bash
 docker compose \
@@ -1763,28 +2209,42 @@ docker compose \
   up --build -d
 ```
 
-The production configuration is designed so PostgreSQL and Redis are not unnecessarily exposed to the host.
+Stop the development stack:
+
+```bash
+docker compose down
+```
+
+Remove containers and persisted Docker volumes:
+
+```bash
+docker compose down -v
+```
+
+The production Compose setup is designed to keep internal infrastructure services such as PostgreSQL and Redis from being unnecessarily exposed to the host.
 
 ---
 
 # Testing
 
-Jest is used for unit testing.
+Jest is used for automated testing.
 
-Tests cover important parts of the application and infrastructure layers, including:
+Tests cover important application and infrastructure behavior, including areas such as:
 
-- Authentication use cases
-- User use cases
-- Administrative use cases
-- Guards
-- Session serialization
+- Authentication
+- OTP
 - Password hashing
-- OTP services
 - Login protection
-- Redis-backed services
-- User balance workflows
+- Sessions
+- Guards
+- User management
+- Administrative operations
+- Balance workflows
+- Financial workflows
+- Ticket workflows
+- Repository behavior
 
-Run the test suite:
+Run tests:
 
 ```bash
 npm test
@@ -1796,7 +2256,7 @@ Run with coverage:
 npm test -- --coverage
 ```
 
-Run tests sequentially:
+Run sequentially:
 
 ```bash
 npm test -- --runInBand
@@ -1808,169 +2268,165 @@ Build the application:
 npm run build
 ```
 
-The application layer is designed to be highly unit-testable because use cases depend on abstractions rather than concrete infrastructure implementations.
-
 ---
 
 # Adding a New Feature
 
-A typical feature follows this flow:
+A typical feature follows this structure:
 
 ```text
 1. Domain
-
    └── Entity / Enum / Exception / Repository contract
 
 2. Application
-
-   └── Use case / Input model / Interface
+   └── Use Case / Input / Interface
 
 3. Infrastructure
-
-   └── Repository or external-service implementation
+   └── Repository / External-service implementation
 
 4. API
-
    └── DTO / Controller / Guard / Module
 
 5. Tests
-
    └── Unit / Integration / E2E
 ```
 
-For features involving multiple related database operations, define the transactional boundary at the application layer using `UnitOfWork`.
-
-For example:
+For a mutation involving multiple related database operations:
 
 ```text
 Controller
     │
     ▼
-UseCase
+Use Case
     │
     ▼
 UnitOfWork
     │
-    ├── Domain Entity
-    │
-    ├── Repository Interface
-    │
-    └── Application Interface
-             ▲
-             │
-       Infrastructure
+    ├── Load / lock entities
+    ├── Domain operation
+    ├── Persist changes
+    └── Create audit record
 ```
 
-This structure keeps the feature understandable and prevents infrastructure details from spreading throughout the application.
+The authenticated actor should come from the session rather than from client-provided actor IDs.
 
 ---
 
-# Current Project Structure
+# Recommended Mutation Pattern
 
-The current project is organized into the following major areas:
+NestStarter follows a consistent pattern for important mutations:
 
 ```text
-src/
-
-├── api/
-│   ├── admin/
-│   ├── auth/
-│   ├── files/
-│   ├── health/
-│   └── users/
-│
-├── application/
-│   ├── dtos/
-│   ├── interfaces/
-│   └── use-cases/
-│       ├── admin-ledgers/
-│       ├── admin-users/
-│       ├── auth/
-│       └── users/
-│
-├── domain/
-│   ├── entities/
-│   ├── enums/
-│   ├── exceptions/
-│   ├── repositories/
-│   └── utils/
-│
-├── infrastructure/
-│   ├── auth/
-│   ├── config/
-│   ├── database/
-│   │   ├── migrations/
-│   │   ├── orm-entities/
-│   │   └── repositories/
-│   └── services/
-│
-├── shared/
-│   └── pagination/
-│
-└── types/
+Controller
+    │
+    ▼
+Extract actorUserId from session
+    │
+    ▼
+UseCase(input)
+    │
+    ▼
+UnitOfWork
+    │
+    ▼
+Load / lock mutable records
+    │
+    ▼
+Domain operation
+    │
+    ▼
+Persist
+    │
+    ▼
+AuditLog
+    │
+    ▼
+Commit
 ```
+
+This pattern is especially important for:
+
+- Administrative mutations
+- Financial mutations
+- Ticket mutations
+- User management operations
+
+Reads that do not require a transaction can use repository operations directly.
 
 ---
 
-# Project Principles
+# Current Major Features
 
-NestStarter follows several principles.
+NestStarter currently provides foundations for:
 
-### Business logic first
+```text
+Architecture
+├── Clean Architecture
+├── Domain entities
+├── Repository contracts
+├── Application use cases
+└── Infrastructure implementations
 
-The domain and application layers define the behavior of the system.
+Authentication
+├── Password login
+├── OTP authentication
+├── Google OAuth
+├── Sessions
+└── Redis-backed login protection
 
-### Infrastructure is replaceable
+Users
+├── User registration
+├── Profiles
+├── Password management
+├── Search
+├── Avatars
+└── Administrative management
 
-PostgreSQL, Redis, SMTP, MinIO, Sharp, bcrypt, and TypeORM are implementation details.
+Financials
+├── User balances
+├── Immutable ledger
+├── Deposits
+├── Withdrawal requests
+├── Withdrawal approval
+├── Withdrawal rejection/refund
+└── Payment provider abstraction
 
-### Controllers stay thin
+Support
+├── Tickets
+├── Ticket messages
+├── Ticket categories
+├── Assignment
+├── Priority
+├── Status transitions
+└── Administrative ticket management
 
-Controllers coordinate HTTP and application operations. They should not contain business rules.
+Infrastructure
+├── PostgreSQL
+├── TypeORM
+├── Redis
+├── MinIO
+├── Sharp
+├── SMTP
+├── Docker
+└── Health checks
 
-### Use cases stay focused
+Security
+├── Session authentication
+├── Role-based authorization
+├── OTP protection
+├── Login protection
+├── Rate limiting
+├── Helmet
+├── CORS
+├── Validation
+└── Centralized error handling
 
-One use case should represent one meaningful operation.
-
-### Domain stays framework-independent
-
-The domain should not require NestJS, TypeORM, Express, Redis, MinIO, or other infrastructure libraries.
-
-### Explicit dependencies
-
-Dependencies should be visible through constructors and interfaces rather than hidden global state.
-
-### Separate external capabilities
-
-File storage, image processing, password hashing, OTP, login protection, notifications, auditing, statistics, and transaction management are represented through abstractions.
-
-### Transactions belong at the application workflow boundary
-
-When multiple related database changes must succeed or fail together, the application defines the workflow through `UnitOfWork` while infrastructure handles the actual database transaction.
-
-### Security by default
-
-Authentication, authorization, password hashing, session storage, validation, rate limiting, and centralized error handling are provided as foundations rather than being left for every project to implement independently.
-
-### Audit important administrative operations
-
-Administrative actions should be traceable without coupling business logic directly to the persistence mechanism.
-
-### Current state and historical state are separate concerns
-
-Current values such as `UserBalance.amount` represent application state.
-
-When financial history is required, immutable `Ledger` records provide historical financial movements independently from the current balance.
-
-### Financial operations are atomic
-
-A financial balance mutation and its corresponding ledger/audit records should succeed or fail together through `UnitOfWork`.
-
-### Financial arithmetic must preserve precision
-
-Money and payment amounts should not rely on JavaScript floating-point arithmetic.
-
-Decimal utilities use string values and `BigInt` internally to preserve precision.
+Observability / administration
+├── Audit logs
+├── Financial history
+├── Administrative statistics
+└── Request IDs
+```
 
 ---
 
@@ -2011,21 +2467,26 @@ Decimal utilities use string values and `BigInt` internally to preserve precisio
 - npm
 - Docker Desktop
 
-For a local setup without Docker, PostgreSQL and Redis can also be installed separately.
+PostgreSQL and Redis can also be installed separately for local development.
 
-For real OTP delivery, an SMTP account is required.
+SMTP credentials are required for actual email/OTP delivery.
 
-MinIO is required when using the file/avatar functionality unless another `FileStorage` implementation is provided.
+MinIO is required for the included object-storage functionality unless another `FileStorage` implementation is provided.
 
 ---
 
-## Installation
+# Installation
+
+Clone the repository:
 
 ```bash
 git clone https://github.com/rezkhaleghi/NestStarter.git
-
 cd NestStarter
+```
 
+Install dependencies:
+
+```bash
 npm install
 ```
 
@@ -2035,11 +2496,11 @@ Create the environment file:
 cp .env.example .env
 ```
 
-Configure the required values.
+Configure the environment variables.
 
 ---
 
-## Start with Docker
+# Start with Docker
 
 ```bash
 docker compose up --build
@@ -2063,7 +2524,7 @@ Stop the stack:
 docker compose down
 ```
 
-Remove containers and persisted Docker volumes:
+Remove containers and persisted volumes:
 
 ```bash
 docker compose down -v
@@ -2071,14 +2532,20 @@ docker compose down -v
 
 ---
 
-## Start Locally
+# Start Locally
 
-After PostgreSQL, Redis, and the required external infrastructure are running:
+Start PostgreSQL, Redis, MinIO, and any other required infrastructure.
+
+Then:
+
+```bash
+npm run start:dev
+```
+
+When using migrations explicitly:
 
 ```bash
 npm run migration:run
-
-npm run start:dev
 ```
 
 ---
@@ -2121,63 +2588,149 @@ npm run migration:run:prod
 
 # Production Considerations
 
-Before deploying a project built from NestStarter:
+NestStarter provides a strong foundation, but production deployment remains application-specific.
+
+Before deployment:
 
 - Generate a strong unique `SESSION_SECRET`
 - Use HTTPS
-- Enable secure production cookies
+- Configure secure production cookies
 - Keep secrets outside version control
 - Use production SMTP credentials
-- Keep OTP logging disabled
-- Use database migrations
+- Disable sensitive development logging
+- Use explicit database migrations
+- Disable database schema synchronization in production
 - Secure Redis with authentication/network controls
-- Configure MinIO/object storage securely
+- Secure MinIO/object storage
 - Review CORS configuration
-- Review throttling configuration for your deployment topology
+- Review rate-limit configuration for the deployment topology
 - Review dependency versions
 - Configure application logging and monitoring
 - Run integration/E2E tests against real infrastructure
-- Review database transaction boundaries for concurrent operations
-- Configure object-storage access policies appropriately
-- Review uploaded-file validation and image-processing limits
-- Ensure publicly accessible file URLs are intentional
+- Review transaction boundaries
+- Review concurrent financial operations
+- Review provider idempotency and reconciliation
+- Validate uploaded files and image-processing limits
+- Configure object-storage access policies
 - Monitor storage usage and orphaned files
-- Review transaction boundaries for workflows involving multiple related writes
-- Ensure financial operations use precise decimal arithmetic
-- Ensure financial balance mutations and ledger creation occur atomically
-- Ensure immutable ledger history is used for financial auditing rather than relying solely on current balances
+- Review publicly accessible file URLs
+- Review session lifecycle and cookie configuration
 
-NestStarter provides the foundation, but production configuration remains application and deployment specific.
+For real payment providers, additionally implement provider-specific:
+
+- Webhooks
+- Idempotency
+- Reconciliation
+- Failure handling
+- Timeout handling
+- Duplicate-event handling
+- Provider withdrawal status synchronization
 
 ---
 
-# What NestStarter Is — and Isn't
+# What NestStarter Is
 
-NestStarter **is**:
+NestStarter is:
 
 - A reusable NestJS backend foundation
 - A Clean Architecture reference implementation
-- An authentication and user-management starting point
-- A production-oriented infrastructure template
-- A foundation for building APIs without repeatedly solving the same backend problems
-- An example of use-case-oriented application design
-- A foundation for object storage and image-processing workflows
-- A foundation for administrative auditing
-- A foundation for transactional application workflows
-- A foundation for current user balance management
-- A foundation for immutable financial ledger history
+- An authentication and authorization foundation
+- A user-management foundation
+- A transactional application foundation
+- A financial balance and ledger foundation
+- A deposit/withdrawal foundation
+- A customer-support ticket foundation
+- An object-storage and image-processing foundation
+- An administrative auditing foundation
+- A PostgreSQL/Redis/Docker development foundation
 
-NestStarter **isn't**:
+---
+
+# What NestStarter Is Not
+
+NestStarter is not:
 
 - A framework
 - A complete SaaS application
 - A domain-specific business solution
 - A complete payment processor
 - A complete accounting system
-- A replacement for application-specific security review
-- A promise that every deployment is production-ready without configuration
+- A complete customer-support product
+- A replacement for an application-specific security review
+- A guarantee that every deployment is production-ready without configuration
 
-The intention is to provide a strong starting point while leaving the actual business domain to the project that uses it.
+The intention is to provide a strong starting point while leaving the actual business domain to the application that uses it.
+
+---
+
+# Project Principles
+
+### Business logic first
+
+The domain and application layers define application behavior.
+
+### Infrastructure is replaceable
+
+PostgreSQL, Redis, SMTP, MinIO, Sharp, bcrypt, TypeORM, and provider SDKs are implementation details.
+
+### Controllers stay thin
+
+Controllers coordinate HTTP and application operations.
+
+### Use cases stay focused
+
+A use case represents one meaningful application operation.
+
+### Domain stays framework-independent
+
+The domain should not require NestJS, TypeORM, Express, Redis, MinIO, or other infrastructure libraries.
+
+### Explicit dependencies
+
+Dependencies should be visible through constructors and interfaces.
+
+### Separate external capabilities
+
+External capabilities such as:
+
+```text
+FileStorage
+ImageProcessing
+PasswordHasher
+OtpService
+NotificationService
+LoginProtection
+PaymentProvider
+UnitOfWork
+```
+
+are represented through abstractions.
+
+### Transactions belong at the workflow boundary
+
+When multiple database changes must succeed or fail together, the application defines the workflow through `UnitOfWork`.
+
+### Lock mutable financial state
+
+Concurrent financial mutations should lock the relevant database records before modifying them.
+
+### Audit important operations
+
+Important administrative and financial operations should produce traceable audit records.
+
+### Current state and historical state are separate
+
+Current values such as `UserBalance.amount` represent current state.
+
+Immutable `Ledger` records represent financial history.
+
+### Financial arithmetic must preserve precision
+
+Money and payment amounts should not rely on JavaScript floating-point arithmetic.
+
+### Database constraints provide defense in depth
+
+Important uniqueness and integrity rules should be reinforced at the database level where appropriate.
 
 ---
 
@@ -2189,10 +2742,10 @@ MIT
 
 # Built with ❤️ by PocketJack
 
-**Reza Khaleghi** — software engineer
+**Reza Khaleghi** — Software Engineer
 
-- GitHub: github.com/rezkhaleghi
-- LinkedIn: linkedin.com/in/rezaxkhaleghi
+- GitHub: https://github.com/rezkhaleghi
+- LinkedIn: https://linkedin.com/in/rezaxkhaleghi
 - Email: `rezaxkhaleghi@gmail.com`
 
 ---

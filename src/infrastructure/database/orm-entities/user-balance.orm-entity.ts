@@ -7,7 +7,7 @@ import {
   UpdateDateColumn,
 } from "typeorm";
 
-import { PaymentCurrency } from "../../../domain/enums/payment-currency.enum";
+import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
 
 @Entity("user_balances")
 @Index(["userId", "currency"], { unique: true })
