@@ -5,7 +5,7 @@ import { Repository } from "typeorm";
 import { TicketCategory } from "@domain/entities/ticket-category.entity";
 import { TicketCategoryRepository } from "@domain/repositories/ticket-category.repository";
 import { TicketCategoryOrmEntity } from "../orm-entities/ticket-category.orm-entity";
-import { PageQuery, PageResult } from "src/shared/pagination/page-query";
+import { PageQuery, PageResult } from "@shared/pagination/page-query";
 
 @Injectable()
 export class TicketCategoryRepositoryImpl extends TicketCategoryRepository {

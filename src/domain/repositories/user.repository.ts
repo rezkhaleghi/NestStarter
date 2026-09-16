@@ -1,7 +1,7 @@
 import { User } from "../entities/user.entity";
 import { UserSearchResult } from "./user-search-result";
 import { AdminUserSearchFilters } from "./admin-user-search-filters";
-import { PageQuery, PageResult } from "src/shared/pagination/page-query";
+import { PageQuery, PageResult } from "@shared/pagination/page-query";
 
 export abstract class UserRepository {
   abstract findById(id: string): Promise<User | null>;

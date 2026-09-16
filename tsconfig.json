@@ -22,7 +22,9 @@
       "@domain/*": ["src/domain/*"],
       "@application/*": ["src/application/*"],
       "@infrastructure/*": ["src/infrastructure/*"],
-      "@api/*": ["src/api/*"]
+      "@api/*": ["src/api/*"],
+      "@shared/*": ["src/shared/*"],
+      "@types/*": ["src/types/*"]
     }
   }
 }

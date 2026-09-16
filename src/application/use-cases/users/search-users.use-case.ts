@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { UserRepository } from "@domain/repositories/user.repository";
 import { UserSearchResult } from "@domain/repositories/user-search-result";
-import { PageQuery, PageResult } from "src/shared/pagination/page-query";
+import { PageQuery, PageResult } from "@shared/pagination/page-query";
 
 @Injectable()
 export class SearchUsersUseCase {

@@ -1,10 +1,10 @@
 import { Injectable } from "@nestjs/common";
 import { UserRepository } from "@domain/repositories/user.repository";
 import { InvalidCredentialsException } from "@domain/exceptions/domain.exception";
-import { PasswordHasher } from "../../interfaces/password-hasher.interface";
-import { LoginUserInput } from "../../dtos/login-user.input";
+import { PasswordHasher } from "@application/interfaces/password-hasher.interface";
+import { LoginUserInput } from "@application/dtos/login-user.input";
 import { User } from "@domain/entities/user.entity";
-import { LoginProtection } from "../../interfaces/login-protection.interface";
+import { LoginProtection } from "@application/interfaces/login-protection.interface";
 import { normalizeEmail } from "@domain/utils/normalize-email";
 import { UserStatus } from "@domain/enums/user-status.enum";
 

@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 
 import { Withdrawal } from "@domain/entities/withdrawal.entity";
 import { WithdrawalRepository } from "@domain/repositories/withdrawal.repository";
-import { PageQuery, PageResult } from "src/shared/pagination/page-query";
+import { PageQuery, PageResult } from "@shared/pagination/page-query";
 
 export interface ListWithdrawalsInput extends PageQuery<
   "createdAt" | "amount"

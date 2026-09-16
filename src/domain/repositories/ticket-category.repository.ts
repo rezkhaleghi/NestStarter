@@ -1,5 +1,5 @@
 import { TicketCategory } from "../entities/ticket-category.entity";
-import { PageQuery, PageResult } from "src/shared/pagination/page-query";
+import { PageQuery, PageResult } from "@shared/pagination/page-query";
 
 export abstract class TicketCategoryRepository {
   abstract create(category: TicketCategory): Promise<TicketCategory>;

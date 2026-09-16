@@ -1,5 +1,5 @@
 import { Deposit } from "../entities/deposit.entity";
-import { PageQuery, PageResult } from "src/shared/pagination/page-query";
+import { PageQuery, PageResult } from "@shared/pagination/page-query";
 
 export type DepositSortBy = "createdAt" | "amount";
 

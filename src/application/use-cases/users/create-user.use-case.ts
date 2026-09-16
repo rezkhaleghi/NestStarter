@@ -1,8 +1,8 @@
 import { Injectable } from "@nestjs/common";
 
 import { User } from "@domain/entities/user.entity";
-import { PasswordHasher } from "../../interfaces/password-hasher.interface";
-import { CreateUserInput } from "../../dtos/create-user.input";
+import { PasswordHasher } from "@application/interfaces/password-hasher.interface";
+import { CreateUserInput } from "@application/dtos/create-user.input";
 import { UserAlreadyExistsException } from "@domain/exceptions/domain.exception";
 import { normalizeEmail } from "@domain/utils/normalize-email";
 import { UserBalance } from "@domain/entities/user-balance.entity";

@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import {
   AdminStatistics,
   AdminStatisticsService,
-} from "../../interfaces/admin-statistics.interface";
+} from "@application/interfaces/admin-statistics.interface";
 
 @Injectable()
 export class GetAdminStatisticsUseCase {

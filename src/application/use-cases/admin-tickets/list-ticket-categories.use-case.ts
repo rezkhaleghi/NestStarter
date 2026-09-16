@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 
 import { TicketCategory } from "@domain/entities/ticket-category.entity";
 import { TicketCategoryRepository } from "@domain/repositories/ticket-category.repository";
-import { PageQuery, PageResult } from "src/shared/pagination/page-query";
+import { PageQuery, PageResult } from "@shared/pagination/page-query";
 
 @Injectable()
 export class ListTicketCategoriesUseCase {

@@ -15,7 +15,7 @@ import {
   isNegativeDecimal,
   isZeroDecimal,
 } from "@domain/utils/decimal.util";
-import { UnitOfWork } from "../../interfaces/unit-of-work.interface";
+import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
 
 export interface UpdateUserBalanceInput {
   userId: string;

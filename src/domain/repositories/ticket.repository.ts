@@ -1,7 +1,7 @@
 import { Ticket } from "../entities/ticket.entity";
 import { TicketPriority } from "../enums/ticket-priority.enum";
 import { TicketStatus } from "../enums/ticket-status.enum";
-import { PageQuery, PageResult } from "src/shared/pagination/page-query";
+import { PageQuery, PageResult } from "@shared/pagination/page-query";
 
 export type TicketSortBy = "createdAt" | "priority" | "status";
 

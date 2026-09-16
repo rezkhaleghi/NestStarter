@@ -10,8 +10,8 @@ import { AuditAction } from "@domain/enums/audit-action.enum";
 
 import { UserAlreadyExistsException } from "@domain/exceptions/domain.exception";
 
-import { PasswordHasher } from "../../interfaces/password-hasher.interface";
-import { UnitOfWork } from "../../interfaces/unit-of-work.interface";
+import { PasswordHasher } from "@application/interfaces/password-hasher.interface";
+import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
 import { normalizeEmail } from "@domain/utils/normalize-email";
 
 export interface CreateAdminUserInput {

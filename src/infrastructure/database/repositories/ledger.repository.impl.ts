@@ -7,7 +7,7 @@ import { LedgerRepository } from "@domain/repositories/ledger.repository";
 
 import { LedgerOrmEntity } from "../orm-entities/ledger.orm-entity";
 import { AdminLedgerSearchFilters } from "@domain/repositories/admin-ledger-search-filters";
-import { PageQuery, PageResult } from "src/shared/pagination/page-query";
+import { PageQuery, PageResult } from "@shared/pagination/page-query";
 
 @Injectable()
 export class LedgerRepositoryImpl extends LedgerRepository {

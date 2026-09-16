@@ -5,7 +5,7 @@ import { LedgerType } from "@domain/enums/ledger-type.enum";
 import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
 import { AdminLedgerSearchFilters } from "@domain/repositories/admin-ledger-search-filters";
 import { LedgerRepository } from "@domain/repositories/ledger.repository";
-import { PageQuery, PageResult } from "src/shared/pagination/page-query";
+import { PageQuery, PageResult } from "@shared/pagination/page-query";
 
 export interface ListLedgersInput extends PageQuery<"createdAt" | "amount"> {
   userId?: string;

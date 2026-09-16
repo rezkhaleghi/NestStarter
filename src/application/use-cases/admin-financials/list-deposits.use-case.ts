@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 
 import { Deposit } from "@domain/entities/deposit.entity";
 import { DepositRepository } from "@domain/repositories/deposit.repository";
-import { PageQuery, PageResult } from "src/shared/pagination/page-query";
+import { PageQuery, PageResult } from "@shared/pagination/page-query";
 
 export interface ListDepositsInput extends PageQuery<"createdAt" | "amount"> {
   userId?: string;

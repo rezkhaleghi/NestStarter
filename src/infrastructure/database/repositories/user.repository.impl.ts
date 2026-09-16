@@ -8,7 +8,7 @@ import { UserRole } from "@domain/enums/user-role.enum";
 import { UserSearchResult } from "@domain/repositories/user-search-result";
 import { UserRepository } from "@domain/repositories/user.repository";
 import { AdminUserSearchFilters } from "@domain/repositories/admin-user-search-filters";
-import { PageQuery, PageResult } from "src/shared/pagination/page-query";
+import { PageQuery, PageResult } from "@shared/pagination/page-query";
 
 /**
  * Concrete implementation of the domain's UserRepository contract.

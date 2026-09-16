@@ -1,6 +1,6 @@
 import { Ledger } from "../entities/ledger.entity";
 import { AdminLedgerSearchFilters } from "./admin-ledger-search-filters";
-import { PageQuery, PageResult } from "src/shared/pagination/page-query";
+import { PageQuery, PageResult } from "@shared/pagination/page-query";
 
 export abstract class LedgerRepository {
   abstract create(ledger: Ledger): Promise<Ledger>;

@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 
 import { TicketRepository } from "@domain/repositories/ticket.repository";
-import { PageQuery, PageResult } from "src/shared/pagination/page-query";
+import { PageQuery, PageResult } from "@shared/pagination/page-query";
 import { Ticket } from "@domain/entities/ticket.entity";
 import { TicketPriority } from "@domain/enums/ticket-priority.enum";
 import { TicketStatus } from "@domain/enums/ticket-status.enum";

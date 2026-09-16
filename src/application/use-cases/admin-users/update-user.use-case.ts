@@ -8,11 +8,11 @@ import {
   UserNotFoundException,
   UsernameAlreadyExistsException,
 } from "@domain/exceptions/domain.exception";
-import { PasswordHasher } from "../../interfaces/password-hasher.interface";
+import { PasswordHasher } from "@application/interfaces/password-hasher.interface";
 import { normalizeEmail } from "@domain/utils/normalize-email";
 import { AuditAction } from "@domain/enums/audit-action.enum";
 import { AuditLog } from "@domain/entities/audit-log.entity";
-import { UnitOfWork } from "../../interfaces/unit-of-work.interface";
+import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
 
 export interface UpdateAdminUserInput {
   id: string;

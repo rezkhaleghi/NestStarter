@@ -3,8 +3,8 @@ import { Injectable } from "@nestjs/common";
 import { User } from "@domain/entities/user.entity";
 import { UserNotFoundException } from "@domain/exceptions/domain.exception";
 import { UserRepository } from "@domain/repositories/user.repository";
-import { FileStorage } from "../../interfaces/file-storage.interface";
-import { ImageProcessing } from "../../interfaces/image-processing.interface";
+import { FileStorage } from "@application/interfaces/file-storage.interface";
+import { ImageProcessing } from "@application/interfaces/image-processing.interface";
 
 @Injectable()
 export class UpdateUserAvatarUseCase {

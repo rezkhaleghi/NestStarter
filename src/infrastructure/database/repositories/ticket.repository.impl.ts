@@ -8,7 +8,7 @@ import {
   TicketSearchFilters,
 } from "@domain/repositories/ticket.repository";
 import { TicketOrmEntity } from "../orm-entities/ticket.orm-entity";
-import { PageQuery, PageResult } from "src/shared/pagination/page-query";
+import { PageQuery, PageResult } from "@shared/pagination/page-query";
 
 @Injectable()
 export class TicketRepositoryImpl extends TicketRepository {

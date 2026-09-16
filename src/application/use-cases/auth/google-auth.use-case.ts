@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { UserRepository } from "@domain/repositories/user.repository";
 import { User } from "@domain/entities/user.entity";
-import { GoogleAuthInput } from "../../dtos/google-auth.input";
+import { GoogleAuthInput } from "@application/dtos/google-auth.input";
 import { normalizeEmail } from "@domain/utils/normalize-email";
 import { UserStatus } from "@domain/enums/user-status.enum";
 import { InvalidCredentialsException } from "@domain/exceptions/domain.exception";

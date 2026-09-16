@@ -1,4 +1,4 @@
-import { PageQuery, PageResult } from "src/shared/pagination/page-query";
+import { PageQuery, PageResult } from "@shared/pagination/page-query";
 import { AuditLog } from "../entities/audit-log.entity";
 import { AuditAction } from "../enums/audit-action.enum";
 

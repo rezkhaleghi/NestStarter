@@ -7,7 +7,7 @@ import {
 } from "@domain/exceptions/domain.exception";
 import { AuditAction } from "@domain/enums/audit-action.enum";
 import { AuditLog } from "@domain/entities/audit-log.entity";
-import { UnitOfWork } from "../../interfaces/unit-of-work.interface";
+import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
 
 @Injectable()
 export class DeleteAdminUserUseCase {

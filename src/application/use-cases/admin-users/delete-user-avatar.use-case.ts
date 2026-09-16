@@ -2,10 +2,10 @@ import { Injectable } from "@nestjs/common";
 
 import { User } from "@domain/entities/user.entity";
 import { UserNotFoundException } from "@domain/exceptions/domain.exception";
-import { FileStorage } from "../../interfaces/file-storage.interface";
+import { FileStorage } from "@application/interfaces/file-storage.interface";
 import { AuditAction } from "@domain/enums/audit-action.enum";
 import { AuditLog } from "@domain/entities/audit-log.entity";
-import { UnitOfWork } from "../../interfaces/unit-of-work.interface";
+import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
 
 /**
  * Application use case for deleting another user's avatar as an administrator.

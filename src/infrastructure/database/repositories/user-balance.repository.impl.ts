@@ -9,7 +9,7 @@ import {
   UserBalanceSortBy,
 } from "@domain/repositories/user-balance.repository";
 import { UserBalanceOrmEntity } from "../orm-entities/user-balance.orm-entity";
-import { PageQuery, PageResult } from "src/shared/pagination/page-query";
+import { PageQuery, PageResult } from "@shared/pagination/page-query";
 
 @Injectable()
 export class UserBalanceRepositoryImpl implements UserBalanceRepository {

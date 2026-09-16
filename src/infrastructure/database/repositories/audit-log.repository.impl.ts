@@ -9,7 +9,7 @@ import {
 } from "@domain/repositories/audit-log.repository";
 
 import { AuditLogOrmEntity } from "../orm-entities/audit-log.orm-entity";
-import { PageQuery, PageResult } from "src/shared/pagination/page-query";
+import { PageQuery, PageResult } from "@shared/pagination/page-query";
 
 @Injectable()
 export class AuditLogRepositoryImpl implements AuditLogRepository {

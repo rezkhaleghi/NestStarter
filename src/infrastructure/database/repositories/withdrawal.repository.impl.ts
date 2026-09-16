@@ -8,7 +8,7 @@ import {
   WithdrawalSearchFilters,
 } from "@domain/repositories/withdrawal.repository";
 import { WithdrawalOrmEntity } from "../orm-entities/withdrawal.orm-entity";
-import { PageQuery, PageResult } from "src/shared/pagination/page-query";
+import { PageQuery, PageResult } from "@shared/pagination/page-query";
 
 @Injectable()
 export class WithdrawalRepositoryImpl extends WithdrawalRepository {

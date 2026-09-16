@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { UserRepository } from "@domain/repositories/user.repository";
 import { UserNotFoundException } from "@domain/exceptions/domain.exception";
-import { FileStorage } from "../../interfaces/file-storage.interface";
+import { FileStorage } from "@application/interfaces/file-storage.interface";
 import { User } from "@domain/entities/user.entity";
 
 @Injectable()
