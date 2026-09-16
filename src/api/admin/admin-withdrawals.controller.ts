@@ -9,19 +9,21 @@ import {
   Req,
   UseGuards,
 } from "@nestjs/common";
+
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
+
 import type { Request } from "express";
 
 import { AdminAuthGuard } from "./admin-auth.guard";
+
 import {
   ListWithdrawalsQueryDto,
-  RejectWithdrawalRequestDto,
+  UpdateWithdrawalStatusRequestDto,
 } from "./dtos/financial-query.dto";
 
-import { AdminApproveWithdrawalUseCase } from "@application/use-cases/admin-financials/approve-withdrawal.use-case";
 import { AdminGetWithdrawalUseCase } from "@application/use-cases/admin-financials/get-withdrawal.use-case";
 import { AdminListWithdrawalsUseCase } from "@application/use-cases/admin-financials/list-withdrawals.use-case";
-import { AdminRejectWithdrawalUseCase } from "@application/use-cases/admin-financials/reject-withdrawal.use-case";
+import { AdminUpdateWithdrawalStatusUseCase } from "@application/use-cases/admin-financials/update-withdrawal-status.use-case";
 
 @ApiTags("admin-withdrawals")
 @Controller("admin/withdrawals")
@@ -30,8 +32,7 @@ export class AdminWithdrawalsController {
   constructor(
     private readonly listWithdrawalsUseCase: AdminListWithdrawalsUseCase,
     private readonly getWithdrawalUseCase: AdminGetWithdrawalUseCase,
-    private readonly approveWithdrawalUseCase: AdminApproveWithdrawalUseCase,
-    private readonly rejectWithdrawalUseCase: AdminRejectWithdrawalUseCase,
+    private readonly updateWithdrawalStatusUseCase: AdminUpdateWithdrawalStatusUseCase,
   ) {}
 
   @Get()
@@ -60,28 +61,23 @@ export class AdminWithdrawalsController {
     return this.getWithdrawalUseCase.execute(id);
   }
 
-  @Patch(":id/approve")
-  @ApiOperation({ summary: "Approve withdrawal" })
-  @ApiResponse({ status: 200, description: "Withdrawal approved" })
-  async approve(@Param("id", ParseUUIDPipe) id: string, @Req() req: Request) {
-    return this.approveWithdrawalUseCase.execute({
-      withdrawalId: id,
-      adminUserId: req.session.userId!,
-    });
-  }
-
-  @Patch(":id/reject")
-  @ApiOperation({ summary: "Reject withdrawal" })
-  @ApiResponse({ status: 200, description: "Withdrawal rejected" })
-  async reject(
+  @Patch(":id/status")
+  @ApiOperation({ summary: "Update withdrawal status" })
+  @ApiResponse({
+    status: 200,
+    description: "Withdrawal status updated",
+  })
+  async updateStatus(
     @Param("id", ParseUUIDPipe) id: string,
-    @Body() body: RejectWithdrawalRequestDto,
+    @Body() body: UpdateWithdrawalStatusRequestDto,
     @Req() req: Request,
   ) {
-    return this.rejectWithdrawalUseCase.execute({
+    return this.updateWithdrawalStatusUseCase.execute({
       withdrawalId: id,
       adminUserId: req.session.userId!,
+      status: body.status,
       reason: body.reason,
+      transactionId: body.transactionId,
     });
   }
 }

@@ -31,8 +31,7 @@ import { AdminGetDepositUseCase } from "./use-cases/admin-financials/get-deposit
 import { CreateWithdrawalUseCase } from "./use-cases/withdrawals/create-withdrawal.use-case";
 import { AdminListWithdrawalsUseCase } from "./use-cases/admin-financials/list-withdrawals.use-case";
 import { AdminGetWithdrawalUseCase } from "./use-cases/admin-financials/get-withdrawal.use-case";
-import { AdminApproveWithdrawalUseCase } from "./use-cases/admin-financials/approve-withdrawal.use-case";
-import { AdminRejectWithdrawalUseCase } from "./use-cases/admin-financials/reject-withdrawal.use-case";
+import { AdminUpdateWithdrawalStatusUseCase } from "./use-cases/admin-financials/update-withdrawal-status.use-case";
 
 import { ListDepositsUseCase } from "./use-cases/deposits/list-deposits.use-case";
 import { GetDepositUseCase } from "./use-cases/deposits/get-deposit.use-case";
@@ -125,8 +124,7 @@ import { DeactivateTicketCategoryUseCase } from "./use-cases/admin-tickets/deact
     AdminGetDepositUseCase,
     AdminListWithdrawalsUseCase,
     AdminGetWithdrawalUseCase,
-    AdminApproveWithdrawalUseCase,
-    AdminRejectWithdrawalUseCase,
+    AdminUpdateWithdrawalStatusUseCase,
   ],
 
   exports: [
@@ -163,8 +161,7 @@ import { DeactivateTicketCategoryUseCase } from "./use-cases/admin-tickets/deact
     AdminGetDepositUseCase,
     AdminListWithdrawalsUseCase,
     AdminGetWithdrawalUseCase,
-    AdminApproveWithdrawalUseCase,
-    AdminRejectWithdrawalUseCase,
+    AdminUpdateWithdrawalStatusUseCase,
 
     // Deposits
     CreateDepositUseCase,

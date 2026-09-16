@@ -46,74 +46,7 @@ describe("Withdrawal", () => {
     );
   });
 
-  it("starts processing an approved withdrawal", () => {
-    const withdrawal = createWithdrawal();
-
-    withdrawal.approve();
-    withdrawal.startProcessing("provider-withdrawal-1");
-
-    expect(withdrawal.getStatus()).toBe(WithdrawalStatus.PROCESSING);
-    expect(withdrawal.providerWithdrawalId).toBe("provider-withdrawal-1");
-  });
-
-  it("starts processing without a provider withdrawal id", () => {
-    const withdrawal = createWithdrawal();
-
-    withdrawal.approve();
-    withdrawal.startProcessing();
-
-    expect(withdrawal.getStatus()).toBe(WithdrawalStatus.PROCESSING);
-    expect(withdrawal.providerWithdrawalId).toBeNull();
-  });
-
-  it("rejects starting processing from a non-approved withdrawal", () => {
-    const withdrawal = createWithdrawal();
-
-    expect(() => withdrawal.startProcessing()).toThrow(
-      WithdrawalStatusChangeNotAllowedException,
-    );
-  });
-
-  it("completes a processing withdrawal", () => {
-    const withdrawal = createWithdrawal();
-
-    withdrawal.approve();
-    withdrawal.startProcessing();
-    withdrawal.markCompleted("transaction-1");
-
-    expect(withdrawal.getStatus()).toBe(WithdrawalStatus.COMPLETED);
-    expect(withdrawal.transactionId).toBe("transaction-1");
-    expect(withdrawal.completedAt).toBeInstanceOf(Date);
-  });
-
-  it("keeps the existing transaction id when completing without one", () => {
-    const withdrawal = Withdrawal.create({
-      userId: "user-1",
-      currency: PaymentCurrency.USDT,
-      amount: "100",
-      destination: "destination-1",
-      transactionId: "transaction-1",
-    });
-
-    withdrawal.approve();
-    withdrawal.startProcessing();
-    withdrawal.markCompleted();
-
-    expect(withdrawal.getStatus()).toBe(WithdrawalStatus.COMPLETED);
-    expect(withdrawal.transactionId).toBe("transaction-1");
-  });
-
-  it("rejects completing a non-processing withdrawal", () => {
-    const withdrawal = createWithdrawal();
-
-    withdrawal.approve();
-
-    expect(() => withdrawal.markCompleted()).toThrow(
-      WithdrawalStatusChangeNotAllowedException,
-    );
-  });
-
-  it("rejects a pending withdrawal", () => {
+  it("rejects a pending withdrawal with a reason", () => {
     const withdrawal = createWithdrawal();
 
     withdrawal.reject("User requested cancellation");
@@ -137,47 +70,6 @@ describe("Withdrawal", () => {
     withdrawal.approve();
 
     expect(() => withdrawal.reject()).toThrow(
-      WithdrawalStatusChangeNotAllowedException,
-    );
-  });
-
-  it("marks a processing withdrawal as failed", () => {
-    const withdrawal = createWithdrawal();
-
-    withdrawal.approve();
-    withdrawal.startProcessing();
-
-    withdrawal.markFailed("Provider rejected the transaction");
-
-    expect(withdrawal.getStatus()).toBe(WithdrawalStatus.FAILED);
-    expect(withdrawal.rejectionReason).toBe(
-      "Provider rejected the transaction",
-    );
-  });
-
-  it("preserves the existing rejection reason when marking failed without one", () => {
-    const withdrawal = Withdrawal.create({
-      userId: "user-1",
-      currency: PaymentCurrency.USDT,
-      amount: "100",
-      destination: "destination-1",
-      rejectionReason: "Existing reason",
-    });
-
-    withdrawal.approve();
-    withdrawal.startProcessing();
-    withdrawal.markFailed();
-
-    expect(withdrawal.getStatus()).toBe(WithdrawalStatus.FAILED);
-    expect(withdrawal.rejectionReason).toBe("Existing reason");
-  });
-
-  it("rejects marking a non-processing withdrawal as failed", () => {
-    const withdrawal = createWithdrawal();
-
-    withdrawal.approve();
-
-    expect(() => withdrawal.markFailed()).toThrow(
       WithdrawalStatusChangeNotAllowedException,
     );
   });

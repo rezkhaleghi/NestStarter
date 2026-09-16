@@ -5,7 +5,6 @@ import { Ledger } from "@domain/entities/ledger.entity";
 import { AuditLog } from "@domain/entities/audit-log.entity";
 
 import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
-import { WithdrawalStatus } from "@domain/enums/withdrawal-status.enum";
 import { LedgerType } from "@domain/enums/ledger-type.enum";
 import { AuditAction } from "@domain/enums/audit-action.enum";
 
@@ -65,7 +64,6 @@ export class CreateWithdrawalUseCase {
         }
 
         const balanceBefore = balance.amount;
-
         const balanceAfter = subtractDecimal(balanceBefore, input.amount);
 
         if (isNegativeDecimal(balanceAfter)) {
@@ -80,9 +78,7 @@ export class CreateWithdrawalUseCase {
           userId: input.userId,
           currency: input.currency,
           amount: input.amount,
-          status: WithdrawalStatus.PENDING,
           destination: input.destination,
-          // referenceId: randomUUID(),
         });
 
         const savedWithdrawal = await withdrawalRepository.create(withdrawal);

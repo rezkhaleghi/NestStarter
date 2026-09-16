@@ -71,37 +71,6 @@ export class Withdrawal {
     this.updatedAt = new Date();
   }
 
-  startProcessing(providerWithdrawalId?: string): void {
-    if (this.status !== WithdrawalStatus.APPROVED) {
-      throw new WithdrawalStatusChangeNotAllowedException(
-        "moved to PROCESSING",
-        this.status,
-      );
-    }
-
-    this.status = WithdrawalStatus.PROCESSING;
-
-    if (providerWithdrawalId) {
-      this.providerWithdrawalId = providerWithdrawalId;
-    }
-
-    this.updatedAt = new Date();
-  }
-
-  markCompleted(transactionId?: string): void {
-    if (this.status !== WithdrawalStatus.PROCESSING) {
-      throw new WithdrawalStatusChangeNotAllowedException(
-        "completed",
-        this.status,
-      );
-    }
-
-    this.status = WithdrawalStatus.COMPLETED;
-    this.transactionId = transactionId ?? this.transactionId;
-    this.completedAt = new Date();
-    this.updatedAt = new Date();
-  }
-
   reject(reason?: string): void {
     if (this.status !== WithdrawalStatus.PENDING) {
       throw new WithdrawalStatusChangeNotAllowedException(
@@ -115,16 +84,17 @@ export class Withdrawal {
     this.updatedAt = new Date();
   }
 
-  markFailed(reason?: string): void {
-    if (this.status !== WithdrawalStatus.PROCESSING) {
+  complete(transactionId?: string): void {
+    if (this.status !== WithdrawalStatus.APPROVED) {
       throw new WithdrawalStatusChangeNotAllowedException(
-        "marked as failed",
+        "completed",
         this.status,
       );
     }
 
-    this.status = WithdrawalStatus.FAILED;
-    this.rejectionReason = reason ?? this.rejectionReason;
+    this.status = WithdrawalStatus.COMPLETED;
+    this.transactionId = transactionId ?? this.transactionId;
+    this.completedAt = new Date();
     this.updatedAt = new Date();
   }
 }
