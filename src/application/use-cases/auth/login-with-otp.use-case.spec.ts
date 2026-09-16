@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
-import { User } from "../../../domain/entities/user.entity";
-import { InvalidOtpException } from "../../../domain/exceptions/domain.exception";
+import { User } from "@domain/entities/user.entity";
+import { InvalidOtpException } from "@domain/exceptions/domain.exception";
 import { LoginWithOtpUseCase } from "./login-with-otp.use-case";
 
 describe("LoginWithOtpUseCase", () => {

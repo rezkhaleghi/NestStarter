@@ -2,7 +2,7 @@ import { ArgumentsHost } from "@nestjs/common";
 import { describe, expect, it, jest } from "@jest/globals";
 
 import { HttpExceptionFilter } from "./http-exception.filter";
-import { UserNotFoundException } from "../domain/exceptions/domain.exception";
+import { UserNotFoundException } from "@domain/exceptions/domain.exception";
 
 describe("HttpExceptionFilter", () => {
   const filter = new HttpExceptionFilter();

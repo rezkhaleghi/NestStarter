@@ -1,5 +1,5 @@
-import { PaymentProvider } from "../../domain/enums/payment-provider.enum";
-import { PaymentCurrency } from "../../domain/enums/payment-currency.enum";
+import { PaymentProvider } from "@domain/enums/payment-provider.enum";
+import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
 
 /**
  * Input required to create a payment with an external provider.

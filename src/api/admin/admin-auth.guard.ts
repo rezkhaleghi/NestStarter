@@ -5,9 +5,9 @@ import {
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
-import { UserRole } from "../../domain/enums/user-role.enum";
-import { UserRepository } from "../../domain/repositories/user.repository";
-import { UserStatus } from "../../domain/enums/user-status.enum";
+import { UserRole } from "@domain/enums/user-role.enum";
+import { UserRepository } from "@domain/repositories/user.repository";
+import { UserStatus } from "@domain/enums/user-status.enum";
 
 @Injectable()
 export class AdminAuthGuard implements CanActivate {

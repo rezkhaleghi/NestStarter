@@ -1,8 +1,8 @@
 import { ExecutionContext } from "@nestjs/common";
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 
-import { User } from "../../domain/entities/user.entity";
-import { UserStatus } from "../../domain/enums/user-status.enum";
+import { User } from "@domain/entities/user.entity";
+import { UserStatus } from "@domain/enums/user-status.enum";
 import { AuthSessionGuard } from "./auth-session.guard";
 
 describe("AuthSessionGuard", () => {

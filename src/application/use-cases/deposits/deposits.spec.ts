@@ -1,15 +1,15 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 
-import { Deposit } from "../../../domain/entities/deposit.entity";
-import { User } from "../../../domain/entities/user.entity";
-import { UserBalance } from "../../../domain/entities/user-balance.entity";
+import { Deposit } from "@domain/entities/deposit.entity";
+import { User } from "@domain/entities/user.entity";
+import { UserBalance } from "@domain/entities/user-balance.entity";
 
-import { AuditAction } from "../../../domain/enums/audit-action.enum";
-import { DepositStatus } from "../../../domain/enums/deposit-status.enum";
-import { LedgerType } from "../../../domain/enums/ledger-type.enum";
-import { PaymentCurrency } from "../../../domain/enums/payment-currency.enum";
+import { AuditAction } from "@domain/enums/audit-action.enum";
+import { DepositStatus } from "@domain/enums/deposit-status.enum";
+import { LedgerType } from "@domain/enums/ledger-type.enum";
+import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
 
-import { UserNotFoundException } from "../../../domain/exceptions/domain.exception";
+import { UserNotFoundException } from "@domain/exceptions/domain.exception";
 
 import { CreateDepositUseCase } from "./create-deposit.use-case";
 import { VerifyDepositUseCase } from "./verify-deposit.use-case";

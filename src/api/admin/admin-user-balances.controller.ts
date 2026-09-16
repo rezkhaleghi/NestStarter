@@ -16,8 +16,8 @@ import type { Request } from "express";
 
 import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
 
-import { UpdateUserBalanceUseCase } from "../../application/use-cases/admin-financials/update-user-balance.use-case";
-import { GetUserBalancesUseCase } from "../../application/use-cases/users/get-user-balances.use-case";
+import { UpdateUserBalanceUseCase } from "@application/use-cases/admin-financials/update-user-balance.use-case";
+import { GetUserBalancesUseCase } from "@application/use-cases/users/get-user-balances.use-case";
 
 import { AdminAuthGuard } from "./admin-auth.guard";
 import { GetUserBalancesQueryDto } from "../users/dtos/user-balance.request.dto";

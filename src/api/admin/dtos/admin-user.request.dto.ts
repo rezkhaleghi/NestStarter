@@ -12,7 +12,7 @@ import {
   IsDateString,
   Length,
 } from "class-validator";
-import { UserRole } from "../../../domain/enums/user-role.enum";
+import { UserRole } from "@domain/enums/user-role.enum";
 import { Transform, Type } from "class-transformer";
 import { UserStatus } from "@domain/enums/user-status.enum";
 export class ListUsersQueryDto {

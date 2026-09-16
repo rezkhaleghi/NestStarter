@@ -1,9 +1,9 @@
 import { Injectable } from "@nestjs/common";
 
-import { UserBalance } from "../../../domain/entities/user-balance.entity";
-import { UserNotFoundException } from "../../../domain/exceptions/domain.exception";
-import { UserBalanceRepository } from "../../../domain/repositories/user-balance.repository";
-import { UserRepository } from "../../../domain/repositories/user.repository";
+import { UserBalance } from "@domain/entities/user-balance.entity";
+import { UserNotFoundException } from "@domain/exceptions/domain.exception";
+import { UserBalanceRepository } from "@domain/repositories/user-balance.repository";
+import { UserRepository } from "@domain/repositories/user.repository";
 import { PageQuery, PageResult } from "src/shared/pagination/page-query";
 
 @Injectable()

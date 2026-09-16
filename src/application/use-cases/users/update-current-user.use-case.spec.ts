@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
-import { User } from "../../../domain/entities/user.entity";
-import { UserNotFoundException } from "../../../domain/exceptions/domain.exception";
+import { User } from "@domain/entities/user.entity";
+import { UserNotFoundException } from "@domain/exceptions/domain.exception";
 import { UpdateCurrentUserUseCase } from "./update-current-user.use-case";
 
 describe("UpdateCurrentUserUseCase", () => {

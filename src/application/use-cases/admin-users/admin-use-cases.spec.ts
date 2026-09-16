@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 
-import { User } from "../../../domain/entities/user.entity";
-import { UserRole } from "../../../domain/enums/user-role.enum";
-import { UserStatus } from "../../../domain/enums/user-status.enum";
-import { AuditAction } from "../../../domain/enums/audit-action.enum";
+import { User } from "@domain/entities/user.entity";
+import { UserRole } from "@domain/enums/user-role.enum";
+import { UserStatus } from "@domain/enums/user-status.enum";
+import { AuditAction } from "@domain/enums/audit-action.enum";
 
 import {
   CannotDeleteSelfException,
@@ -11,7 +11,7 @@ import {
   UserAlreadyExistsException,
   UserNotFoundException,
   UsernameAlreadyExistsException,
-} from "../../../domain/exceptions/domain.exception";
+} from "@domain/exceptions/domain.exception";
 
 import { CreateAdminUserUseCase } from "./create-user.use-case";
 import { DeleteAdminUserUseCase } from "./delete-user.use-case";

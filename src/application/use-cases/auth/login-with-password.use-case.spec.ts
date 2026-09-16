@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
-import { User } from "../../../domain/entities/user.entity";
-import { InvalidCredentialsException } from "../../../domain/exceptions/domain.exception";
+import { User } from "@domain/entities/user.entity";
+import { InvalidCredentialsException } from "@domain/exceptions/domain.exception";
 import { LoginWithPasswordUseCase } from "./login-with-password.use-case";
 
 describe("LoginWithPasswordUseCase", () => {

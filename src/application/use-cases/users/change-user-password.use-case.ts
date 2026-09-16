@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
-import { UserNotFoundException } from "../../../domain/exceptions/domain.exception";
-import { UserRepository } from "../../../domain/repositories/user.repository";
+import { UserNotFoundException } from "@domain/exceptions/domain.exception";
+import { UserRepository } from "@domain/repositories/user.repository";
 import { PasswordHasher } from "../../interfaces/password-hasher.interface";
 
 export interface ChangeUserPasswordInput {

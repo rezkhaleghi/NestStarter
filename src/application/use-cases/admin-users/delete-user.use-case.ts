@@ -4,7 +4,7 @@ import {
   CannotDeleteSelfException,
   CannotRemoveLastAdminException,
   UserNotFoundException,
-} from "../../../domain/exceptions/domain.exception";
+} from "@domain/exceptions/domain.exception";
 import { AuditAction } from "@domain/enums/audit-action.enum";
 import { AuditLog } from "@domain/entities/audit-log.entity";
 import { UnitOfWork } from "../../interfaces/unit-of-work.interface";

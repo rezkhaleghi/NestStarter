@@ -4,7 +4,7 @@ import { DataSource } from "typeorm";
 import {
   UnitOfWork,
   UnitOfWorkRepositories,
-} from "../../application/interfaces/unit-of-work.interface";
+} from "@application/interfaces/unit-of-work.interface";
 
 import { UserRepositoryImpl } from "./repositories/user.repository.impl";
 import { UserBalanceRepositoryImpl } from "./repositories/user-balance.repository.impl";

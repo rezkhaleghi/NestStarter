@@ -1,5 +1,5 @@
 import { IsEnum, IsISO8601, IsOptional, IsUUID } from "class-validator";
-import { AuditAction } from "../../../domain/enums/audit-action.enum";
+import { AuditAction } from "@domain/enums/audit-action.enum";
 
 export class GetAuditLogsQueryDto {
   @IsOptional()

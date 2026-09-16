@@ -14,16 +14,16 @@ import {
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 
-import { CreateAdminUserUseCase } from "../../application/use-cases/admin-users/create-user.use-case";
-import { DeleteAdminUserUseCase } from "../../application/use-cases/admin-users/delete-user.use-case";
-import { GetUserUseCase } from "../../application/use-cases/admin-users/get-user.use-case";
-import { ListUsersUseCase } from "../../application/use-cases/admin-users/list-users.use-case";
-import { UpdateAdminUserUseCase } from "../../application/use-cases/admin-users/update-user.use-case";
-import { GetAuditLogsUseCase } from "../../application/use-cases/admin-users/get-audit-logs.use-case";
-import { DeleteAdminUserAvatarUseCase } from "../../application/use-cases/admin-users/delete-user-avatar.use-case";
-import { GetAdminStatisticsUseCase } from "../../application/use-cases/admin-users/get-statistics.use-case";
+import { CreateAdminUserUseCase } from "@application/use-cases/admin-users/create-user.use-case";
+import { DeleteAdminUserUseCase } from "@application/use-cases/admin-users/delete-user.use-case";
+import { GetUserUseCase } from "@application/use-cases/admin-users/get-user.use-case";
+import { ListUsersUseCase } from "@application/use-cases/admin-users/list-users.use-case";
+import { UpdateAdminUserUseCase } from "@application/use-cases/admin-users/update-user.use-case";
+import { GetAuditLogsUseCase } from "@application/use-cases/admin-users/get-audit-logs.use-case";
+import { DeleteAdminUserAvatarUseCase } from "@application/use-cases/admin-users/delete-user-avatar.use-case";
+import { GetAdminStatisticsUseCase } from "@application/use-cases/admin-users/get-statistics.use-case";
 
-import { ChangeUserPasswordUseCase } from "../../application/use-cases/users/change-user-password.use-case";
+import { ChangeUserPasswordUseCase } from "@application/use-cases/users/change-user-password.use-case";
 
 import { AdminAuthGuard } from "./admin-auth.guard";
 

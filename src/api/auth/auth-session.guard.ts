@@ -4,8 +4,8 @@ import {
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
-import { UserRepository } from "../../domain/repositories/user.repository";
-import { UserStatus } from "../../domain/enums/user-status.enum";
+import { UserRepository } from "@domain/repositories/user.repository";
+import { UserStatus } from "@domain/enums/user-status.enum";
 
 @Injectable()
 export class AuthSessionGuard implements CanActivate {

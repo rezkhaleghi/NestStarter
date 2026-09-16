@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
-import { InvalidOtpException } from "../../../domain/exceptions/domain.exception";
+import { InvalidOtpException } from "@domain/exceptions/domain.exception";
 import { VerifyOtpUseCase } from "./verify-otp.use-case";
 
 describe("VerifyOtpUseCase", () => {

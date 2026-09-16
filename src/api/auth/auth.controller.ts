@@ -15,13 +15,13 @@ import { Throttle } from "@nestjs/throttler";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import type { Request, Response } from "express";
 
-import { CreateUserUseCase } from "../../application/use-cases/users/create-user.use-case";
-import { VerifyOtpUseCase } from "../../application/use-cases/auth/verify-otp.use-case";
-import { GoogleAuthUseCase } from "../../application/use-cases/auth/google-auth.use-case";
-import { LoginWithPasswordUseCase } from "../../application/use-cases/auth/login-with-password.use-case";
-import { LoginWithOtpUseCase } from "../../application/use-cases/auth/login-with-otp.use-case";
-import { OtpService } from "../../application/interfaces/otp.service.interface";
-import { ChangeUserPasswordUseCase } from "../../application/use-cases/users/change-user-password.use-case";
+import { CreateUserUseCase } from "@application/use-cases/users/create-user.use-case";
+import { VerifyOtpUseCase } from "@application/use-cases/auth/verify-otp.use-case";
+import { GoogleAuthUseCase } from "@application/use-cases/auth/google-auth.use-case";
+import { LoginWithPasswordUseCase } from "@application/use-cases/auth/login-with-password.use-case";
+import { LoginWithOtpUseCase } from "@application/use-cases/auth/login-with-otp.use-case";
+import { OtpService } from "@application/interfaces/otp.service.interface";
+import { ChangeUserPasswordUseCase } from "@application/use-cases/users/change-user-password.use-case";
 
 import { AuthSessionGuard } from "./auth-session.guard";
 import { AuthenticatedUserResponseDto } from "./dtos/authenticated-user.response.dto";

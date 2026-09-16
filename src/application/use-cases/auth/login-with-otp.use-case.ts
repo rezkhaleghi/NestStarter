@@ -1,12 +1,12 @@
 import { Injectable } from "@nestjs/common";
-import { UserRepository } from "../../../domain/repositories/user.repository";
+import { UserRepository } from "@domain/repositories/user.repository";
 import {
   InvalidCredentialsException,
   InvalidOtpException,
-} from "../../../domain/exceptions/domain.exception";
+} from "@domain/exceptions/domain.exception";
 import { OtpService } from "../../interfaces/otp.service.interface";
-import { User } from "../../../domain/entities/user.entity";
-import { normalizeEmail } from "../../../domain/utils/normalize-email";
+import { User } from "@domain/entities/user.entity";
+import { normalizeEmail } from "@domain/utils/normalize-email";
 import { UserStatus } from "@domain/enums/user-status.enum";
 
 @Injectable()

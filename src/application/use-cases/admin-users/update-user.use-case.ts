@@ -1,15 +1,15 @@
 import { Injectable } from "@nestjs/common";
-import { User } from "../../../domain/entities/user.entity";
-import { UserRole } from "../../../domain/enums/user-role.enum";
+import { User } from "@domain/entities/user.entity";
+import { UserRole } from "@domain/enums/user-role.enum";
 import { UserStatus } from "@domain/enums/user-status.enum";
 import {
   CannotRemoveLastAdminException,
   UserAlreadyExistsException,
   UserNotFoundException,
   UsernameAlreadyExistsException,
-} from "../../../domain/exceptions/domain.exception";
+} from "@domain/exceptions/domain.exception";
 import { PasswordHasher } from "../../interfaces/password-hasher.interface";
-import { normalizeEmail } from "../../../domain/utils/normalize-email";
+import { normalizeEmail } from "@domain/utils/normalize-email";
 import { AuditAction } from "@domain/enums/audit-action.enum";
 import { AuditLog } from "@domain/entities/audit-log.entity";
 import { UnitOfWork } from "../../interfaces/unit-of-work.interface";

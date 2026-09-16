@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { OtpService } from "../../interfaces/otp.service.interface";
 import { VerifyOtpInput } from "../../dtos/verify-otp.input";
-import { InvalidOtpException } from "../../../domain/exceptions/domain.exception";
+import { InvalidOtpException } from "@domain/exceptions/domain.exception";
 import { normalizeEmail } from "@domain/utils/normalize-email";
 
 @Injectable()

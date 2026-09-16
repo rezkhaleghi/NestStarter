@@ -3,18 +3,18 @@ import { Injectable } from "@nestjs/common";
 import { Ledger } from "@domain/entities/ledger.entity";
 import { UserBalance } from "@domain/entities/user-balance.entity";
 import { AuditLog } from "@domain/entities/audit-log.entity";
-import { AuditAction } from "../../../domain/enums/audit-action.enum";
-import { LedgerType } from "../../../domain/enums/ledger-type.enum";
-import { PaymentCurrency } from "../../../domain/enums/payment-currency.enum";
+import { AuditAction } from "@domain/enums/audit-action.enum";
+import { LedgerType } from "@domain/enums/ledger-type.enum";
+import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
 import {
   InsufficientBalanceException,
   UserNotFoundException,
-} from "../../../domain/exceptions/domain.exception";
+} from "@domain/exceptions/domain.exception";
 import {
   addDecimal,
   isNegativeDecimal,
   isZeroDecimal,
-} from "../../../domain/utils/decimal.util";
+} from "@domain/utils/decimal.util";
 import { UnitOfWork } from "../../interfaces/unit-of-work.interface";
 
 export interface UpdateUserBalanceInput {

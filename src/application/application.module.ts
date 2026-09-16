@@ -55,7 +55,7 @@ import { CreateTicketCategoryUseCase } from "./use-cases/admin-tickets/create-ti
 import { UpdateTicketCategoryUseCase } from "./use-cases/admin-tickets/update-ticket-category.use-case";
 import { DeactivateTicketCategoryUseCase } from "./use-cases/admin-tickets/deactive-ticket-category.use-case";
 
-import { InfrastructureModule } from "../infrastructure/infrastructure.module";
+import { InfrastructureModule } from "@infrastructure/infrastructure.module";
 
 /**
  * Registers application use cases. Infrastructure bindings are supplied by

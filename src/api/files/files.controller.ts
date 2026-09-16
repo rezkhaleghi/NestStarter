@@ -15,7 +15,7 @@ import {
 } from "@nestjs/swagger";
 import type { Response } from "express";
 
-import { FileStorage } from "../../application/interfaces/file-storage.interface";
+import { FileStorage } from "@application/interfaces/file-storage.interface";
 
 @ApiTags("Files")
 @Controller("files")

@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 
-import { AuditAction } from "../../../domain/enums/audit-action.enum";
-import { LedgerType } from "../../../domain/enums/ledger-type.enum";
-import { PaymentCurrency } from "../../../domain/enums/payment-currency.enum";
-import { WithdrawalStatus } from "../../../domain/enums/withdrawal-status.enum";
-import { User } from "../../../domain/entities/user.entity";
-import { UserBalance } from "../../../domain/entities/user-balance.entity";
-import { Withdrawal } from "../../../domain/entities/withdrawal.entity";
-import { InsufficientBalanceException } from "../../../domain/exceptions/domain.exception";
+import { AuditAction } from "@domain/enums/audit-action.enum";
+import { LedgerType } from "@domain/enums/ledger-type.enum";
+import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
+import { WithdrawalStatus } from "@domain/enums/withdrawal-status.enum";
+import { User } from "@domain/entities/user.entity";
+import { UserBalance } from "@domain/entities/user-balance.entity";
+import { Withdrawal } from "@domain/entities/withdrawal.entity";
+import { InsufficientBalanceException } from "@domain/exceptions/domain.exception";
 import { ListLedgersUseCase } from "./list-ledgers.use-case";
 import { UpdateUserBalanceUseCase } from "./update-user-balance.use-case";
 import { AdminListDepositsUseCase } from "./list-deposits.use-case";

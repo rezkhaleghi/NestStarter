@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
-import { UserRepository } from "../../../domain/repositories/user.repository";
-import { UserSearchResult } from "../../../domain/repositories/user-search-result";
+import { UserRepository } from "@domain/repositories/user.repository";
+import { UserSearchResult } from "@domain/repositories/user-search-result";
 import { PageQuery, PageResult } from "src/shared/pagination/page-query";
 
 @Injectable()

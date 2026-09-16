@@ -1,15 +1,15 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 
-import { Withdrawal } from "../../../domain/entities/withdrawal.entity";
-import { User } from "../../../domain/entities/user.entity";
-import { UserBalance } from "../../../domain/entities/user-balance.entity";
-import { WithdrawalStatus } from "../../../domain/enums/withdrawal-status.enum";
-import { LedgerType } from "../../../domain/enums/ledger-type.enum";
-import { PaymentCurrency } from "../../../domain/enums/payment-currency.enum";
+import { Withdrawal } from "@domain/entities/withdrawal.entity";
+import { User } from "@domain/entities/user.entity";
+import { UserBalance } from "@domain/entities/user-balance.entity";
+import { WithdrawalStatus } from "@domain/enums/withdrawal-status.enum";
+import { LedgerType } from "@domain/enums/ledger-type.enum";
+import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
 import {
   InsufficientBalanceException,
   UserNotFoundException,
-} from "../../../domain/exceptions/domain.exception";
+} from "@domain/exceptions/domain.exception";
 import { CreateWithdrawalUseCase } from "./create-withdrawal.use-case";
 import { GetWithdrawalUseCase } from "./get-withdrawal.use-case";
 import { ListWithdrawalsUseCase } from "./list-withdrawals.use-case";

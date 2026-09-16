@@ -1,11 +1,11 @@
 import { Injectable, OnModuleInit } from "@nestjs/common";
 import { randomUUID } from "crypto";
 import { ConfigService } from "@nestjs/config";
-import { User } from "../../domain/entities/user.entity";
-import { UserRole } from "../../domain/enums/user-role.enum";
-import { UserRepository } from "../../domain/repositories/user.repository";
-import { PasswordHasher } from "../../application/interfaces/password-hasher.interface";
-import { normalizeEmail } from "../../domain/utils/normalize-email";
+import { User } from "@domain/entities/user.entity";
+import { UserRole } from "@domain/enums/user-role.enum";
+import { UserRepository } from "@domain/repositories/user.repository";
+import { PasswordHasher } from "@application/interfaces/password-hasher.interface";
+import { normalizeEmail } from "@domain/utils/normalize-email";
 
 @Injectable()
 export class SeedAdminService implements OnModuleInit {

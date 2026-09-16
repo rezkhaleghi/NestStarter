@@ -5,7 +5,7 @@ import {
   TypeOrmHealthIndicator,
 } from "@nestjs/terminus";
 import type { RedisClientType } from "redis";
-import { FileStorage } from "../../application/interfaces/file-storage.interface";
+import { FileStorage } from "@application/interfaces/file-storage.interface";
 
 @Controller("health")
 export class HealthController {

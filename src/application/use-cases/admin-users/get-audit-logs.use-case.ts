@@ -1,11 +1,11 @@
 import { Injectable, Logger } from "@nestjs/common";
 
-import { AuditAction } from "../../../domain/enums/audit-action.enum";
+import { AuditAction } from "@domain/enums/audit-action.enum";
 import {
   AuditLogFilters,
   AuditLogRepository,
-} from "../../../domain/repositories/audit-log.repository";
-import { AuditLog } from "../../../domain/entities/audit-log.entity";
+} from "@domain/repositories/audit-log.repository";
+import { AuditLog } from "@domain/entities/audit-log.entity";
 import { PageQuery, PageResult } from "src/shared/pagination/page-query";
 
 export interface GetAuditLogsInput {

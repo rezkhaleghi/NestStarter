@@ -27,19 +27,19 @@ import {
 
 import type { Request } from "express";
 
-import { User } from "../../domain/entities/user.entity";
+import { User } from "@domain/entities/user.entity";
 
 import { AuthSessionGuard } from "../auth/auth-session.guard";
 
-import { GetCurrentUserUseCase } from "../../application/use-cases/users/get-current-user.use-case";
+import { GetCurrentUserUseCase } from "@application/use-cases/users/get-current-user.use-case";
 
-import { UpdateCurrentUserUseCase } from "../../application/use-cases/users/update-current-user.use-case";
+import { UpdateCurrentUserUseCase } from "@application/use-cases/users/update-current-user.use-case";
 
-import { UpdateUserAvatarUseCase } from "../../application/use-cases/users/update-user-avatar.use-case";
+import { UpdateUserAvatarUseCase } from "@application/use-cases/users/update-user-avatar.use-case";
 
-import { DeleteUserAvatarUseCase } from "../../application/use-cases/users/delete-user-avatar.use-case";
+import { DeleteUserAvatarUseCase } from "@application/use-cases/users/delete-user-avatar.use-case";
 
-import { SearchUsersUseCase } from "../../application/use-cases/users/search-users.use-case";
+import { SearchUsersUseCase } from "@application/use-cases/users/search-users.use-case";
 
 import { UpdateProfileRequestDto } from "../auth/dtos/update-profile.request.dto";
 

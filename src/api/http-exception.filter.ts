@@ -21,7 +21,7 @@ import {
   UserNotFoundException,
   OtpCooldownException,
   UserBalanceNotFoundException,
-} from "../domain/exceptions/domain.exception";
+} from "@domain/exceptions/domain.exception";
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
