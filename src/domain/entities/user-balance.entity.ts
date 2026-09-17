@@ -1,8 +1,15 @@
 import { randomUUID } from "crypto";
 
 import { PaymentCurrency } from "../enums/payment-currency.enum";
-import { isNegativeDecimal } from "../utils/decimal.util";
-import { InvalidUserBalanceException } from "@domain/exceptions/domain.exception";
+import {
+  addDecimal,
+  isNegativeDecimal,
+  isZeroDecimal,
+} from "../utils/decimal.util";
+import {
+  InsufficientBalanceException,
+  InvalidUserBalanceException,
+} from "@domain/exceptions/domain.exception";
 
 export interface CreateUserBalanceProps {
   id?: string;
@@ -16,7 +23,7 @@ export class UserBalance {
     public readonly id: string,
     public readonly userId: string,
     public currency: PaymentCurrency,
-    public amount: string,
+    private _amount: string,
   ) {}
 
   static create(props: CreateUserBalanceProps): UserBalance {
@@ -30,5 +37,69 @@ export class UserBalance {
       props.currency,
       props.amount,
     );
+  }
+
+  get amount(): string {
+    return this._amount;
+  }
+
+  /**
+   * Business operation with rules/invariants.
+   *
+   * Increases the current balance by a positive amount.
+   */
+  credit(amount: string): void {
+    if (isNegativeDecimal(amount) || isZeroDecimal(amount)) {
+      throw new InvalidUserBalanceException();
+    }
+
+    const newAmount = addDecimal(this._amount, amount);
+
+    if (isNegativeDecimal(newAmount)) {
+      throw new InvalidUserBalanceException();
+    }
+
+    this._amount = newAmount;
+  }
+
+  /**
+   * Business operation with rules/invariants.
+   *
+   * Decreases the current balance by a positive amount.
+   * A balance can never become negative.
+   */
+  debit(amount: string): void {
+    if (isNegativeDecimal(amount) || isZeroDecimal(amount)) {
+      throw new InvalidUserBalanceException();
+    }
+
+    const newAmount = addDecimal(this._amount, `-${amount}`);
+
+    if (isNegativeDecimal(newAmount)) {
+      throw new InsufficientBalanceException();
+    }
+
+    this._amount = newAmount;
+  }
+
+  /**
+   * Business operation with rules/invariants.
+   *
+   * Used for administrative signed adjustments:
+   * +100 → increase balance
+   * -100 → decrease balance
+   */
+  adjust(amount: string): void {
+    if (isZeroDecimal(amount)) {
+      return;
+    }
+
+    const newAmount = addDecimal(this._amount, amount);
+
+    if (isNegativeDecimal(newAmount)) {
+      throw new InsufficientBalanceException();
+    }
+
+    this._amount = newAmount;
   }
 }

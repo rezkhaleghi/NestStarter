@@ -162,17 +162,11 @@ describe("VerifyDepositUseCase", () => {
       }),
     } as unknown as Deposit;
 
-    const balance = {
-      id: "balance-1",
+    const balance = UserBalance.create({
       userId: "user-1",
       currency,
       amount: "50",
-    } as UserBalance;
-
-    const savedBalance = {
-      ...balance,
-      amount: "150",
-    } as UserBalance;
+    });
 
     const verification = {
       providerPaymentId: "payment-1",
@@ -193,7 +187,9 @@ describe("VerifyDepositUseCase", () => {
       balance,
     );
 
-    userBalanceRepositoryMock.save.mockResolvedValue(savedBalance);
+    userBalanceRepositoryMock.save.mockImplementation(
+      async (savedBalance: UserBalance) => savedBalance,
+    );
 
     depositRepositoryMock.save.mockResolvedValue(deposit);
 

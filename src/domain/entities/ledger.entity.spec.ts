@@ -77,6 +77,124 @@ describe("Ledger", () => {
     ).toThrow(InvalidLedgerEntryException);
   });
 
+  it("rejects zero amount", () => {
+    expect(() =>
+      Ledger.create({
+        userId: "user-1",
+        currency: PaymentCurrency.USDT,
+        amount: "0",
+        balanceBefore: "100",
+        balanceAfter: "100",
+        type: LedgerType.DEPOSIT,
+      }),
+    ).toThrow(InvalidLedgerEntryException);
+  });
+
+  it("rejects negative deposit", () => {
+    expect(() =>
+      Ledger.create({
+        userId: "user-1",
+        currency: PaymentCurrency.USDT,
+        amount: "-50",
+        balanceBefore: "100",
+        balanceAfter: "50",
+        type: LedgerType.DEPOSIT,
+      }),
+    ).toThrow(InvalidLedgerEntryException);
+  });
+
+  it("rejects positive withdrawal", () => {
+    expect(() =>
+      Ledger.create({
+        userId: "user-1",
+        currency: PaymentCurrency.USDT,
+        amount: "50",
+        balanceBefore: "100",
+        balanceAfter: "150",
+        type: LedgerType.WITHDRAWAL,
+      }),
+    ).toThrow(InvalidLedgerEntryException);
+  });
+
+  it("accepts negative withdrawal", () => {
+    const ledger = Ledger.create({
+      userId: "user-1",
+      currency: PaymentCurrency.USDT,
+      amount: "-50",
+      balanceBefore: "100",
+      balanceAfter: "50",
+      type: LedgerType.WITHDRAWAL,
+    });
+
+    expect(ledger.amount).toBe("-50");
+    expect(ledger.balanceAfter).toBe("50");
+  });
+
+  it("accepts positive refund", () => {
+    const ledger = Ledger.create({
+      userId: "user-1",
+      currency: PaymentCurrency.USDT,
+      amount: "50",
+      balanceBefore: "100",
+      balanceAfter: "150",
+      type: LedgerType.REFUND,
+    });
+
+    expect(ledger.amount).toBe("50");
+  });
+
+  it("accepts positive transfer in", () => {
+    const ledger = Ledger.create({
+      userId: "user-1",
+      currency: PaymentCurrency.USDT,
+      amount: "50",
+      balanceBefore: "100",
+      balanceAfter: "150",
+      type: LedgerType.TRANSFER_IN,
+    });
+
+    expect(ledger.amount).toBe("50");
+  });
+
+  it("accepts negative transfer out", () => {
+    const ledger = Ledger.create({
+      userId: "user-1",
+      currency: PaymentCurrency.USDT,
+      amount: "-50",
+      balanceBefore: "100",
+      balanceAfter: "50",
+      type: LedgerType.TRANSFER_OUT,
+    });
+
+    expect(ledger.amount).toBe("-50");
+  });
+
+  it("accepts positive admin adjustment", () => {
+    const ledger = Ledger.create({
+      userId: "user-1",
+      currency: PaymentCurrency.USDT,
+      amount: "50",
+      balanceBefore: "100",
+      balanceAfter: "150",
+      type: LedgerType.ADMIN_ADJUSTMENT,
+    });
+
+    expect(ledger.amount).toBe("50");
+  });
+
+  it("accepts negative admin adjustment", () => {
+    const ledger = Ledger.create({
+      userId: "user-1",
+      currency: PaymentCurrency.USDT,
+      amount: "-50",
+      balanceBefore: "100",
+      balanceAfter: "50",
+      type: LedgerType.ADMIN_ADJUSTMENT,
+    });
+
+    expect(ledger.amount).toBe("-50");
+  });
+
   it("restores a valid ledger entry", () => {
     const createdAt = new Date("2026-01-01T00:00:00.000Z");
 
@@ -84,9 +202,9 @@ describe("Ledger", () => {
       id: "ledger-1",
       userId: "user-1",
       currency: PaymentCurrency.USDT,
-      amount: "50",
+      amount: "-50",
       balanceBefore: "100",
-      balanceAfter: "150",
+      balanceAfter: "50",
       type: LedgerType.WITHDRAWAL,
       actorUserId: "admin-1",
       referenceId: "reference-1",
@@ -98,9 +216,9 @@ describe("Ledger", () => {
 
     expect(ledger.id).toBe("ledger-1");
     expect(ledger.userId).toBe("user-1");
-    expect(ledger.amount).toBe("50");
+    expect(ledger.amount).toBe("-50");
     expect(ledger.balanceBefore).toBe("100");
-    expect(ledger.balanceAfter).toBe("150");
+    expect(ledger.balanceAfter).toBe("50");
     expect(ledger.type).toBe(LedgerType.WITHDRAWAL);
     expect(ledger.actorUserId).toBe("admin-1");
     expect(ledger.referenceId).toBe("reference-1");
@@ -117,6 +235,24 @@ describe("Ledger", () => {
         amount: "50",
         balanceBefore: "100",
         balanceAfter: "140",
+        type: LedgerType.WITHDRAWAL,
+        actorUserId: null,
+        referenceId: null,
+        metadata: null,
+        createdAt: new Date(),
+      }),
+    ).toThrow(InvalidLedgerEntryException);
+  });
+
+  it("rejects a positive withdrawal when restoring", () => {
+    expect(() =>
+      Ledger.restore({
+        id: "ledger-1",
+        userId: "user-1",
+        currency: PaymentCurrency.USDT,
+        amount: "50",
+        balanceBefore: "100",
+        balanceAfter: "150",
         type: LedgerType.WITHDRAWAL,
         actorUserId: null,
         referenceId: null,

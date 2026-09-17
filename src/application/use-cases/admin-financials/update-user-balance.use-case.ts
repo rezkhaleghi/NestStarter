@@ -6,15 +6,8 @@ import { AuditLog } from "@domain/entities/audit-log.entity";
 import { AuditAction } from "@domain/enums/audit-action.enum";
 import { LedgerType } from "@domain/enums/ledger-type.enum";
 import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
-import {
-  InsufficientBalanceException,
-  UserNotFoundException,
-} from "@domain/exceptions/domain.exception";
-import {
-  addDecimal,
-  isNegativeDecimal,
-  isZeroDecimal,
-} from "@domain/utils/decimal.util";
+import { UserNotFoundException } from "@domain/exceptions/domain.exception";
+import { isZeroDecimal } from "@domain/utils/decimal.util";
 import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
 
 export interface UpdateUserBalanceInput {
@@ -74,33 +67,54 @@ export class UpdateUserBalanceUseCase {
         // +100 → increase balance by 100
         // -100 → decrease balance by 100
         const amount = input.amount;
-        const after = addDecimal(before, amount);
-
-        // User balances cannot become negative.
-        if (isNegativeDecimal(after)) {
-          throw new InsufficientBalanceException();
-        }
 
         // No balance change means there is nothing to record.
         if (isZeroDecimal(amount)) {
           return existingBalance;
         }
 
-        let saved;
-
         if (existingBalance) {
-          existingBalance.amount = after;
+          existingBalance.adjust(amount);
 
-          saved = await userBalanceRepository.save(existingBalance);
-        } else {
-          const balance = UserBalance.create({
-            userId: input.userId,
-            currency: input.currency,
-            amount: after,
-          });
+          const saved = await userBalanceRepository.save(existingBalance);
 
-          saved = await userBalanceRepository.create(balance);
+          await ledgerRepository.create(
+            Ledger.create({
+              userId: input.userId,
+              currency: input.currency,
+              amount,
+              balanceBefore: before,
+              balanceAfter: saved.amount,
+              type: LedgerType.ADMIN_ADJUSTMENT,
+              actorUserId,
+            }),
+          );
+
+          await auditLogRepository.create(
+            AuditLog.create({
+              actorUserId,
+              targetUserId: input.userId,
+              action: AuditAction.USER_BALANCE_UPDATED,
+              metadata: {
+                currency: input.currency,
+                from: before,
+                to: saved.amount,
+              },
+            }),
+          );
+
+          return saved;
         }
+
+        const balance = UserBalance.create({
+          userId: input.userId,
+          currency: input.currency,
+          amount: "0",
+        });
+
+        balance.adjust(amount);
+
+        const saved = await userBalanceRepository.create(balance);
 
         await ledgerRepository.create(
           Ledger.create({

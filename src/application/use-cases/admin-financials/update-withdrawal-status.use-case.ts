@@ -13,8 +13,6 @@ import {
   WithdrawalNotFoundException,
 } from "@domain/exceptions/domain.exception";
 
-import { addDecimal } from "@domain/utils/decimal.util";
-
 import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
 
 export interface AdminUpdateWithdrawalStatusInput {
@@ -64,11 +62,10 @@ export class AdminUpdateWithdrawalStatusUseCase {
             withdrawal.reject(input.reason);
 
             const balanceBefore = balance.amount;
-            const balanceAfter = addDecimal(balanceBefore, withdrawal.amount);
 
-            balance.amount = balanceAfter;
+            balance.credit(withdrawal.amount);
 
-            await userBalanceRepository.save(balance);
+            const savedBalance = await userBalanceRepository.save(balance);
 
             await ledgerRepository.create(
               Ledger.create({
@@ -76,7 +73,7 @@ export class AdminUpdateWithdrawalStatusUseCase {
                 currency: withdrawal.currency,
                 amount: withdrawal.amount,
                 balanceBefore,
-                balanceAfter,
+                balanceAfter: savedBalance.amount,
                 type: LedgerType.REFUND,
                 referenceId: withdrawal.referenceId,
                 metadata: {

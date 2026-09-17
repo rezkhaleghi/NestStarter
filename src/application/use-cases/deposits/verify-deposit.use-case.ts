@@ -13,7 +13,6 @@ import {
   NotMatchException,
   UserBalanceNotFoundException,
 } from "@domain/exceptions/domain.exception";
-import { addDecimal } from "@domain/utils/decimal.util";
 
 import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
 import {
@@ -128,9 +127,8 @@ export class VerifyDepositUseCase {
         }
 
         const balanceBefore = balance.amount;
-        const balanceAfter = addDecimal(balanceBefore, currentDeposit.amount);
 
-        balance.amount = balanceAfter;
+        balance.credit(currentDeposit.amount);
 
         const savedBalance = await userBalanceRepository.save(balance);
 

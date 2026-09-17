@@ -9,17 +9,12 @@ import { LedgerType } from "@domain/enums/ledger-type.enum";
 import { AuditAction } from "@domain/enums/audit-action.enum";
 
 import {
-  InsufficientBalanceException,
   InvalidWithdrawalAmountException,
   UserBalanceNotFoundException,
   UserNotFoundException,
 } from "@domain/exceptions/domain.exception";
 
-import {
-  isNegativeDecimal,
-  isZeroDecimal,
-  subtractDecimal,
-} from "@domain/utils/decimal.util";
+import { isNegativeDecimal, isZeroDecimal } from "@domain/utils/decimal.util";
 
 import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
 
@@ -64,13 +59,8 @@ export class CreateWithdrawalUseCase {
         }
 
         const balanceBefore = balance.amount;
-        const balanceAfter = subtractDecimal(balanceBefore, input.amount);
 
-        if (isNegativeDecimal(balanceAfter)) {
-          throw new InsufficientBalanceException();
-        }
-
-        balance.amount = balanceAfter;
+        balance.debit(input.amount);
 
         const savedBalance = await userBalanceRepository.save(balance);
 

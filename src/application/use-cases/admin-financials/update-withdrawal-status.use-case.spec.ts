@@ -1,6 +1,8 @@
 import { AdminUpdateWithdrawalStatusUseCase } from "./update-withdrawal-status.use-case";
 
 import { Withdrawal } from "@domain/entities/withdrawal.entity";
+import { UserBalance } from "@domain/entities/user-balance.entity";
+
 import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
 import { WithdrawalStatus } from "@domain/enums/withdrawal-status.enum";
 import { AuditAction } from "@domain/enums/audit-action.enum";
@@ -69,7 +71,7 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
     );
 
     userBalanceRepository.save.mockImplementation(
-      async (balance: { amount: string }) => balance,
+      async (balance: UserBalance) => balance,
     );
 
     ledgerRepository.create.mockResolvedValue(undefined);
@@ -96,9 +98,11 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
         action: AuditAction.WITHDRAWAL_APPROVED,
       }),
     );
+
     expect(
       userBalanceRepository.findByUserIdAndCurrencyForUpdate,
     ).not.toHaveBeenCalled();
+
     expect(ledgerRepository.create).not.toHaveBeenCalled();
   });
 
@@ -107,9 +111,11 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
 
     withdrawalRepository.findByIdForUpdate.mockResolvedValue(withdrawal);
 
-    const balance = {
-      amount: "500",
-    };
+    const balance = UserBalance.create({
+      userId: "user-1",
+      currency: withdrawal.currency,
+      amount: "50",
+    });
 
     userBalanceRepository.findByUserIdAndCurrencyForUpdate.mockResolvedValue(
       balance,
@@ -125,7 +131,8 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
     expect(result.getStatus()).toBe(WithdrawalStatus.REJECTED);
     expect(result.rejectionReason).toBe("Invalid destination");
 
-    expect(balance.amount).toBe("600");
+    expect(balance.amount).toBe("150");
+
     expect(userBalanceRepository.save).toHaveBeenCalledWith(balance);
 
     expect(ledgerRepository.create).toHaveBeenCalledWith(
@@ -133,8 +140,8 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
         userId: withdrawal.userId,
         currency: withdrawal.currency,
         amount: "100",
-        balanceBefore: "500",
-        balanceAfter: "600",
+        balanceBefore: "50",
+        balanceAfter: "150",
         type: LedgerType.REFUND,
         referenceId: withdrawal.referenceId,
       }),
@@ -174,6 +181,7 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
     expect(
       userBalanceRepository.findByUserIdAndCurrencyForUpdate,
     ).not.toHaveBeenCalled();
+
     expect(ledgerRepository.create).not.toHaveBeenCalled();
   });
 

@@ -4,6 +4,7 @@ import { PaymentCurrency } from "../enums/payment-currency.enum";
 import { LedgerType } from "../enums/ledger-type.enum";
 import {
   addDecimal,
+  isNegativeDecimal,
   isZeroDecimal,
   subtractDecimal,
 } from "../utils/decimal.util";
@@ -52,10 +53,11 @@ export class Ledger {
   ) {}
 
   static create(props: CreateLedgerProps): Ledger {
-    this.assertBalanceInvariant(
+    this.assertLedgerInvariants(
       props.amount,
       props.balanceBefore,
       props.balanceAfter,
+      props.type,
     );
 
     return new Ledger(
@@ -74,10 +76,11 @@ export class Ledger {
   }
 
   static restore(props: RestoreLedgerProps): Ledger {
-    this.assertBalanceInvariant(
+    this.assertLedgerInvariants(
       props.amount,
       props.balanceBefore,
       props.balanceAfter,
+      props.type,
     );
 
     return new Ledger(
@@ -95,15 +98,44 @@ export class Ledger {
     );
   }
 
-  private static assertBalanceInvariant(
+  private static assertLedgerInvariants(
     amount: string,
     balanceBefore: string,
     balanceAfter: string,
+    type: LedgerType,
   ): void {
+    if (isZeroDecimal(amount)) {
+      throw new InvalidLedgerEntryException();
+    }
+
     const expectedBalanceAfter = addDecimal(balanceBefore, amount);
 
     if (!isZeroDecimal(subtractDecimal(expectedBalanceAfter, balanceAfter))) {
       throw new InvalidLedgerEntryException();
+    }
+
+    switch (type) {
+      case LedgerType.DEPOSIT:
+      case LedgerType.REFUND:
+      case LedgerType.TRANSFER_IN:
+        if (isNegativeDecimal(amount)) {
+          throw new InvalidLedgerEntryException();
+        }
+        break;
+
+      case LedgerType.WITHDRAWAL:
+      case LedgerType.TRANSFER_OUT:
+        if (!isNegativeDecimal(amount)) {
+          throw new InvalidLedgerEntryException();
+        }
+        break;
+
+      case LedgerType.ADMIN_ADJUSTMENT:
+        // Admin adjustments may increase or decrease the balance.
+        break;
+
+      default:
+        throw new InvalidLedgerEntryException();
     }
   }
 }
