@@ -1,14 +1,19 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { User } from "@domain/entities/user.entity";
-import { UserNotFoundException } from "@domain/exceptions/domain.exception";
+import {
+  UserNotFoundException,
+  UsernameAlreadyExistsException,
+} from "@domain/exceptions/domain.exception";
 import { UpdateCurrentUserUseCase } from "./update-current-user.use-case";
 
 describe("UpdateCurrentUserUseCase", () => {
   const findById = jest.fn<() => Promise<User | null>>();
+  const findByUserName = jest.fn<() => Promise<User | null>>();
   const save = jest.fn<(user: User) => Promise<User>>();
 
   const useCase = new UpdateCurrentUserUseCase({
     findById,
+    findByUserName,
     save,
   } as any);
 
@@ -35,6 +40,7 @@ describe("UpdateCurrentUserUseCase", () => {
     );
 
     findById.mockResolvedValue(existing);
+    findByUserName.mockResolvedValue(null);
     save.mockImplementation(async (user) => user);
 
     const result = await useCase.execute("userId", {
@@ -43,7 +49,7 @@ describe("UpdateCurrentUserUseCase", () => {
     });
 
     expect(findById).toHaveBeenCalledWith("userId");
-
+    expect(findByUserName).toHaveBeenCalledWith("new_name");
     expect(save).toHaveBeenCalledWith(existing);
 
     expect(result.firstName).toBe("New");
@@ -82,10 +88,11 @@ describe("UpdateCurrentUserUseCase", () => {
     });
 
     expect(result.bio).toBe("New bio");
+    expect(findByUserName).not.toHaveBeenCalled();
     expect(save).toHaveBeenCalledWith(existing);
   });
 
-  it("allows changing the username without checking another repository", async () => {
+  it("allows changing the username when it is unused", async () => {
     const existing = new User(
       "id",
       "user@example.com",
@@ -101,14 +108,87 @@ describe("UpdateCurrentUserUseCase", () => {
     );
 
     findById.mockResolvedValue(existing);
+    findByUserName.mockResolvedValue(null);
     save.mockImplementation(async (user) => user);
 
     const result = await useCase.execute("id", {
       userName: "new_name",
     });
 
+    expect(findByUserName).toHaveBeenCalledWith("new_name");
     expect(result.userName).toBe("new_name");
     expect(save).toHaveBeenCalledWith(existing);
+  });
+
+  it("allows keeping the current username", async () => {
+    const existing = new User(
+      "id",
+      "user@example.com",
+      "hashed",
+      undefined,
+      true,
+      undefined,
+      undefined,
+      undefined,
+      "Jane",
+      "Doe",
+      "current_name",
+    );
+
+    findById.mockResolvedValue(existing);
+    findByUserName.mockResolvedValue(existing);
+    save.mockImplementation(async (user) => user);
+
+    const result = await useCase.execute("id", {
+      userName: "current_name",
+    });
+
+    expect(findByUserName).toHaveBeenCalledWith("current_name");
+    expect(result.userName).toBe("current_name");
+    expect(save).toHaveBeenCalledWith(existing);
+  });
+
+  it("rejects changing the username to another user's username", async () => {
+    const existing = new User(
+      "id",
+      "user@example.com",
+      "hashed",
+      undefined,
+      true,
+      undefined,
+      undefined,
+      undefined,
+      "Jane",
+      "Doe",
+      "old_name",
+    );
+
+    const otherUser = new User(
+      "other-id",
+      "other@example.com",
+      "hashed",
+      undefined,
+      true,
+      undefined,
+      undefined,
+      undefined,
+      "John",
+      "Doe",
+      "taken_name",
+    );
+
+    findById.mockResolvedValue(existing);
+    findByUserName.mockResolvedValue(otherUser);
+
+    await expect(
+      useCase.execute("id", {
+        userName: "taken_name",
+      }),
+    ).rejects.toBeInstanceOf(UsernameAlreadyExistsException);
+
+    expect(findByUserName).toHaveBeenCalledWith("taken_name");
+    expect(save).not.toHaveBeenCalled();
+    expect(existing.userName).toBe("old_name");
   });
 
   it("allows clearing nullable profile fields", async () => {
@@ -146,6 +226,7 @@ describe("UpdateCurrentUserUseCase", () => {
     expect(result.dateOfBirth).toBeNull();
     expect(result.bio).toBeNull();
 
+    expect(findByUserName).not.toHaveBeenCalled();
     expect(save).toHaveBeenCalledWith(existing);
   });
 
@@ -165,7 +246,6 @@ describe("UpdateCurrentUserUseCase", () => {
       undefined,
       undefined,
       "Bio",
-      // "avatar.jpg",
     );
 
     existing.avatar = "avatar.jpg";
@@ -179,6 +259,7 @@ describe("UpdateCurrentUserUseCase", () => {
     expect(result.firstName).toBe("Updated");
     expect(result.avatar).toBe("avatar.jpg");
 
+    expect(findByUserName).not.toHaveBeenCalled();
     expect(save).toHaveBeenCalledWith(existing);
   });
 
@@ -191,6 +272,7 @@ describe("UpdateCurrentUserUseCase", () => {
       }),
     ).rejects.toBeInstanceOf(UserNotFoundException);
 
+    expect(findByUserName).not.toHaveBeenCalled();
     expect(save).not.toHaveBeenCalled();
   });
 });

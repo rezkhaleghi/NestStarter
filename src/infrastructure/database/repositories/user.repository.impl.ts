@@ -1,17 +1,26 @@
 import { Injectable } from "@nestjs/common";
+
 import { InjectRepository } from "@nestjs/typeorm";
+
 import { Repository } from "typeorm";
+
 import { User } from "@domain/entities/user.entity";
+
 import { UserOrmEntity } from "../orm-entities/user.orm-entity";
+
 import { UserRole } from "@domain/enums/user-role.enum";
 
 import { UserSearchResult } from "@domain/repositories/user-search-result";
+
 import { UserRepository } from "@domain/repositories/user.repository";
+
 import { AdminUserSearchFilters } from "@domain/repositories/admin-user-search-filters";
+
 import { PageQuery, PageResult } from "@shared/pagination/page-query";
 
 /**
  * Concrete implementation of the domain's UserRepository contract.
+ *
  * This is the ONLY place that translates between the domain entity
  * and the ORM entity — that translation logic (toDomain/toOrm) never
  * leaks into domain or application.
@@ -28,7 +37,7 @@ export class UserRepositoryImpl implements UserRepository {
     return row ? this.toDomain(row) : null;
   }
 
-  // for locking the row for update, we need to use a transaction and a pessimistic lock
+  // For locking the row for update, we need to use a transaction and a pessimistic lock.
   async findByIdForUpdate(id: string): Promise<User | null> {
     const row = await this.repo.findOne({
       where: { id },
@@ -44,6 +53,7 @@ export class UserRepositoryImpl implements UserRepository {
     const row = await this.repo.findOne({
       where: { email: email.toLowerCase() },
     });
+
     return row ? this.toDomain(row) : null;
   }
 
@@ -61,10 +71,13 @@ export class UserRepositoryImpl implements UserRepository {
     params: PageQuery<"createdAt" | "email" | "role">,
   ): Promise<PageResult<User>> {
     const [rows, total] = await this.repo.findAndCount({
-      order: { [params.sortBy ?? "createdAt"]: params.sortDirection ?? "DESC" },
+      order: {
+        [params.sortBy ?? "createdAt"]: params.sortDirection ?? "DESC",
+      },
       skip: (params.page - 1) * params.limit,
       take: params.limit,
     });
+
     return {
       data: rows.map((row) => this.toDomain(row)),
       page: params.page,
@@ -81,6 +94,7 @@ export class UserRepositoryImpl implements UserRepository {
   async save(user: User): Promise<User> {
     const row = this.toOrm(user);
     const saved = await this.repo.save(row);
+
     return this.toDomain(saved);
   }
 
@@ -94,10 +108,13 @@ export class UserRepositoryImpl implements UserRepository {
         where: { role: UserRole.ADMIN },
         lock: { mode: "pessimistic_write" },
       });
+
       if (admins.length <= 1) {
         return null;
       }
+
       const saved = await manager.save(UserOrmEntity, this.toOrm(user));
+
       return this.toDomain(saved);
     });
   }
@@ -108,14 +125,21 @@ export class UserRepositoryImpl implements UserRepository {
         where: { role: UserRole.ADMIN },
         lock: { mode: "pessimistic_write" },
       });
-      const user = await manager.findOne(UserOrmEntity, { where: { id } });
+
+      const user = await manager.findOne(UserOrmEntity, {
+        where: { id },
+      });
+
       if (!user) {
         return false;
       }
+
       if (user.role === UserRole.ADMIN && admins.length <= 1) {
         return false;
       }
+
       await manager.delete(UserOrmEntity, id);
+
       return true;
     });
   }
@@ -148,16 +172,35 @@ export class UserRepositoryImpl implements UserRepository {
     const firstNameQuery = nameParts[0];
     const lastNameQuery = nameParts.slice(1).join(" ");
 
+    /*
+     * Supported birthday search formats:
+     *
+     * 1990       -> year
+     * 01-01      -> month-day
+     * 1990-01    -> year-month
+     * 1990-01-01 -> exact date
+     *
+     * PostgreSQL's TO_CHAR is used because dateOfBirth is stored
+     * as a PostgreSQL DATE column.
+     */
     qb.where(
       `
       user.email ILIKE :exactEmail
       OR user.userName ILIKE :prefix
       OR user.firstName ILIKE :prefix
       OR user.lastName ILIKE :prefix
-    `,
+      OR TO_CHAR(user.dateOfBirth, 'YYYY') = :birthYear
+      OR TO_CHAR(user.dateOfBirth, 'MM-DD') = :birthMonthDay
+      OR TO_CHAR(user.dateOfBirth, 'YYYY-MM') = :birthYearMonth
+      OR TO_CHAR(user.dateOfBirth, 'YYYY-MM-DD') = :birthDate
+      `,
       {
         exactEmail: normalizedQuery,
         prefix: `${normalizedQuery}%`,
+        birthYear: normalizedQuery,
+        birthMonthDay: normalizedQuery,
+        birthYearMonth: normalizedQuery,
+        birthDate: normalizedQuery,
       },
     );
 
@@ -168,7 +211,7 @@ export class UserRepositoryImpl implements UserRepository {
         `
         user.firstName ILIKE :firstNamePrefix
         AND user.lastName ILIKE :lastNamePrefix
-      `,
+        `,
         {
           firstNamePrefix: `${firstNameQuery}%`,
           lastNamePrefix: `${lastNameQuery}%`,
@@ -190,9 +233,13 @@ export class UserRepositoryImpl implements UserRepository {
           user.firstName ILIKE :firstNamePrefix
           AND user.lastName ILIKE :lastNamePrefix
         ) THEN 8
-        ELSE 9
+        WHEN TO_CHAR(user.dateOfBirth, 'YYYY-MM-DD') = :birthDate THEN 9
+        WHEN TO_CHAR(user.dateOfBirth, 'YYYY-MM') = :birthYearMonth THEN 10
+        WHEN TO_CHAR(user.dateOfBirth, 'MM-DD') = :birthMonthDay THEN 11
+        WHEN TO_CHAR(user.dateOfBirth, 'YYYY') = :birthYear THEN 12
+        ELSE 13
       END
-    `,
+      `,
       "search_rank",
     );
 
@@ -203,10 +250,17 @@ export class UserRepositoryImpl implements UserRepository {
       prefix: `${normalizedQuery}%`,
       firstNamePrefix: `${firstNameQuery}%`,
       lastNamePrefix: `${lastNameQuery}%`,
+      birthYear: normalizedQuery,
+      birthMonthDay: normalizedQuery,
+      birthYearMonth: normalizedQuery,
+      birthDate: normalizedQuery,
     });
 
     qb.orderBy("search_rank", "ASC");
     qb.addOrderBy("user.createdAt", "DESC");
+
+    // Stable ordering when two users have the same ranking and createdAt.
+    qb.addOrderBy("user.id", "ASC");
 
     const [rows, total] = await qb
       .skip((params.page - 1) * params.limit)
@@ -240,7 +294,6 @@ export class UserRepositoryImpl implements UserRepository {
 
     if (filters.search?.trim()) {
       const normalizedSearch = filters.search.trim();
-
       const nameParts = normalizedSearch.split(/\s+/);
 
       if (nameParts.length >= 2) {
@@ -249,17 +302,17 @@ export class UserRepositoryImpl implements UserRepository {
 
         qb.andWhere(
           `
-        (
-          user.email ILIKE :exactEmail
-          OR user.userName ILIKE :prefix
-          OR user.firstName ILIKE :prefix
-          OR user.lastName ILIKE :prefix
-          OR (
-            user.firstName ILIKE :firstName
-            AND user.lastName ILIKE :lastName
+          (
+            user.email ILIKE :exactEmail
+            OR user.userName ILIKE :prefix
+            OR user.firstName ILIKE :prefix
+            OR user.lastName ILIKE :prefix
+            OR (
+              user.firstName ILIKE :firstName
+              AND user.lastName ILIKE :lastName
+            )
           )
-        )
-        `,
+          `,
           {
             exactEmail: normalizedSearch,
             prefix: `${normalizedSearch}%`,
@@ -270,13 +323,13 @@ export class UserRepositoryImpl implements UserRepository {
       } else {
         qb.andWhere(
           `
-        (
-          user.email ILIKE :exactEmail
-          OR user.userName ILIKE :prefix
-          OR user.firstName ILIKE :prefix
-          OR user.lastName ILIKE :prefix
-        )
-        `,
+          (
+            user.email ILIKE :exactEmail
+            OR user.userName ILIKE :prefix
+            OR user.firstName ILIKE :prefix
+            OR user.lastName ILIKE :prefix
+          )
+          `,
           {
             exactEmail: normalizedSearch,
             prefix: `${normalizedSearch}%`,
@@ -359,13 +412,14 @@ export class UserRepositoryImpl implements UserRepository {
    * This keeps ORM-specific persistence details inside the
    * infrastructure layer.
    *
-   * Domain Entity → ORM Entity → Database
+   * Domain Entity → TypeORM Entity → Database
    *
    * Whenever a new property is added to the User domain entity,
    * it should also be mapped here and in toDomain().
    */
   private toOrm(user: User): UserOrmEntity {
     const row = new UserOrmEntity();
+
     row.id = user.id;
     row.email = user.email;
     row.hashedPassword = user.hashedPassword;
@@ -381,6 +435,7 @@ export class UserRepositoryImpl implements UserRepository {
     row.avatar = user.avatar;
     row.bio = user.bio;
     row.status = user.status;
+
     return row;
   }
 }
