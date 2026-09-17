@@ -45,6 +45,7 @@ export interface CreatePaymentInput {
    * The payment system does not need to know what this ID represents.
    */
   referenceId: string;
+  idempotencyKey: string;
 
   /**
    * URL where the payment provider redirects the user after

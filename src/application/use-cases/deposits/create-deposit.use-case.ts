@@ -4,6 +4,7 @@ import { Deposit } from "@domain/entities/deposit.entity";
 import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
 import { DepositStatus } from "@domain/enums/deposit-status.enum";
 import {
+  DepositNotFoundException,
   InvalidDepositAmountException,
   UnsupportedPaymentCurrencyException,
   UserNotFoundException,
@@ -51,7 +52,6 @@ export class CreateDepositUseCase {
           currency: input.currency,
           amount: input.amount,
           status: DepositStatus.PENDING,
-          // referenceId: randomUUID(),
         });
 
         return depositRepository.create(newDeposit);
@@ -64,6 +64,7 @@ export class CreateDepositUseCase {
       provider: this.paymentProvider.name,
       referenceId: deposit.referenceId,
       callbackUrl: "",
+      idempotencyKey: deposit.referenceId,
     });
 
     return this.unitOfWork.execute(async ({ depositRepository }) => {
@@ -72,7 +73,7 @@ export class CreateDepositUseCase {
       );
 
       if (!currentDeposit) {
-        throw new Error("Deposit not found after creation.");
+        throw new DepositNotFoundException();
       }
 
       currentDeposit.setProviderPayment(payment.providerPaymentId);
