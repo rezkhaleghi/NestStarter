@@ -40,7 +40,7 @@ export default new DataSource({
     TicketCategoryOrmEntity,
   ],
   migrations: [__dirname + "/../database/migrations/*.{js,ts}"],
-  synchronize: false, // Set to false in production to avoid data loss
+  synchronize: true, // Set to false in production to avoid data loss
 });
 
 //                     Database
