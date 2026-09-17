@@ -201,5 +201,3 @@ export interface PaymentProviderInterface {
     input: GetWithdrawalStatusInput,
   ): Promise<GetWithdrawalStatusResult>;
 }
-
-export const PAYMENT_PROVIDER = Symbol("PAYMENT_PROVIDER");

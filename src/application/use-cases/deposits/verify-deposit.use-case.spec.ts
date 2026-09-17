@@ -16,7 +16,7 @@ import {
   UserBalanceNotFoundException,
 } from "@domain/exceptions/domain.exception";
 
-import { PaymentProviderInterface } from "@application/interfaces/payment-provider.interface";
+import { PaymentProviderResolver } from "@application/interfaces/payment-provider-resolver.interface";
 import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
 
 describe("VerifyDepositUseCase", () => {
@@ -26,6 +26,10 @@ describe("VerifyDepositUseCase", () => {
 
   const paymentProviderMock = {
     verifyPayment: jest.fn(),
+  };
+
+  const paymentProviderResolverMock = {
+    resolve: jest.fn().mockReturnValue(paymentProviderMock),
   };
 
   const depositRepositoryMock = {
@@ -53,8 +57,10 @@ describe("VerifyDepositUseCase", () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
+    paymentProviderResolverMock.resolve.mockReturnValue(paymentProviderMock);
+
     useCase = new VerifyDepositUseCase(
-      paymentProviderMock as unknown as PaymentProviderInterface,
+      paymentProviderResolverMock as unknown as PaymentProviderResolver,
       unitOfWorkMock as unknown as UnitOfWork,
     );
   });
@@ -100,6 +106,7 @@ describe("VerifyDepositUseCase", () => {
 
     expect(result).toBe(deposit);
 
+    expect(paymentProviderResolverMock.resolve).not.toHaveBeenCalled();
     expect(paymentProviderMock.verifyPayment).not.toHaveBeenCalled();
   });
 
@@ -113,6 +120,7 @@ describe("VerifyDepositUseCase", () => {
       }),
     ).rejects.toBeInstanceOf(DepositNotFoundException);
 
+    expect(paymentProviderResolverMock.resolve).not.toHaveBeenCalled();
     expect(paymentProviderMock.verifyPayment).not.toHaveBeenCalled();
   });
 
@@ -136,6 +144,7 @@ describe("VerifyDepositUseCase", () => {
       }),
     ).rejects.toBeInstanceOf(NotMatchException);
 
+    expect(paymentProviderResolverMock.resolve).not.toHaveBeenCalled();
     expect(paymentProviderMock.verifyPayment).not.toHaveBeenCalled();
   });
 
@@ -202,6 +211,8 @@ describe("VerifyDepositUseCase", () => {
     });
 
     expect(result).toBe(deposit);
+
+    expect(paymentProviderResolverMock.resolve).toHaveBeenCalledTimes(1);
 
     expect(paymentProviderMock.verifyPayment).toHaveBeenCalledWith({
       providerPaymentId: "payment-1",

@@ -15,11 +15,11 @@ import {
 } from "@domain/exceptions/domain.exception";
 import { addDecimal } from "@domain/utils/decimal.util";
 
-import {
-  PAYMENT_PROVIDER,
-  PaymentProviderInterface,
-} from "@application/interfaces/payment-provider.interface";
 import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
+import {
+  PAYMENT_PROVIDER_RESOLVER,
+  PaymentProviderResolver,
+} from "@application/interfaces/payment-provider-resolver.interface";
 
 export interface VerifyDepositInput {
   depositId: string;
@@ -29,8 +29,8 @@ export interface VerifyDepositInput {
 @Injectable()
 export class VerifyDepositUseCase {
   constructor(
-    @Inject(PAYMENT_PROVIDER)
-    private readonly paymentProvider: PaymentProviderInterface,
+    @Inject(PAYMENT_PROVIDER_RESOLVER)
+    private readonly paymentProviderResolver: PaymentProviderResolver,
     private readonly unitOfWork: UnitOfWork,
   ) {}
 
@@ -67,7 +67,11 @@ export class VerifyDepositUseCase {
       throw new NotMatchException("Provider payment ID", "Deposit");
     }
 
-    const verification = await this.paymentProvider.verifyPayment({
+    const paymentProvider = this.paymentProviderResolver.resolve(
+      deposit.provider,
+    );
+
+    const verification = await paymentProvider.verifyPayment({
       providerPaymentId: deposit.providerPaymentId,
       referenceId: deposit.referenceId,
       amount: deposit.amount,

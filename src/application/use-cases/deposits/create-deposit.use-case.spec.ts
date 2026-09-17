@@ -3,6 +3,7 @@ import { CreateDepositUseCase } from "./create-deposit.use-case";
 import { Deposit } from "@domain/entities/deposit.entity";
 import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
 import { DepositStatus } from "@domain/enums/deposit-status.enum";
+import { PaymentProvider } from "@domain/enums/payment-provider.enum";
 
 import {
   InvalidDepositAmountException,
@@ -10,12 +11,7 @@ import {
   UserNotFoundException,
 } from "@domain/exceptions/domain.exception";
 
-import {
-  PAYMENT_PROVIDER,
-  PaymentProviderInterface,
-} from "@application/interfaces/payment-provider.interface";
 import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
-import { PaymentProvider } from "@domain/enums/payment-provider.enum";
 import { PaymentProviderResolver } from "@application/interfaces/payment-provider-resolver.interface";
 
 describe("CreateDepositUseCase", () => {
@@ -25,7 +21,8 @@ describe("CreateDepositUseCase", () => {
 
   const paymentProviderMock = {
     name: PaymentProvider.FAKE_PROVIDER,
-    supportedCurrencies: [PaymentCurrency.USD, PaymentCurrency.IRR],
+    // Only support the currency used by the normal tests.
+    supportedCurrencies: [currency],
     createPayment: jest.fn(),
     verifyPayment: jest.fn(),
   };
@@ -51,9 +48,11 @@ describe("CreateDepositUseCase", () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
+    paymentProviderResolverMock.resolve.mockReturnValue(paymentProviderMock);
+
     useCase = new CreateDepositUseCase(
       paymentProviderResolverMock as unknown as PaymentProviderResolver,
-      unitOfWorkMock,
+      unitOfWorkMock as unknown as UnitOfWork,
     );
   });
 
@@ -70,6 +69,7 @@ describe("CreateDepositUseCase", () => {
       userId: "user-1",
       currency,
       amount: "100",
+      provider: PaymentProvider.FAKE_PROVIDER,
       status: DepositStatus.PENDING,
       referenceId: "reference-1",
       providerPaymentId: null,
@@ -115,6 +115,10 @@ describe("CreateDepositUseCase", () => {
 
     expect(result).toBe(savedDeposit);
 
+    expect(paymentProviderResolverMock.resolve).toHaveBeenCalledWith(
+      PaymentProvider.FAKE_PROVIDER,
+    );
+
     expect(userRepositoryMock.findById).toHaveBeenCalledWith("user-1");
 
     expect(depositRepositoryMock.create).toHaveBeenCalledTimes(1);
@@ -124,14 +128,16 @@ describe("CreateDepositUseCase", () => {
     expect(depositArgument.userId).toBe("user-1");
     expect(depositArgument.currency).toBe(currency);
     expect(depositArgument.amount).toBe("100");
+    expect(depositArgument.provider).toBe(PaymentProvider.FAKE_PROVIDER);
     expect(depositArgument.status).toBe(DepositStatus.PENDING);
 
     expect(paymentProviderMock.createPayment).toHaveBeenCalledWith({
       amount: "100",
       currency,
-      provider: "test-provider",
+      provider: PaymentProvider.FAKE_PROVIDER,
       referenceId: "reference-1",
       callbackUrl: "",
+      idempotencyKey: "reference-1",
     });
 
     expect(depositRepositoryMock.findByIdForUpdate).toHaveBeenCalledWith(
@@ -146,10 +152,12 @@ describe("CreateDepositUseCase", () => {
   it("should throw when the currency is not supported", async () => {
     const unsupportedCurrency = Object.values(PaymentCurrency).find(
       (value) => value !== currency,
-    ) as PaymentCurrency;
+    );
 
     if (unsupportedCurrency === undefined) {
-      return;
+      throw new Error(
+        "PaymentCurrency must contain at least two currencies for this test",
+      );
     }
 
     await expect(
@@ -160,6 +168,10 @@ describe("CreateDepositUseCase", () => {
         provider: PaymentProvider.FAKE_PROVIDER,
       }),
     ).rejects.toBeInstanceOf(UnsupportedPaymentCurrencyException);
+
+    expect(paymentProviderResolverMock.resolve).toHaveBeenCalledWith(
+      PaymentProvider.FAKE_PROVIDER,
+    );
 
     expect(unitOfWorkMock.execute).not.toHaveBeenCalled();
     expect(paymentProviderMock.createPayment).not.toHaveBeenCalled();
@@ -176,6 +188,7 @@ describe("CreateDepositUseCase", () => {
     ).rejects.toBeInstanceOf(InvalidDepositAmountException);
 
     expect(unitOfWorkMock.execute).not.toHaveBeenCalled();
+    expect(paymentProviderMock.createPayment).not.toHaveBeenCalled();
   });
 
   it("should throw when the amount is negative", async () => {
@@ -189,6 +202,7 @@ describe("CreateDepositUseCase", () => {
     ).rejects.toBeInstanceOf(InvalidDepositAmountException);
 
     expect(unitOfWorkMock.execute).not.toHaveBeenCalled();
+    expect(paymentProviderMock.createPayment).not.toHaveBeenCalled();
   });
 
   it("should throw when the user does not exist", async () => {
