@@ -1,9 +1,9 @@
 import { randomUUID } from "crypto";
 
 import { PaymentCurrency } from "../enums/payment-currency.enum";
+import { PaymentProvider } from "../enums/payment-provider.enum";
 import { DepositStatus } from "../enums/deposit-status.enum";
 import {
-  DepositCannotCancelException,
   DepositCannotFailException,
   DepositChangeStatusNotAllowedException,
 } from "@domain/exceptions/domain.exception";
@@ -13,6 +13,7 @@ export interface CreateDepositProps {
   userId: string;
   currency: PaymentCurrency;
   amount: string;
+  provider: PaymentProvider;
   status?: DepositStatus;
   referenceId?: string;
   providerPaymentId?: string | null;
@@ -28,6 +29,7 @@ export class Deposit {
     public readonly userId: string,
     public readonly currency: PaymentCurrency,
     public readonly amount: string,
+    public readonly provider: PaymentProvider,
     public status: DepositStatus,
     public readonly referenceId: string,
     public providerPaymentId: string | null,
@@ -43,6 +45,7 @@ export class Deposit {
       props.userId,
       props.currency,
       props.amount,
+      props.provider,
       props.status ?? DepositStatus.PENDING,
       props.referenceId ?? randomUUID(),
       props.providerPaymentId ?? null,

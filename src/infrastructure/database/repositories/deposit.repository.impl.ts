@@ -153,6 +153,7 @@ export class DepositRepositoryImpl extends DepositRepository {
       userId: row.userId,
       currency: row.currency,
       amount: row.amount,
+      provider: row.provider,
       status: row.status,
       referenceId: row.referenceId,
       providerPaymentId: row.providerPaymentId,
@@ -170,6 +171,7 @@ export class DepositRepositoryImpl extends DepositRepository {
     row.userId = deposit.userId;
     row.currency = deposit.currency;
     row.amount = deposit.amount;
+    row.provider = deposit.provider;
     row.status = deposit.status;
     row.referenceId = deposit.referenceId;
     row.providerPaymentId = deposit.providerPaymentId;

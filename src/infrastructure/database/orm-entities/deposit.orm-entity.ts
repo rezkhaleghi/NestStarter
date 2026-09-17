@@ -8,6 +8,7 @@ import {
 } from "typeorm";
 
 import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
+import { PaymentProvider } from "@domain/enums/payment-provider.enum";
 import { DepositStatus } from "@domain/enums/deposit-status.enum";
 
 @Entity("deposits")
@@ -34,6 +35,12 @@ export class DepositOrmEntity {
     default: DepositStatus.PENDING,
   })
   status!: DepositStatus;
+
+  @Column({
+    type: "enum",
+    enum: PaymentProvider,
+  })
+  provider!: PaymentProvider;
 
   @Column({ type: "uuid" })
   referenceId!: string;

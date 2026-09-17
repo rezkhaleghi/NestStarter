@@ -17,8 +17,8 @@ import { PaymentProvider } from "@domain/enums/payment-provider.enum";
 
 @Injectable()
 export class FakePaymentProvider implements PaymentProviderInterface {
-  readonly name = PaymentProvider.NOWPAYMENTS;
-  readonly supportedCurrencies = [PaymentCurrency.USD, PaymentCurrency.USDT];
+  readonly name = PaymentProvider.FAKE_PROVIDER;
+  readonly supportedCurrencies = [PaymentCurrency.USD, PaymentCurrency.IRR];
 
   async createPayment(input: CreatePaymentInput): Promise<CreatePaymentResult> {
     const providerPaymentId = `fake-payment-${randomUUID()}`;

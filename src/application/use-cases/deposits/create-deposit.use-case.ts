@@ -51,6 +51,7 @@ export class CreateDepositUseCase {
           userId: input.userId,
           currency: input.currency,
           amount: input.amount,
+          provider: this.paymentProvider.name,
           status: DepositStatus.PENDING,
         });
 
