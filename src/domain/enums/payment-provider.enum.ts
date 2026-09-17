@@ -1,7 +1,4 @@
 export enum PaymentProvider {
   FAKE_PROVIDER = "FAKE_PROVIDER",
   ZARINPAL = "ZARINPAL",
-  PAYPAL = "PAYPAL",
-  NOWPAYMENTS = "NOWPAYMENTS",
-  COINBASE = "COINBASE",
 }

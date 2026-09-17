@@ -4,6 +4,7 @@ import { Deposit } from "@domain/entities/deposit.entity";
 import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
 import { DepositRepository } from "@domain/repositories/deposit.repository";
 import { DepositNotFoundException } from "@domain/exceptions/domain.exception";
+import { PaymentProvider } from "@domain/enums/payment-provider.enum";
 
 describe("AdminGetDepositUseCase", () => {
   let useCase: AdminGetDepositUseCase;
@@ -26,6 +27,7 @@ describe("AdminGetDepositUseCase", () => {
       userId: "user-1",
       currency: PaymentCurrency.USDT,
       amount: "100",
+      provider: PaymentProvider.FAKE_PROVIDER,
     });
 
     depositRepository.findById.mockResolvedValue(deposit);

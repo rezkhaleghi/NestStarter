@@ -106,9 +106,17 @@ import { TicketMessageOrmEntity } from "./database/orm-entities/ticket-message.o
 
 import { TicketCategoryOrmEntity } from "./database/orm-entities/ticket-category.orm-entity";
 
-import { PAYMENT_PROVIDER } from "@application/interfaces/payment-provider.interface";
-
 import { FakePaymentProvider } from "./services/fake-payment-provider.service";
+
+import {
+  PAYMENT_PROVIDERS,
+  PAYMENT_PROVIDER_RESOLVER,
+} from "@application/interfaces/payment-provider-resolver.interface";
+
+import { PaymentProviderResolver } from "@application/interfaces/payment-provider-resolver.interface";
+
+import { PaymentProviderResolverService } from "./services/payment-provider-resolver.service";
+import { PaymentProviderInterface } from "@application/interfaces/payment-provider.interface";
 
 /**
  * This module is the ONLY place where abstract tokens (interfaces) from
@@ -260,9 +268,19 @@ import { FakePaymentProvider } from "./services/fake-payment-provider.service";
       provide: TicketCategoryRepository,
       useClass: TicketCategoryRepositoryImpl,
     },
+    FakePaymentProvider,
     {
-      provide: PAYMENT_PROVIDER,
-      useClass: FakePaymentProvider,
+      provide: PAYMENT_PROVIDERS,
+      inject: [FakePaymentProvider],
+      useFactory: (
+        fakePaymentProvider: FakePaymentProvider,
+      ): PaymentProviderInterface[] => {
+        return [fakePaymentProvider];
+      },
+    },
+    {
+      provide: PAYMENT_PROVIDER_RESOLVER,
+      useClass: PaymentProviderResolverService,
     },
   ],
   exports: [
@@ -284,7 +302,7 @@ import { FakePaymentProvider } from "./services/fake-payment-provider.service";
     TicketRepository,
     TicketMessageRepository,
     TicketCategoryRepository,
-    PAYMENT_PROVIDER,
+    PAYMENT_PROVIDER_RESOLVER,
   ],
 })
 export class InfrastructureModule {}

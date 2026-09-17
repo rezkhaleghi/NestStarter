@@ -15,6 +15,8 @@ import {
   PaymentProviderInterface,
 } from "@application/interfaces/payment-provider.interface";
 import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
+import { PaymentProvider } from "@domain/enums/payment-provider.enum";
+import { PaymentProviderResolver } from "@application/interfaces/payment-provider-resolver.interface";
 
 describe("CreateDepositUseCase", () => {
   let useCase: CreateDepositUseCase;
@@ -22,9 +24,14 @@ describe("CreateDepositUseCase", () => {
   const currency = Object.values(PaymentCurrency)[0] as PaymentCurrency;
 
   const paymentProviderMock = {
-    name: "test-provider",
-    supportedCurrencies: [currency],
+    name: PaymentProvider.FAKE_PROVIDER,
+    supportedCurrencies: [PaymentCurrency.USD, PaymentCurrency.IRR],
     createPayment: jest.fn(),
+    verifyPayment: jest.fn(),
+  };
+
+  const paymentProviderResolverMock = {
+    resolve: jest.fn().mockReturnValue(paymentProviderMock),
   };
 
   const userRepositoryMock = {
@@ -45,8 +52,8 @@ describe("CreateDepositUseCase", () => {
     jest.clearAllMocks();
 
     useCase = new CreateDepositUseCase(
-      paymentProviderMock as unknown as PaymentProviderInterface,
-      unitOfWorkMock as unknown as UnitOfWork,
+      paymentProviderResolverMock as unknown as PaymentProviderResolver,
+      unitOfWorkMock,
     );
   });
 
@@ -55,6 +62,7 @@ describe("CreateDepositUseCase", () => {
       userId: "user-1",
       currency,
       amount: "100",
+      provider: PaymentProvider.FAKE_PROVIDER,
     };
 
     const createdDeposit = {
@@ -149,6 +157,7 @@ describe("CreateDepositUseCase", () => {
         userId: "user-1",
         currency: unsupportedCurrency,
         amount: "100",
+        provider: PaymentProvider.FAKE_PROVIDER,
       }),
     ).rejects.toBeInstanceOf(UnsupportedPaymentCurrencyException);
 
@@ -162,6 +171,7 @@ describe("CreateDepositUseCase", () => {
         userId: "user-1",
         currency,
         amount: "0",
+        provider: PaymentProvider.FAKE_PROVIDER,
       }),
     ).rejects.toBeInstanceOf(InvalidDepositAmountException);
 
@@ -174,6 +184,7 @@ describe("CreateDepositUseCase", () => {
         userId: "user-1",
         currency,
         amount: "-10",
+        provider: PaymentProvider.FAKE_PROVIDER,
       }),
     ).rejects.toBeInstanceOf(InvalidDepositAmountException);
 
@@ -195,6 +206,7 @@ describe("CreateDepositUseCase", () => {
         userId: "missing-user",
         currency,
         amount: "100",
+        provider: PaymentProvider.FAKE_PROVIDER,
       }),
     ).rejects.toBeInstanceOf(UserNotFoundException);
 

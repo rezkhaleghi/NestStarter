@@ -214,3 +214,10 @@ export class DecimalScaleExceededException extends DomainException {
     );
   }
 }
+
+// Payment provider exceptions
+export class UnsupportedPaymentProviderException extends DomainException {
+  constructor(provider: string) {
+    super(`Payment provider ${provider} is not supported.`);
+  }
+}

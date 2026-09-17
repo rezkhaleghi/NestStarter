@@ -5,6 +5,7 @@ import {
   DepositCannotFailException,
   DepositChangeStatusNotAllowedException,
 } from "../exceptions/domain.exception";
+import { PaymentProvider } from "@domain/enums/payment-provider.enum";
 
 describe("Deposit", () => {
   const createDeposit = () =>
@@ -12,6 +13,7 @@ describe("Deposit", () => {
       userId: "user-1",
       currency: PaymentCurrency.USDT,
       amount: "100",
+      provider: PaymentProvider.FAKE_PROVIDER,
     });
 
   it("creates a pending deposit with generated identifiers", () => {
@@ -52,6 +54,7 @@ describe("Deposit", () => {
       currency: PaymentCurrency.USDT,
       amount: "100",
       transactionId: "transaction-1",
+      provider: PaymentProvider.FAKE_PROVIDER,
     });
 
     deposit.markCompleted();

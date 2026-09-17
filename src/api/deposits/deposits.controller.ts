@@ -61,6 +61,7 @@ export class DepositsController {
       userId: req.session.userId!,
       currency: dto.currency,
       amount: dto.amount,
+      provider: dto.provider,
     });
   }
 
