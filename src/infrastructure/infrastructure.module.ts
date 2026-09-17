@@ -113,8 +113,6 @@ import {
   PAYMENT_PROVIDER_RESOLVER,
 } from "@application/interfaces/payment-provider-resolver.interface";
 
-import { PaymentProviderResolver } from "@application/interfaces/payment-provider-resolver.interface";
-
 import { PaymentProviderResolverService } from "./services/payment-provider-resolver.service";
 import { PaymentProviderInterface } from "@application/interfaces/payment-provider.interface";
 
