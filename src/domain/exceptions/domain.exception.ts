@@ -158,12 +158,6 @@ export class DepositChangeStatusNotAllowedException extends DomainException {
   }
 }
 
-export class DepositCannotCancelException extends DomainException {
-  constructor(status: string) {
-    super(`Deposit cannot be cancelled from status ${status}.`);
-  }
-}
-
 export class DepositCannotFailException extends DomainException {
   constructor(status: string) {
     super(`Deposit cannot be marked as failed from status ${status}.`);

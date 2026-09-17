@@ -2,7 +2,6 @@ import { Deposit } from "./deposit.entity";
 import { DepositStatus } from "../enums/deposit-status.enum";
 import { PaymentCurrency } from "../enums/payment-currency.enum";
 import {
-  DepositCannotCancelException,
   DepositCannotFailException,
   DepositChangeStatusNotAllowedException,
 } from "../exceptions/domain.exception";
@@ -85,21 +84,5 @@ describe("Deposit", () => {
     deposit.markCompleted();
 
     expect(() => deposit.markFailed()).toThrow(DepositCannotFailException);
-  });
-
-  it("marks a pending deposit as cancelled", () => {
-    const deposit = createDeposit();
-
-    deposit.markCancelled();
-
-    expect(deposit.status).toBe(DepositStatus.CANCELLED);
-  });
-
-  it("rejects cancelling a non-pending deposit", () => {
-    const deposit = createDeposit();
-
-    deposit.markCancelled();
-
-    expect(() => deposit.markCancelled()).toThrow(DepositCannotCancelException);
   });
 });

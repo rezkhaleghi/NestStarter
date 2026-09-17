@@ -380,7 +380,6 @@ Deposit statuses currently include:
 PENDING
 COMPLETED
 FAILED
-CANCELLED
 ```
 
 The domain controls valid state changes such as:
@@ -388,7 +387,6 @@ The domain controls valid state changes such as:
 ```text
 PENDING → COMPLETED
 PENDING → FAILED
-PENDING → CANCELLED
 ```
 
 A deposit has both an application-generated `referenceId` and an optional provider payment identifier.
@@ -426,7 +424,6 @@ PROCESSING
 COMPLETED
 FAILED
 REJECTED
-CANCELLED
 ```
 
 The domain controls valid state transitions.
@@ -1448,7 +1445,6 @@ USER_BALANCE_UPDATED
 DEPOSIT_CREATED
 DEPOSIT_COMPLETED
 DEPOSIT_FAILED
-DEPOSIT_CANCELLED
 
 WITHDRAWAL_REQUESTED
 WITHDRAWAL_APPROVED

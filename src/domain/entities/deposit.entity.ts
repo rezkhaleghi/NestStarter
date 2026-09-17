@@ -77,13 +77,4 @@ export class Deposit {
     this.status = DepositStatus.FAILED;
     this.updatedAt = new Date();
   }
-
-  markCancelled(): void {
-    if (this.status !== DepositStatus.PENDING) {
-      throw new DepositCannotCancelException(this.status);
-    }
-
-    this.status = DepositStatus.CANCELLED;
-    this.updatedAt = new Date();
-  }
 }
