@@ -56,4 +56,14 @@ describe("TicketMessage", () => {
 
     expect(() => message.updateBody("   ")).toThrow(FieldMustExistException);
   });
+
+  it("rejects an empty body during creation", () => {
+    expect(() =>
+      TicketMessage.create({
+        ticketId: "ticket-1",
+        senderUserId: "user-1",
+        body: "   ",
+      }),
+    ).toThrow(FieldMustExistException);
+  });
 });

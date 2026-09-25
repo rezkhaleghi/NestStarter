@@ -113,4 +113,12 @@ describe("TicketCategory", () => {
 
     expect(category.isActive).toBe(false);
   });
+
+  it("rejects an empty category name during creation", () => {
+    expect(() =>
+      TicketCategory.create({
+        name: "   ",
+      }),
+    ).toThrow(FieldMustExistException);
+  });
 });

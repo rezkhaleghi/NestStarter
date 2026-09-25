@@ -1,5 +1,6 @@
-import { FieldMustExistException } from "@domain/exceptions/domain.exception";
 import { randomUUID } from "crypto";
+
+import { FieldMustExistException } from "@domain/exceptions/domain.exception";
 
 export interface CreateTicketCategoryProps {
   id?: string;
@@ -21,9 +22,15 @@ export class TicketCategory {
   ) {}
 
   static create(props: CreateTicketCategoryProps): TicketCategory {
+    const name = props.name.trim();
+
+    if (!name) {
+      throw new FieldMustExistException("Ticket category name");
+    }
+
     return new TicketCategory(
       props.id ?? randomUUID(),
-      props.name.trim(),
+      name,
       props.description?.trim() ?? null,
       props.isActive ?? true,
       props.createdAt ?? new Date(),
@@ -38,9 +45,11 @@ export class TicketCategory {
   }): void {
     if (params.name !== undefined) {
       const value = params.name.trim();
+
       if (!value) {
         throw new FieldMustExistException("Ticket category name");
       }
+
       this.name = value;
     }
 
