@@ -164,6 +164,14 @@ export class DepositCannotFailException extends DomainException {
   }
 }
 
+export class InvalidDepositCompletionException extends DomainException {
+  constructor() {
+    super(
+      "Completed deposit must have completedAt, and non-completed deposits must not have completedAt.",
+    );
+  }
+}
+
 //ticket
 export class TicketNotFoundException extends DomainException {
   constructor() {

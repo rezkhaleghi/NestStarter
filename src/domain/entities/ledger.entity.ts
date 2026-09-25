@@ -114,6 +114,10 @@ export class Ledger {
       throw new InvalidLedgerEntryException();
     }
 
+    if (isNegativeDecimal(balanceBefore) || isNegativeDecimal(balanceAfter)) {
+      throw new InvalidLedgerEntryException();
+    }
+
     switch (type) {
       case LedgerType.DEPOSIT:
       case LedgerType.REFUND:

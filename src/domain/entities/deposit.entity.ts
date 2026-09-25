@@ -6,7 +6,10 @@ import { DepositStatus } from "../enums/deposit-status.enum";
 import {
   DepositCannotFailException,
   DepositChangeStatusNotAllowedException,
+  InvalidDepositAmountException,
+  InvalidDepositCompletionException,
 } from "@domain/exceptions/domain.exception";
+import { isNegativeDecimal, isZeroDecimal } from "../utils/decimal.util";
 
 export interface CreateDepositProps {
   id?: string;
@@ -40,6 +43,17 @@ export class Deposit {
   ) {}
 
   static create(props: CreateDepositProps): Deposit {
+    if (isNegativeDecimal(props.amount) || isZeroDecimal(props.amount)) {
+      throw new InvalidDepositAmountException();
+    }
+
+    if (props.status !== DepositStatus.COMPLETED && props.completedAt != null) {
+      throw new InvalidDepositCompletionException();
+    }
+
+    if (props.status === DepositStatus.COMPLETED && props.completedAt == null) {
+      throw new InvalidDepositCompletionException();
+    }
     return new Deposit(
       props.id ?? randomUUID(),
       props.userId,
