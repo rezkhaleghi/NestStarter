@@ -30,12 +30,12 @@ describe("AdminAuthGuard", () => {
   });
 
   it("allows an administrator and attaches the user", async () => {
-    const admin = new User(
-      "admin-id",
-      "admin@example.com",
-      "hashed",
-      UserRole.ADMIN,
-    );
+    const admin = User.create({
+      id: "admin-id",
+      email: "admin@example.com",
+      hashedPassword: "hashed",
+      role: UserRole.ADMIN,
+    });
 
     request.session.userId = admin.id;
     findById.mockResolvedValue(admin);
@@ -64,12 +64,12 @@ describe("AdminAuthGuard", () => {
   });
 
   it("rejects a regular user", async () => {
-    const user = new User(
-      "user-id",
-      "user@example.com",
-      "hashed",
-      UserRole.USER,
-    );
+    const user = User.create({
+      id: "user-id",
+      email: "user@example.com",
+      hashedPassword: "hashed",
+      role: UserRole.USER,
+    });
 
     request.session.userId = user.id;
     findById.mockResolvedValue(user);

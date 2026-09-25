@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { User } from "@domain/entities/user.entity";
 import { UserRole } from "@domain/enums/user-role.enum";
 import { GoogleAuthUseCase } from "./google-auth.use-case";
+import { UserStatus } from "@domain/enums/user-status.enum";
 
 describe("GoogleAuthUseCase", () => {
   const findByEmail = jest.fn<() => Promise<User | null>>();
@@ -21,16 +22,23 @@ describe("GoogleAuthUseCase", () => {
   });
 
   it("returns an account already linked to Google", async () => {
-    const user = new User(
-      "user-id",
-      "user@example.com",
-      null,
-      UserRole.USER,
-      true,
-      new Date(),
-      new Date(),
-      "google-id",
-    );
+    const user = User.restore({
+      id: "user-id",
+      email: "user@example.com",
+      hashedPassword: null,
+      role: UserRole.USER,
+      emailVerified: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      googleId: "google-id",
+      firstName: null,
+      lastName: null,
+      userName: null,
+      dateOfBirth: null,
+      avatar: null,
+      bio: null,
+      status: UserStatus.ACTIVE,
+    });
 
     findByGoogleId.mockResolvedValue(user);
 
@@ -47,7 +55,11 @@ describe("GoogleAuthUseCase", () => {
   });
 
   it("links and verifies an existing local account", async () => {
-    const user = new User("user-id", "user@example.com", "hashed-password");
+    const user = User.create({
+      id: "user-id",
+      email: "user@example.com",
+      hashedPassword: "hashed-password",
+    });
 
     findByGoogleId.mockResolvedValue(null);
     findByEmail.mockResolvedValue(user);

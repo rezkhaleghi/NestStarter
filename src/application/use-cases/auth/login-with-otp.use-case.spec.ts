@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { User } from "@domain/entities/user.entity";
 import { InvalidOtpException } from "@domain/exceptions/domain.exception";
 import { LoginWithOtpUseCase } from "./login-with-otp.use-case";
+import { UserRole } from "@domain/enums/user-role.enum";
 
 describe("LoginWithOtpUseCase", () => {
   const findByEmail = jest.fn<() => Promise<User | null>>();
@@ -18,13 +19,13 @@ describe("LoginWithOtpUseCase", () => {
   });
 
   it("authenticates with a valid OTP", async () => {
-    const user = new User(
-      "user-id",
-      "user@example.com",
-      "hashed-password",
-      undefined,
-      true,
-    );
+    const user = User.create({
+      id: "user-id",
+      email: "user@example.com",
+      hashedPassword: "hashed-password",
+      role: UserRole.USER,
+      emailVerified: true,
+    });
 
     findByEmail.mockResolvedValue(user);
     verify.mockResolvedValue(true);
@@ -39,12 +40,11 @@ describe("LoginWithOtpUseCase", () => {
   });
 
   it("verifies an unverified user after a valid OTP", async () => {
-    const unverifiedUser = new User(
-      "user-id",
-      "user@example.com",
-      "hashed-password",
-    );
-
+    const unverifiedUser = User.create({
+      id: "user-id",
+      email: "user@example.com",
+      hashedPassword: "hashed-password",
+    });
     findByEmail.mockResolvedValue(unverifiedUser);
     verify.mockResolvedValue(true);
     save.mockResolvedValue(unverifiedUser);
@@ -58,13 +58,13 @@ describe("LoginWithOtpUseCase", () => {
   });
 
   it("does not save an already verified user", async () => {
-    const verifiedUser = new User(
-      "user-id",
-      "user@example.com",
-      "hashed-password",
-      undefined,
-      true,
-    );
+    const verifiedUser = User.create({
+      id: "user-id",
+      email: "user@example.com",
+      hashedPassword: "hashed-password",
+      role: UserRole.USER,
+      emailVerified: true,
+    });
 
     findByEmail.mockResolvedValue(verifiedUser);
     verify.mockResolvedValue(true);
@@ -78,13 +78,13 @@ describe("LoginWithOtpUseCase", () => {
   });
 
   it("rejects an invalid OTP", async () => {
-    const user = new User(
-      "user-id",
-      "user@example.com",
-      "hashed-password",
-      undefined,
-      true,
-    );
+    const user = User.create({
+      id: "user-id",
+      email: "user@example.com",
+      hashedPassword: "hashed-password",
+      role: UserRole.USER,
+      emailVerified: true,
+    });
 
     findByEmail.mockResolvedValue(user);
     verify.mockResolvedValue(false);

@@ -5,6 +5,8 @@ import {
   UsernameAlreadyExistsException,
 } from "@domain/exceptions/domain.exception";
 import { UpdateCurrentUserUseCase } from "./update-current-user.use-case";
+import { UserRole } from "@domain/enums/user-role.enum";
+import { UserStatus } from "@domain/enums/user-status.enum";
 
 describe("UpdateCurrentUserUseCase", () => {
   const findById = jest.fn<() => Promise<User | null>>();
@@ -24,20 +26,23 @@ describe("UpdateCurrentUserUseCase", () => {
   it("updates supplied profile fields and preserves omitted fields", async () => {
     const dateOfBirth = new Date("1990-01-01");
 
-    const existing = new User(
-      "id",
-      "user@example.com",
-      "hashed",
-      undefined,
-      true,
-      new Date(),
-      new Date(),
-      "google",
-      "Old",
-      "Name",
-      "old_name",
+    const existing = User.restore({
+      id: "id",
+      email: "user@example.com",
+      hashedPassword: "hashed",
+      role: UserRole.USER,
+      emailVerified: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      googleId: "google",
+      firstName: "Old",
+      lastName: "Name",
+      userName: "old_name",
       dateOfBirth,
-    );
+      avatar: null,
+      bio: null,
+      status: UserStatus.ACTIVE,
+    });
 
     findById.mockResolvedValue(existing);
     findByUserName.mockResolvedValue(null);
@@ -63,22 +68,23 @@ describe("UpdateCurrentUserUseCase", () => {
   });
 
   it("updates the bio", async () => {
-    const existing = new User(
-      "id",
-      "user@example.com",
-      "hashed",
-      undefined,
-      true,
-      undefined,
-      undefined,
-      undefined,
-      "Jane",
-      "Doe",
-      "jane",
-      undefined,
-      undefined,
-      "Old bio",
-    );
+    const existing = User.restore({
+      id: "id",
+      email: "user@example.com",
+      hashedPassword: "hashed",
+      role: UserRole.USER,
+      emailVerified: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      googleId: null,
+      firstName: "Jane",
+      lastName: "Doe",
+      userName: "jane",
+      dateOfBirth: null,
+      avatar: null,
+      bio: "Old bio",
+      status: UserStatus.ACTIVE,
+    });
 
     findById.mockResolvedValue(existing);
     save.mockImplementation(async (user) => user);
@@ -93,19 +99,23 @@ describe("UpdateCurrentUserUseCase", () => {
   });
 
   it("allows changing the username when it is unused", async () => {
-    const existing = new User(
-      "id",
-      "user@example.com",
-      "hashed",
-      undefined,
-      true,
-      undefined,
-      undefined,
-      undefined,
-      "Jane",
-      "Doe",
-      "old_name",
-    );
+    const existing = User.restore({
+      id: "id",
+      email: "user@example.com",
+      hashedPassword: "hashed",
+      role: UserRole.USER,
+      emailVerified: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      googleId: null,
+      firstName: "Jane",
+      lastName: "Doe",
+      userName: "old_name",
+      dateOfBirth: null,
+      avatar: null,
+      bio: null,
+      status: UserStatus.ACTIVE,
+    });
 
     findById.mockResolvedValue(existing);
     findByUserName.mockResolvedValue(null);
@@ -121,19 +131,23 @@ describe("UpdateCurrentUserUseCase", () => {
   });
 
   it("allows keeping the current username", async () => {
-    const existing = new User(
-      "id",
-      "user@example.com",
-      "hashed",
-      undefined,
-      true,
-      undefined,
-      undefined,
-      undefined,
-      "Jane",
-      "Doe",
-      "current_name",
-    );
+    const existing = User.restore({
+      id: "id",
+      email: "user@example.com",
+      hashedPassword: "hashed",
+      role: UserRole.USER,
+      emailVerified: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      googleId: null,
+      firstName: "Jane",
+      lastName: "Doe",
+      userName: "current_name",
+      dateOfBirth: null,
+      avatar: null,
+      bio: null,
+      status: UserStatus.ACTIVE,
+    });
 
     findById.mockResolvedValue(existing);
     findByUserName.mockResolvedValue(existing);
@@ -149,33 +163,41 @@ describe("UpdateCurrentUserUseCase", () => {
   });
 
   it("rejects changing the username to another user's username", async () => {
-    const existing = new User(
-      "id",
-      "user@example.com",
-      "hashed",
-      undefined,
-      true,
-      undefined,
-      undefined,
-      undefined,
-      "Jane",
-      "Doe",
-      "old_name",
-    );
+    const existing = User.restore({
+      id: "id",
+      email: "user@example.com",
+      hashedPassword: "hashed",
+      role: UserRole.USER,
+      emailVerified: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      googleId: null,
+      firstName: "Jane",
+      lastName: "Doe",
+      userName: "old_name",
+      dateOfBirth: null,
+      avatar: null,
+      bio: null,
+      status: UserStatus.ACTIVE,
+    });
 
-    const otherUser = new User(
-      "other-id",
-      "other@example.com",
-      "hashed",
-      undefined,
-      true,
-      undefined,
-      undefined,
-      undefined,
-      "John",
-      "Doe",
-      "taken_name",
-    );
+    const otherUser = User.restore({
+      id: "other-id",
+      email: "other@example.com",
+      hashedPassword: "hashed",
+      role: UserRole.USER,
+      emailVerified: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      googleId: null,
+      firstName: "John",
+      lastName: "Doe",
+      userName: "taken_name",
+      dateOfBirth: null,
+      avatar: null,
+      bio: null,
+      status: UserStatus.ACTIVE,
+    });
 
     findById.mockResolvedValue(existing);
     findByUserName.mockResolvedValue(otherUser);
@@ -192,22 +214,23 @@ describe("UpdateCurrentUserUseCase", () => {
   });
 
   it("allows clearing nullable profile fields", async () => {
-    const existing = new User(
-      "id",
-      "user@example.com",
-      "hashed",
-      undefined,
-      true,
-      undefined,
-      undefined,
-      undefined,
-      "Jane",
-      "Doe",
-      "jane",
-      new Date("1990-01-01"),
-      undefined,
-      "Bio",
-    );
+    const existing = User.restore({
+      id: "id",
+      email: "user@example.com",
+      hashedPassword: "hashed",
+      role: UserRole.USER,
+      emailVerified: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      googleId: null,
+      firstName: "Jane",
+      lastName: "Doe",
+      userName: "jane",
+      dateOfBirth: new Date("1990-01-01"),
+      avatar: null,
+      bio: "Bio",
+      status: UserStatus.ACTIVE,
+    });
 
     findById.mockResolvedValue(existing);
     save.mockImplementation(async (user) => user);
@@ -231,22 +254,23 @@ describe("UpdateCurrentUserUseCase", () => {
   });
 
   it("does not update avatar", async () => {
-    const existing = new User(
-      "id",
-      "user@example.com",
-      "hashed",
-      undefined,
-      true,
-      undefined,
-      undefined,
-      undefined,
-      "Jane",
-      "Doe",
-      "jane",
-      undefined,
-      undefined,
-      "Bio",
-    );
+    const existing = User.restore({
+      id: "id",
+      email: "user@example.com",
+      hashedPassword: "hashed",
+      role: UserRole.USER,
+      emailVerified: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      googleId: null,
+      firstName: "Jane",
+      lastName: "Doe",
+      userName: "jane",
+      dateOfBirth: null,
+      avatar: null,
+      bio: "Bio",
+      status: UserStatus.ACTIVE,
+    });
 
     existing.avatar = "avatar.jpg";
     findById.mockResolvedValue(existing);

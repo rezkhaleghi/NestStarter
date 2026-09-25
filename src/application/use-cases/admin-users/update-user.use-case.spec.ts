@@ -49,13 +49,13 @@ describe("UpdateAdminUserUseCase", () => {
   });
 
   it("updates profile data and creates an audit log", async () => {
-    const user = new User(
-      "id",
-      "user@example.com",
-      "old-hash",
-      UserRole.USER,
-      true,
-    );
+    const user = User.create({
+      id: "id",
+      email: "user@example.com",
+      hashedPassword: "old-hash",
+      role: UserRole.USER,
+      emailVerified: true,
+    });
 
     repository.findByIdForUpdate.mockResolvedValue(user);
     repository.findByUserName.mockResolvedValue(null);
@@ -115,18 +115,23 @@ describe("UpdateAdminUserUseCase", () => {
   });
 
   it("rejects duplicate usernames", async () => {
-    const user = new User(
-      "id",
-      "user@example.com",
-      "old-hash",
-      UserRole.USER,
-      true,
-    );
+    const user = User.create({
+      id: "id",
+      email: "user@example.com",
+      hashedPassword: "old-hash",
+      role: UserRole.USER,
+      emailVerified: true,
+    });
 
     repository.findByIdForUpdate.mockResolvedValue(user);
 
     repository.findByUserName.mockResolvedValue(
-      new User("other", "other@example.com", "old-hash", UserRole.USER),
+      User.create({
+        id: "other",
+        email: "other@example.com",
+        hashedPassword: "old-hash",
+        role: UserRole.USER,
+      }),
     );
 
     const useCase = new UpdateAdminUserUseCase(
@@ -149,18 +154,23 @@ describe("UpdateAdminUserUseCase", () => {
   });
 
   it("rejects duplicate emails", async () => {
-    const user = new User(
-      "id",
-      "user@example.com",
-      "old-hash",
-      UserRole.USER,
-      true,
-    );
+    const user = User.create({
+      id: "id",
+      email: "user@example.com",
+      hashedPassword: "old-hash",
+      role: UserRole.USER,
+      emailVerified: true,
+    });
 
     repository.findByIdForUpdate.mockResolvedValue(user);
 
     repository.findByEmail.mockResolvedValue(
-      new User("other", "other@example.com", "old-hash", UserRole.USER),
+      User.create({
+        id: "other",
+        email: "other@example.com",
+        hashedPassword: "old-hash",
+        role: UserRole.USER,
+      }),
     );
 
     const useCase = new UpdateAdminUserUseCase(
@@ -183,13 +193,13 @@ describe("UpdateAdminUserUseCase", () => {
   });
 
   it("changes the password and creates a password audit log", async () => {
-    const user = new User(
-      "id",
-      "user@example.com",
-      "old-hash",
-      UserRole.USER,
-      true,
-    );
+    const user = User.create({
+      id: "id",
+      email: "user@example.com",
+      hashedPassword: "old-hash",
+      role: UserRole.USER,
+      emailVerified: true,
+    });
 
     repository.findByIdForUpdate.mockResolvedValue(user);
 
@@ -226,13 +236,13 @@ describe("UpdateAdminUserUseCase", () => {
   });
 
   it("changes the role and creates a role audit log", async () => {
-    const user = new User(
-      "id",
-      "user@example.com",
-      "old-hash",
-      UserRole.USER,
-      true,
-    );
+    const user = User.create({
+      id: "id",
+      email: "user@example.com",
+      hashedPassword: "old-hash",
+      role: UserRole.USER,
+      emailVerified: true,
+    });
 
     repository.findByIdForUpdate.mockResolvedValue(user);
 
@@ -269,13 +279,13 @@ describe("UpdateAdminUserUseCase", () => {
   });
 
   it("prevents demoting the last admin", async () => {
-    const user = new User(
-      "id",
-      "admin@example.com",
-      "old-hash",
-      UserRole.ADMIN,
-      true,
-    );
+    const user = User.create({
+      id: "id",
+      email: "admin@example.com",
+      hashedPassword: "old-hash",
+      role: UserRole.ADMIN,
+      emailVerified: true,
+    });
 
     repository.findByIdForUpdate.mockResolvedValue(user);
 
@@ -302,13 +312,13 @@ describe("UpdateAdminUserUseCase", () => {
   });
 
   it("changes account status and creates an update audit log", async () => {
-    const user = new User(
-      "id",
-      "user@example.com",
-      "old-hash",
-      UserRole.USER,
-      true,
-    );
+    const user = User.create({
+      id: "id",
+      email: "user@example.com",
+      hashedPassword: "old-hash",
+      role: UserRole.USER,
+      emailVerified: true,
+    });
 
     repository.findByIdForUpdate.mockResolvedValue(user);
 
@@ -347,22 +357,23 @@ describe("UpdateAdminUserUseCase", () => {
   });
 
   it("can explicitly clear nullable profile fields", async () => {
-    const user = new User(
-      "id",
-      "user@example.com",
-      "old-hash",
-      UserRole.USER,
-      true,
-      new Date(),
-      new Date(),
-      null,
-      "John",
-      "Doe",
-      "john",
-      new Date("2000-01-01"),
-      "avatars/id/avatar.webp",
-      "Old bio",
-    );
+    const user = User.restore({
+      id: "id",
+      email: "user@example.com",
+      hashedPassword: "old-hash",
+      role: UserRole.USER,
+      emailVerified: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      googleId: null,
+      firstName: "John",
+      lastName: "Doe",
+      userName: "john",
+      dateOfBirth: new Date("2000-01-01"),
+      avatar: "avatars/id/avatar.webp",
+      bio: "Old bio",
+      status: UserStatus.ACTIVE,
+    });
 
     repository.findByIdForUpdate.mockResolvedValue(user);
 
@@ -425,13 +436,13 @@ describe("UpdateAdminUserUseCase", () => {
   });
 
   it("does not create an update audit log when nothing changed", async () => {
-    const user = new User(
-      "id",
-      "user@example.com",
-      "old-hash",
-      UserRole.USER,
-      true,
-    );
+    const user = User.create({
+      id: "id",
+      email: "user@example.com",
+      hashedPassword: "old-hash",
+      role: UserRole.USER,
+      emailVerified: true,
+    });
 
     repository.findByIdForUpdate.mockResolvedValue(user);
 

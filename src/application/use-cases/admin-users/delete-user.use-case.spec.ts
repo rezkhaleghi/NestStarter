@@ -43,7 +43,12 @@ describe("DeleteAdminUserUseCase", () => {
 
   it("rejects deleting yourself", async () => {
     repository.findByIdForUpdate.mockResolvedValue(
-      new User("id", "admin@example.com", "hashed", UserRole.ADMIN),
+      User.create({
+        id: "id",
+        email: "admin@example.com",
+        hashedPassword: "hashed",
+        role: UserRole.ADMIN,
+      }),
     );
 
     const useCase = new DeleteAdminUserUseCase(unitOfWork as any);
@@ -58,9 +63,13 @@ describe("DeleteAdminUserUseCase", () => {
 
   it("rejects deleting the last admin", async () => {
     repository.findByIdForUpdate.mockResolvedValue(
-      new User("id", "admin@example.com", "hashed", UserRole.ADMIN),
+      User.create({
+        id: "id",
+        email: "admin@example.com",
+        hashedPassword: "hashed",
+        role: UserRole.ADMIN,
+      }),
     );
-
     repository.deleteAdminUser.mockResolvedValue(false);
 
     const useCase = new DeleteAdminUserUseCase(unitOfWork as any);
@@ -74,12 +83,12 @@ describe("DeleteAdminUserUseCase", () => {
   });
 
   it("deletes a user and creates an audit log", async () => {
-    const user = new User(
-      "user-id",
-      "user@example.com",
-      "hashed",
-      UserRole.USER,
-    );
+    const user = User.create({
+      id: "user-id",
+      email: "user@example.com",
+      hashedPassword: "hashed",
+      role: UserRole.USER,
+    });
 
     repository.findByIdForUpdate.mockResolvedValue(user);
     repository.deleteAdminUser.mockResolvedValue(true);

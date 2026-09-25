@@ -62,22 +62,23 @@ describe("User", () => {
   });
 
   it("clears profile fields when explicitly set to null", () => {
-    const user = new User(
-      "user-1",
-      "user@example.com",
-      "hashed-password",
-      UserRole.USER,
-      false,
-      new Date(),
-      new Date(),
-      null,
-      "Reza",
-      "Khaleghi",
-      "reza",
-      new Date("2000-01-01"),
-      "avatar.webp",
-      "Bio",
-    );
+    const user = User.restore({
+      id: "user-1",
+      email: "user@example.com",
+      hashedPassword: "hashed-password",
+      role: UserRole.USER,
+      emailVerified: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      googleId: null,
+      firstName: "Reza",
+      lastName: "Khaleghi",
+      userName: "reza",
+      dateOfBirth: new Date("2000-01-01"),
+      avatar: "avatar.webp",
+      bio: "Bio",
+      status: UserStatus.ACTIVE,
+    });
 
     user.update({
       firstName: null,
@@ -97,22 +98,23 @@ describe("User", () => {
   });
 
   it("does not change profile fields that are undefined", () => {
-    const user = new User(
-      "user-1",
-      "user@example.com",
-      "hashed-password",
-      UserRole.USER,
-      false,
-      new Date(),
-      new Date(),
-      null,
-      "Reza",
-      "Khaleghi",
-      "reza",
-      null,
-      null,
-      "Bio",
-    );
+    const user = User.restore({
+      id: "user-1",
+      email: "user@example.com",
+      hashedPassword: "hashed-password",
+      role: UserRole.USER,
+      emailVerified: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      googleId: null,
+      firstName: "Reza",
+      lastName: "Khaleghi",
+      userName: "reza",
+      dateOfBirth: null,
+      avatar: null,
+      bio: "Bio",
+      status: UserStatus.ACTIVE,
+    });
 
     user.update({
       firstName: undefined,
@@ -202,23 +204,23 @@ describe("User", () => {
   });
 
   it("activates a restricted user", () => {
-    const user = new User(
-      "user-1",
-      "user@example.com",
-      "hashed-password",
-      UserRole.USER,
-      false,
-      new Date(),
-      new Date(),
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      UserStatus.RESTRICTED,
-    );
+    const user = User.restore({
+      id: "user-1",
+      email: "user@example.com",
+      hashedPassword: "hashed-password",
+      role: UserRole.USER,
+      emailVerified: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      googleId: null,
+      firstName: null,
+      lastName: null,
+      userName: null,
+      dateOfBirth: null,
+      avatar: null,
+      bio: null,
+      status: UserStatus.RESTRICTED,
+    });
 
     user.activate();
 

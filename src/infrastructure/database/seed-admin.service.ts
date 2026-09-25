@@ -1,5 +1,4 @@
 import { Injectable, OnModuleInit } from "@nestjs/common";
-import { randomUUID } from "crypto";
 import { ConfigService } from "@nestjs/config";
 import { User } from "@domain/entities/user.entity";
 import { UserRole } from "@domain/enums/user-role.enum";
@@ -28,13 +27,13 @@ export class SeedAdminService implements OnModuleInit {
       return;
     }
 
-    const admin = new User(
-      randomUUID(),
+    const admin = User.create({
       email,
-      await this.passwordHasher.hash(password),
-      UserRole.ADMIN,
-      true,
-    );
+      hashedPassword: await this.passwordHasher.hash(password),
+      role: UserRole.ADMIN,
+      emailVerified: true,
+    });
+
     await this.userRepository.save(admin);
   }
 }

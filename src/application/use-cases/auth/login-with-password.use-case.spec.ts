@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { User } from "@domain/entities/user.entity";
 import { InvalidCredentialsException } from "@domain/exceptions/domain.exception";
 import { LoginWithPasswordUseCase } from "./login-with-password.use-case";
+import { UserRole } from "@domain/enums/user-role.enum";
+import { UserStatus } from "@domain/enums/user-status.enum";
 
 describe("LoginWithPasswordUseCase", () => {
   const findByEmail = jest.fn<() => Promise<User | null>>();
@@ -26,13 +28,13 @@ describe("LoginWithPasswordUseCase", () => {
   });
 
   it("authenticates a password user", async () => {
-    const user = new User(
-      "user-id",
-      "user@example.com",
-      "hashed-password",
-      undefined,
-      true,
-    );
+    const user = User.create({
+      id: "user-id",
+      email: "user@example.com",
+      hashedPassword: "hashed-password",
+      role: UserRole.USER,
+      emailVerified: true,
+    });
 
     findByEmail.mockResolvedValue(user);
     compare.mockResolvedValue(true);
@@ -51,13 +53,13 @@ describe("LoginWithPasswordUseCase", () => {
   });
 
   it("rejects an invalid password", async () => {
-    const user = new User(
-      "user-id",
-      "user@example.com",
-      "hashed-password",
-      undefined,
-      true,
-    );
+    const user = User.create({
+      id: "user-id",
+      email: "user@example.com",
+      hashedPassword: "hashed-password",
+      role: UserRole.USER,
+      emailVerified: true,
+    });
 
     findByEmail.mockResolvedValue(user);
     compare.mockResolvedValue(false);
@@ -109,13 +111,13 @@ describe("LoginWithPasswordUseCase", () => {
   });
 
   it("rejects password login when the user has no password", async () => {
-    const googleUser = new User(
-      "user-id",
-      "user@example.com",
-      null,
-      undefined,
-      true,
-    );
+    const googleUser = User.create({
+      id: "user-id",
+      email: "user@example.com",
+      hashedPassword: null,
+      role: UserRole.USER,
+      emailVerified: true,
+    });
 
     findByEmail.mockResolvedValue(googleUser);
 
@@ -133,13 +135,13 @@ describe("LoginWithPasswordUseCase", () => {
   });
 
   it("clears previous login failures after successful authentication", async () => {
-    const user = new User(
-      "user-id",
-      "user@example.com",
-      "hashed-password",
-      undefined,
-      true,
-    );
+    const user = User.create({
+      id: "user-id",
+      email: "user@example.com",
+      hashedPassword: "hashed-password",
+      role: UserRole.USER,
+      emailVerified: true,
+    });
 
     findByEmail.mockResolvedValue(user);
     compare.mockResolvedValue(true);

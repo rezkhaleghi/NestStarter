@@ -3,6 +3,7 @@ import { User } from "@domain/entities/user.entity";
 import { UserRole } from "@domain/enums/user-role.enum";
 import { UserNotFoundException } from "@domain/exceptions/domain.exception";
 import { ChangeUserPasswordUseCase } from "./change-user-password.use-case";
+import { UserStatus } from "@domain/enums/user-status.enum";
 
 describe("ChangeUserPasswordUseCase", () => {
   const findById = jest.fn<() => Promise<User | null>>();
@@ -21,22 +22,23 @@ describe("ChangeUserPasswordUseCase", () => {
   it("hashes and saves the new password without losing profile data", async () => {
     const dateOfBirth = new Date("1990-01-01");
 
-    const user = new User(
-      "id",
-      "user@example.com",
-      "old",
-      UserRole.USER,
-      true,
-      new Date(),
-      new Date(),
-      "google",
-      "Jane",
-      "Doe",
-      "jane",
+    const user = User.restore({
+      id: "id",
+      email: "user@example.com",
+      hashedPassword: "old",
+      role: UserRole.USER,
+      emailVerified: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      googleId: "google",
+      firstName: "Jane",
+      lastName: "Doe",
+      userName: "jane",
       dateOfBirth,
-      "avatar.webp",
-      "Bio",
-    );
+      avatar: "avatar.webp",
+      bio: "Bio",
+      status: UserStatus.ACTIVE,
+    });
 
     findById.mockResolvedValue(user);
     hash.mockResolvedValue("new-hash");

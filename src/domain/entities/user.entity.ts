@@ -28,6 +28,24 @@ export type UpdateUserParams = Partial<{
   bio: string | null;
 }>;
 
+export interface RestoreUserProps {
+  id: string;
+  email: string;
+  hashedPassword: string | null;
+  role: UserRole;
+  emailVerified: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  googleId: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  userName: string | null;
+  dateOfBirth: Date | null;
+  avatar: string | null;
+  bio: string | null;
+  status: UserStatus;
+}
+
 /**
  * Domain entity — represents the business truth about a User.
  *
@@ -221,6 +239,27 @@ export class User {
       new Date(),
       new Date(),
       params.googleId ?? null,
+    );
+  }
+
+  /** * Reconstitutes an existing user from persistence. * * This method intentionally accepts the complete persisted state * instead of applying creation defaults. */
+  static restore(params: RestoreUserProps): User {
+    return new User(
+      params.id,
+      params.email,
+      params.hashedPassword,
+      params.role,
+      params.emailVerified,
+      params.createdAt,
+      params.updatedAt,
+      params.googleId,
+      params.firstName,
+      params.lastName,
+      params.userName,
+      params.dateOfBirth,
+      params.avatar,
+      params.bio,
+      params.status,
     );
   }
 }

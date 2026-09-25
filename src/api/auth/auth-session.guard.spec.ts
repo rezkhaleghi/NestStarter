@@ -28,8 +28,11 @@ describe("AuthSessionGuard", () => {
   });
 
   it("allows an authenticated active user", async () => {
-    const user = new User("user-id", "user@example.com", "hashed-password");
-
+    const user = User.create({
+      id: "user-id",
+      email: "user@example.com",
+      hashedPassword: "hashed-password",
+    });
     findById.mockResolvedValue(user);
 
     await expect(
@@ -56,8 +59,11 @@ describe("AuthSessionGuard", () => {
   });
 
   it("rejects a restricted user", async () => {
-    const user = new User("user-id", "user@example.com", "hashed-password");
-
+    const user = User.create({
+      id: "user-id",
+      email: "user@example.com",
+      hashedPassword: "hashed-password",
+    });
     user.restrict();
 
     expect(user.status).toBe(UserStatus.RESTRICTED);

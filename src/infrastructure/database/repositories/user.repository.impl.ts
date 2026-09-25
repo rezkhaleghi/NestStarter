@@ -387,23 +387,23 @@ export class UserRepositoryImpl implements UserRepository {
    * Database → ORM Entity → Domain Entity
    */
   private toDomain(row: UserOrmEntity): User {
-    return new User(
-      row.id,
-      row.email,
-      row.hashedPassword,
-      row.role,
-      row.emailVerified,
-      row.createdAt,
-      row.updatedAt,
-      row.googleId,
-      row.firstName,
-      row.lastName,
-      row.userName,
-      row.dateOfBirth,
-      row.avatar,
-      row.bio,
-      row.status,
-    );
+    return User.restore({
+      id: row.id,
+      email: row.email,
+      hashedPassword: row.hashedPassword,
+      role: row.role,
+      emailVerified: row.emailVerified,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+      googleId: row.googleId,
+      firstName: row.firstName,
+      lastName: row.lastName,
+      userName: row.userName,
+      dateOfBirth: row.dateOfBirth,
+      avatar: row.avatar,
+      bio: row.bio,
+      status: row.status,
+    });
   }
 
   /**
