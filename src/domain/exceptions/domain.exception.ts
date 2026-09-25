@@ -98,7 +98,7 @@ export class UserBalanceAlreadyExistsException extends DomainException {
 
 export class InvalidUserBalanceException extends DomainException {
   constructor() {
-    super("User balance amount must be positive.");
+    super("User balance amount cannot be negative.");
   }
 }
 
