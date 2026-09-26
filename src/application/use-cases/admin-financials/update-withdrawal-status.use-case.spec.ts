@@ -93,6 +93,7 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
 
     expect(result.getStatus()).toBe(WithdrawalStatus.APPROVED);
     expect(withdrawalRepository.save).toHaveBeenCalledWith(withdrawal);
+
     expect(auditLogRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({
         action: AuditAction.WITHDRAWAL_APPROVED,
@@ -152,6 +153,113 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
         action: AuditAction.WITHDRAWAL_REJECTED,
       }),
     );
+  });
+
+  it("does not refund an already rejected withdrawal", async () => {
+    const withdrawal = createWithdrawal();
+    withdrawal.reject("Already rejected");
+
+    withdrawalRepository.findByIdForUpdate.mockResolvedValue(withdrawal);
+
+    const balance = UserBalance.create({
+      userId: withdrawal.userId,
+      currency: withdrawal.currency,
+      amount: "50",
+    });
+
+    userBalanceRepository.findByUserIdAndCurrencyForUpdate.mockResolvedValue(
+      balance,
+    );
+
+    await expect(
+      useCase.execute({
+        withdrawalId: withdrawal.id,
+        adminUserId: "admin-1",
+        status: WithdrawalStatus.REJECTED,
+        reason: "Duplicate rejection",
+      }),
+    ).rejects.toThrow();
+
+    expect(withdrawal.getStatus()).toBe(WithdrawalStatus.REJECTED);
+    expect(balance.amount).toBe("50");
+
+    expect(userBalanceRepository.save).not.toHaveBeenCalled();
+    expect(ledgerRepository.create).not.toHaveBeenCalled();
+    expect(auditLogRepository.create).not.toHaveBeenCalled();
+  });
+
+  it("refunds the exact withdrawal amount and creates exactly one refund ledger", async () => {
+    const withdrawal = Withdrawal.create({
+      userId: "user-1",
+      currency: PaymentCurrency.USDT,
+      amount: "100.25",
+      destination: "destination-1",
+    });
+
+    withdrawalRepository.findByIdForUpdate.mockResolvedValue(withdrawal);
+
+    const balance = UserBalance.create({
+      userId: withdrawal.userId,
+      currency: withdrawal.currency,
+      amount: "49.75",
+    });
+
+    userBalanceRepository.findByUserIdAndCurrencyForUpdate.mockResolvedValue(
+      balance,
+    );
+
+    await useCase.execute({
+      withdrawalId: withdrawal.id,
+      adminUserId: "admin-1",
+      status: WithdrawalStatus.REJECTED,
+      reason: "Invalid destination",
+    });
+
+    expect(balance.amount).toBe("150");
+    expect(userBalanceRepository.save).toHaveBeenCalledTimes(1);
+    expect(ledgerRepository.create).toHaveBeenCalledTimes(1);
+
+    expect(ledgerRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        amount: "100.25",
+        balanceBefore: "49.75",
+        balanceAfter: "150",
+        type: LedgerType.REFUND,
+        referenceId: withdrawal.referenceId,
+      }),
+    );
+  });
+
+  it("does not save the withdrawal if refund ledger creation fails", async () => {
+    const withdrawal = createWithdrawal();
+
+    withdrawalRepository.findByIdForUpdate.mockResolvedValue(withdrawal);
+
+    const balance = UserBalance.create({
+      userId: withdrawal.userId,
+      currency: withdrawal.currency,
+      amount: "50",
+    });
+
+    userBalanceRepository.findByUserIdAndCurrencyForUpdate.mockResolvedValue(
+      balance,
+    );
+
+    ledgerRepository.create.mockRejectedValue(new Error("ledger failure"));
+
+    await expect(
+      useCase.execute({
+        withdrawalId: withdrawal.id,
+        adminUserId: "admin-1",
+        status: WithdrawalStatus.REJECTED,
+        reason: "Invalid destination",
+      }),
+    ).rejects.toThrow("ledger failure");
+
+    expect(withdrawal.getStatus()).toBe(WithdrawalStatus.REJECTED);
+    expect(userBalanceRepository.save).toHaveBeenCalledWith(balance);
+    expect(withdrawalRepository.save).not.toHaveBeenCalled();
+    expect(auditLogRepository.create).not.toHaveBeenCalled();
   });
 
   it("completes an approved withdrawal", async () => {

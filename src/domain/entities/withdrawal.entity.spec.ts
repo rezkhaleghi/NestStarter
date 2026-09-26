@@ -73,4 +73,61 @@ describe("Withdrawal", () => {
       WithdrawalStatusChangeNotAllowedException,
     );
   });
+
+  it("completes an approved withdrawal with a transaction id", () => {
+    const withdrawal = createWithdrawal();
+
+    withdrawal.approve();
+    withdrawal.complete("tx-123");
+
+    expect(withdrawal.getStatus()).toBe(WithdrawalStatus.COMPLETED);
+    expect(withdrawal.transactionId).toBe("tx-123");
+    expect(withdrawal.completedAt).toBeInstanceOf(Date);
+  });
+
+  it("retains an existing transaction id when completing without a new one", () => {
+    const withdrawal = Withdrawal.create({
+      userId: "user-1",
+      currency: PaymentCurrency.USDT,
+      amount: "100",
+      destination: "destination-1",
+      transactionId: "tx-existing",
+    });
+
+    withdrawal.approve();
+    withdrawal.complete();
+
+    expect(withdrawal.getStatus()).toBe(WithdrawalStatus.COMPLETED);
+    expect(withdrawal.transactionId).toBe("tx-existing");
+    expect(withdrawal.completedAt).toBeInstanceOf(Date);
+  });
+
+  it("rejects completing a pending withdrawal", () => {
+    const withdrawal = createWithdrawal();
+
+    expect(() => withdrawal.complete("tx-123")).toThrow(
+      WithdrawalStatusChangeNotAllowedException,
+    );
+  });
+
+  it("rejects completing a rejected withdrawal", () => {
+    const withdrawal = createWithdrawal();
+
+    withdrawal.reject();
+
+    expect(() => withdrawal.complete("tx-123")).toThrow(
+      WithdrawalStatusChangeNotAllowedException,
+    );
+  });
+
+  it("rejects completing an already completed withdrawal", () => {
+    const withdrawal = createWithdrawal();
+
+    withdrawal.approve();
+    withdrawal.complete("tx-123");
+
+    expect(() => withdrawal.complete("tx-456")).toThrow(
+      WithdrawalStatusChangeNotAllowedException,
+    );
+  });
 });
