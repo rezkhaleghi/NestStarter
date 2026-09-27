@@ -1,23 +1,9 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
-import { Type } from "class-transformer";
-import { IsEnum, IsInt, IsOptional, Max, Min } from "class-validator";
+import { IsEnum, IsOptional } from "class-validator";
 
-export class ListDepositsQueryDto {
-  @ApiPropertyOptional({ default: 1, minimum: 1 })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  page = 1;
+import { SortablePaginationQueryDto } from "@shared/pagination/pagination.query.dto";
 
-  @ApiPropertyOptional({ default: 20, minimum: 1, maximum: 100 })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  limit = 20;
-
+export class ListDepositsQueryDto extends SortablePaginationQueryDto {
   @ApiPropertyOptional({
     enum: ["createdAt", "amount"],
     default: "createdAt",
@@ -25,12 +11,4 @@ export class ListDepositsQueryDto {
   @IsOptional()
   @IsEnum(["createdAt", "amount"])
   sortBy: "createdAt" | "amount" = "createdAt";
-
-  @ApiPropertyOptional({
-    enum: ["ASC", "DESC"],
-    default: "DESC",
-  })
-  @IsOptional()
-  @IsEnum(["ASC", "DESC"])
-  sortDirection: "ASC" | "DESC" = "DESC";
 }

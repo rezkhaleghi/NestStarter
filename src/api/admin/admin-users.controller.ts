@@ -27,17 +27,15 @@ import { ChangeUserPasswordUseCase } from "@application/use-cases/users/change-u
 
 import { AdminAuthGuard } from "./admin-auth.guard";
 
-import { GetAuditLogsQueryDto } from "./dtos/get-audit-logs-query.dto";
-import {
-  CreateAdminUserRequestDto,
-  ListUsersQueryDto,
-  UpdateAdminUserRequestDto,
-} from "./dtos/admin-user.request.dto";
-import { ChangeUserPasswordRequestDto } from "./dtos/change-user-password.request.dto";
-import { AdminUserResponseDto } from "./dtos/admin-user.response.dto";
-import { AdminUserListResponseDto } from "./dtos/admin-user-list.response.dto";
+import { UpdateUserPasswordtDto } from "./dtos/users/update-user-password.dto";
+import { AdminUserResponseDto } from "./dtos/users/admin-user.response.dto";
+import { AdminUserListResponseDto } from "./dtos/users/admin-user-list.response.dto";
 
 import { UserStatus } from "@domain/enums/user-status.enum";
+import { ListAuditLogsQueryDto } from "./dtos/audit-logs/list-audit-logs.query.dto";
+import { ListUsersQueryDto } from "./dtos/users/list-users.query.dto";
+import { CreateUserDto } from "./dtos/users/create-user.dto";
+import { UpdateUserDto } from "./dtos/users/update-user.dto";
 
 /**
  * HTTP controller for administrator user management.
@@ -95,7 +93,7 @@ export class AdminUsersController {
     status: 200,
     description: "Paginated audit log list",
   })
-  async auditLogs(@Query() query: GetAuditLogsQueryDto) {
+  async auditLogs(@Query() query: ListAuditLogsQueryDto) {
     const result = await this.getAuditLogsUseCase.execute(
       {
         action: query.action,
@@ -193,10 +191,7 @@ export class AdminUsersController {
     status: 409,
     description: "Email already exists",
   })
-  async create(
-    @Body() dto: CreateAdminUserRequestDto,
-    @Req() request: Request,
-  ) {
+  async create(@Body() dto: CreateUserDto, @Req() request: Request) {
     return this.toResponse(
       await this.createUserUseCase.execute(dto, request.session.userId!),
     );
@@ -233,7 +228,7 @@ export class AdminUsersController {
   })
   async update(
     @Param("id", ParseUUIDPipe) id: string,
-    @Body() dto: UpdateAdminUserRequestDto,
+    @Body() dto: UpdateUserDto,
     @Req() request: Request,
   ) {
     return this.toResponse(
@@ -314,7 +309,7 @@ export class AdminUsersController {
   })
   async changePassword(
     @Param("id", ParseUUIDPipe) id: string,
-    @Body() dto: ChangeUserPasswordRequestDto,
+    @Body() dto: UpdateUserPasswordtDto,
   ) {
     await this.changeUserPasswordUseCase.execute({
       userId: id,

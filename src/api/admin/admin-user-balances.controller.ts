@@ -19,8 +19,8 @@ import { UpdateUserBalanceUseCase } from "@application/use-cases/admin-financial
 import { GetUserBalancesUseCase } from "@application/use-cases/users/get-user-balances.use-case";
 
 import { AdminAuthGuard } from "./admin-auth.guard";
-import { GetUserBalancesQueryDto } from "../users/dtos/user-balance.request.dto";
-import { UpdateUserBalanceRequestDto } from "./dtos/update-user-balance.request.dto";
+import { UpdateUserBalanceDto } from "./dtos/user-balances/update-user-balance.dto";
+import { ListUserBalancesQueryDto } from "@api/users/dtos/list-user-balances.query.dto";
 
 @Controller("admin/users/:userId/balances")
 @ApiTags("admin-user-balances")
@@ -52,7 +52,7 @@ export class AdminUserBalancesController {
   })
   async getBalances(
     @Param("userId", ParseUUIDPipe) userId: string,
-    @Query() query: GetUserBalancesQueryDto,
+    @Query() query: ListUserBalancesQueryDto,
   ) {
     return this.getUserBalancesUseCase.execute(userId, {
       page: query.page,
@@ -87,7 +87,7 @@ export class AdminUserBalancesController {
     @Param("userId", ParseUUIDPipe) userId: string,
     @Param("currency", new ParseEnumPipe(PaymentCurrency))
     currency: PaymentCurrency,
-    @Body() dto: UpdateUserBalanceRequestDto,
+    @Body() dto: UpdateUserBalanceDto,
     @Req() request: Request,
   ) {
     return this.updateUserBalanceUseCase.execute(

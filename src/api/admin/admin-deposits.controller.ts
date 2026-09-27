@@ -9,10 +9,10 @@ import {
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 
 import { AdminAuthGuard } from "./admin-auth.guard";
-import { ListDepositsQueryDto } from "./dtos/financial-query.dto";
 
 import { AdminGetDepositUseCase } from "@application/use-cases/admin-financials/get-deposit.use-case";
 import { AdminListDepositsUseCase } from "@application/use-cases/admin-financials/list-deposits.use-case";
+import { ListDepositsQueryDto } from "./dtos/deposits/list-deposits.query.dto";
 
 @ApiTags("admin-deposits")
 @Controller("admin/deposits")

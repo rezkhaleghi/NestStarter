@@ -1,4 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
+import { PaginationQueryDto } from "@shared/pagination/pagination.query.dto";
 import { Type } from "class-transformer";
 import {
   IsInt,
@@ -9,7 +10,7 @@ import {
   MinLength,
 } from "class-validator";
 
-export class SearchUsersRequestDto {
+export class SearchUsersQueryDto extends PaginationQueryDto {
   @ApiProperty({
     example: "pocketj",
     description:
@@ -19,24 +20,4 @@ export class SearchUsersRequestDto {
   @IsNotEmpty()
   @MinLength(2)
   q: string;
-
-  @ApiProperty({
-    example: 1,
-    default: 1,
-  })
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  page: number = 1;
-
-  @ApiProperty({
-    example: 20,
-    default: 20,
-    maximum: 50,
-  })
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(50)
-  limit: number = 20;
 }

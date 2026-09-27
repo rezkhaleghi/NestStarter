@@ -17,7 +17,7 @@ import { CreateWithdrawalUseCase } from "@application/use-cases/withdrawals/crea
 import { ListWithdrawalsUseCase } from "@application/use-cases/withdrawals/list-withdrawals.use-case";
 import { GetWithdrawalUseCase } from "@application/use-cases/withdrawals/get-withdrawal.use-case";
 
-import { CreateWithdrawalRequestDto } from "./dtos/create-withdrawal.request.dto";
+import { CreateWithdrawalRequestDto } from "./dtos/create-withdrawal.dto";
 import { ListWithdrawalsQueryDto } from "./dtos/list-withdrawals.query.dto";
 
 @ApiTags("withdrawals")

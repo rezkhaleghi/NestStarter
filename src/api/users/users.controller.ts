@@ -43,12 +43,12 @@ import { SearchUsersUseCase } from "@application/use-cases/users/search-users.us
 
 import { UpdateProfileRequestDto } from "../auth/dtos/update-profile.request.dto";
 
-import { SearchUsersRequestDto } from "./dtos/search-users.request.dto";
+import { SearchUsersQueryDto } from "./dtos/search-users.request.dto";
 
 import { AuthenticatedUserResponseDto } from "../auth/dtos/authenticated-user.response.dto";
 
 import { GetUserBalancesUseCase } from "@application/use-cases/users/get-user-balances.use-case";
-import { GetUserBalancesQueryDto } from "@api/users/dtos/user-balance.request.dto";
+import { ListUserBalancesQueryDto } from "@api/users/dtos/user-balance.request.dto";
 
 @ApiTags("users")
 @Controller("users")
@@ -97,7 +97,7 @@ export class UsersController {
     description: "Not authenticated",
   })
   async getMyBalances(
-    @Query() query: GetUserBalancesQueryDto,
+    @Query() query: ListUserBalancesQueryDto,
     @Req() req: Request,
   ) {
     return this.getCurrentUserBalancesUseCase.execute(req.session.userId!, {
@@ -223,7 +223,7 @@ export class UsersController {
     status: 200,
     description: "Users matching the search query",
   })
-  async search(@Query() query: SearchUsersRequestDto) {
+  async search(@Query() query: SearchUsersQueryDto) {
     return this.searchUsersUseCase.execute(query.q, {
       page: query.page,
       limit: query.limit,

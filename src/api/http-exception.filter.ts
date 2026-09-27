@@ -1,26 +1,50 @@
 import {
   ArgumentsHost,
   Catch,
-  ConflictException,
   ExceptionFilter,
   HttpException,
+  HttpStatus,
   Logger,
-  NotFoundException,
-  UnauthorizedException,
 } from "@nestjs/common";
 import { Request, Response } from "express";
+
 import {
-  CannotRemoveLastAdminException,
   CannotDeleteSelfException,
+  CannotRemoveLastAdminException,
+  DecimalScaleExceededException,
+  DepositChangeStatusNotAllowedException,
+  DepositCannotFailException,
+  DepositIdempotencyConflictException,
+  DepositNotFoundException,
   DomainException,
-  InvalidCredentialsException,
-  InvalidOtpException,
+  FileNotFoundException,
+  FieldMustExistException,
   GoogleAccountConflictException,
-  UserAlreadyExistsException,
-  UsernameAlreadyExistsException,
-  UserNotFoundException,
+  InsufficientBalanceException,
+  InvalidCredentialsException,
+  InvalidDecimalValueException,
+  InvalidDepositAmountException,
+  InvalidLedgerEntryException,
+  InvalidOtpException,
+  InvalidUserBalanceException,
+  InvalidWithdrawalAmountException,
+  NotMatchException,
   OtpCooldownException,
+  TicketAccessNotAllowedException,
+  TicketCategoryNotFoundException,
+  TicketClosedException,
+  TicketMustAssignToAdminException,
+  TicketNotFoundException,
+  TicketStatusTransitionException,
+  UnsupportedPaymentCurrencyException,
+  UnsupportedPaymentProviderException,
+  UserAlreadyExistsException,
+  UserBalanceAlreadyExistsException,
   UserBalanceNotFoundException,
+  UserNotFoundException,
+  UsernameAlreadyExistsException,
+  WithdrawalNotFoundException,
+  WithdrawalStatusChangeNotAllowedException,
 } from "@domain/exceptions/domain.exception";
 
 @Catch()
@@ -28,19 +52,17 @@ export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name);
 
   catch(exception: unknown, host: ArgumentsHost): void {
-    const response = host.switchToHttp().getResponse<Response>();
-    const request = host.switchToHttp().getRequest<Request>();
+    const context = host.switchToHttp();
+    const response = context.getResponse<Response>();
+    const request = context.getRequest<Request>();
 
     const status = this.statusFor(exception);
     const requestId =
       response.getHeader("X-Request-Id")?.toString() ?? "unknown";
 
-    /**
-     * Log unexpected server errors with their stack trace.
-     *
-     * We deliberately do not expose the stack trace to the client.
-     */
-    if (status >= 500) {
+    // Only unexpected 5xx errors are logged here.
+    // Expected domain/application errors are normal API control flow.
+    if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
       if (exception instanceof Error) {
         this.logger.error(
           `${request.method} ${request.url} - ${exception.message}`,
@@ -65,10 +87,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
   }
 
   /**
-   * Maps domain exceptions to HTTP status codes.
-   *
-   * Domain exceptions themselves know nothing about HTTP.
-   * This keeps the domain layer independent from NestJS/API concerns.
+   * Domain exceptions stay independent from HTTP.
+   * This API-layer mapping converts business/application failures
+   * into the appropriate REST semantics.
    */
   private statusFor(exception: unknown): number {
     if (exception instanceof HttpException) {
@@ -76,50 +97,85 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
 
     if (!(exception instanceof DomainException)) {
-      return 500;
+      return HttpStatus.INTERNAL_SERVER_ERROR;
     }
 
-    if (exception instanceof InvalidCredentialsException) {
-      return new UnauthorizedException().getStatus();
+    // Authentication
+    if (
+      exception instanceof InvalidCredentialsException ||
+      exception instanceof InvalidOtpException
+    ) {
+      return HttpStatus.UNAUTHORIZED;
     }
 
-    if (exception instanceof InvalidOtpException) {
-      return new UnauthorizedException().getStatus();
+    // Authorization
+    if (exception instanceof TicketAccessNotAllowedException) {
+      return HttpStatus.FORBIDDEN;
     }
 
-    if (exception instanceof GoogleAccountConflictException) {
-      return new UnauthorizedException().getStatus();
+    if (exception instanceof CannotDeleteSelfException) {
+      return HttpStatus.FORBIDDEN;
     }
 
-    if (exception instanceof UserNotFoundException) {
-      return new NotFoundException().getStatus();
+    // Resources that do not exist
+    if (
+      exception instanceof UserNotFoundException ||
+      exception instanceof FileNotFoundException ||
+      exception instanceof UserBalanceNotFoundException ||
+      exception instanceof DepositNotFoundException ||
+      exception instanceof WithdrawalNotFoundException ||
+      exception instanceof TicketNotFoundException ||
+      exception instanceof TicketCategoryNotFoundException
+    ) {
+      return HttpStatus.NOT_FOUND;
     }
 
-    if (exception instanceof UserBalanceNotFoundException) {
-      return new NotFoundException().getStatus();
-    }
-
+    // Resource/state conflicts
     if (
       exception instanceof UserAlreadyExistsException ||
       exception instanceof UsernameAlreadyExistsException ||
+      exception instanceof UserBalanceAlreadyExistsException ||
+      exception instanceof GoogleAccountConflictException ||
       exception instanceof CannotRemoveLastAdminException ||
-      exception instanceof CannotDeleteSelfException
+      exception instanceof DepositIdempotencyConflictException ||
+      exception instanceof DepositChangeStatusNotAllowedException ||
+      exception instanceof DepositCannotFailException ||
+      exception instanceof WithdrawalStatusChangeNotAllowedException ||
+      exception instanceof TicketClosedException ||
+      exception instanceof TicketStatusTransitionException
     ) {
-      return new ConflictException().getStatus();
+      return HttpStatus.CONFLICT;
     }
 
+    // Rate limiting / temporal constraint
     if (exception instanceof OtpCooldownException) {
-      return 429;
+      return HttpStatus.TOO_MANY_REQUESTS;
     }
 
-    // Unknown domain exceptions are treated as bad requests by default.
-    return 400;
+    // Everything else represents invalid input or a business-rule
+    // violation that the client can correct.
+    if (
+      exception instanceof FieldMustExistException ||
+      exception instanceof NotMatchException ||
+      exception instanceof InvalidUserBalanceException ||
+      exception instanceof InsufficientBalanceException ||
+      exception instanceof InvalidLedgerEntryException ||
+      exception instanceof UnsupportedPaymentCurrencyException ||
+      exception instanceof InvalidWithdrawalAmountException ||
+      exception instanceof InvalidDepositAmountException ||
+      exception instanceof TicketMustAssignToAdminException ||
+      exception instanceof InvalidDecimalValueException ||
+      exception instanceof DecimalScaleExceededException ||
+      exception instanceof UnsupportedPaymentProviderException
+    ) {
+      return HttpStatus.BAD_REQUEST;
+    }
+
+    // New domain exceptions default to 400 until explicitly classified.
+    // This prevents an expected domain failure from becoming a misleading 500.
+    return HttpStatus.BAD_REQUEST;
   }
 
-  /**
-   * Extracts a useful message from NestJS HTTP exceptions,
-   * domain exceptions, or falls back to a generic message.
-   */
   private messageFor(exception: unknown, status: number): string | string[] {
     if (exception instanceof HttpException) {
       const body = exception.getResponse();
@@ -141,12 +197,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
       return exception.message;
     }
 
-    return status >= 500 ? "Internal server error" : "Request failed";
+    return status >= HttpStatus.INTERNAL_SERVER_ERROR
+      ? "Internal server error"
+      : "Request failed";
   }
 
-  /**
-   * Returns a consistent error name for the API response.
-   */
   private errorFor(exception: unknown, status: number): string {
     if (exception instanceof HttpException) {
       const body = exception.getResponse();
@@ -166,6 +221,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
       return exception.name;
     }
 
-    return status >= 500 ? "Internal Server Error" : "Error";
+    return status >= HttpStatus.INTERNAL_SERVER_ERROR
+      ? "Internal Server Error"
+      : "Error";
   }
 }

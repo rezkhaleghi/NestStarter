@@ -3,12 +3,12 @@ import { IsEnum, IsOptional } from "class-validator";
 
 import { SortablePaginationQueryDto } from "@shared/pagination/pagination.query.dto";
 
-export class ListWithdrawalsQueryDto extends SortablePaginationQueryDto {
+export class ListUserBalancesQueryDto extends SortablePaginationQueryDto {
   @ApiPropertyOptional({
-    enum: ["createdAt", "amount"],
+    enum: ["currency", "amount", "createdAt"],
     default: "createdAt",
   })
   @IsOptional()
-  @IsEnum(["createdAt", "amount"])
-  sortBy: "createdAt" | "amount" = "createdAt";
+  @IsEnum(["currency", "amount", "createdAt"])
+  sortBy: "currency" | "amount" | "createdAt" = "createdAt";
 }

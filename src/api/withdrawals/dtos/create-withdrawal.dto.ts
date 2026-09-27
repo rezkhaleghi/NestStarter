@@ -3,7 +3,7 @@ import { IsEnum, IsNotEmpty, IsNumberString, IsString } from "class-validator";
 
 import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
 
-export class CreateWithdrawalRequestDto {
+export class CreateWithdrawalDto {
   @ApiProperty({
     enum: PaymentCurrency,
     example: PaymentCurrency.USD,

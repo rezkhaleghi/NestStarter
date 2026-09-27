@@ -20,7 +20,7 @@ import { ListDepositsUseCase } from "@application/use-cases/deposits/list-deposi
 import { VerifyDepositUseCase } from "@application/use-cases/deposits/verify-deposit.use-case";
 
 import { AuthSessionGuard } from "../auth/auth-session.guard";
-import { CreateDepositRequestDto } from "./dtos/create-deposit.request.dto";
+import { CreateDepositRequestDto } from "./dtos/create-deposit.dto";
 import { ListDepositsQueryDto } from "./dtos/list-deposits.query.dto";
 
 @ApiTags("deposits")

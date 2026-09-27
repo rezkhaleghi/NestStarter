@@ -1,12 +1,13 @@
-import { Type } from "class-transformer";
-import { IsDateString, IsEnum, IsOptional, IsUUID } from "class-validator";
 import { ApiPropertyOptional } from "@nestjs/swagger";
+import { IsDateString, IsEnum, IsOptional, IsUUID } from "class-validator";
+
+import { SortablePaginationQueryDto } from "@shared/pagination/pagination.query.dto";
 import { LedgerType } from "@domain/enums/ledger-type.enum";
 import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
 
-export class ListLedgersQueryDto {
+export class ListLedgersQueryDto extends SortablePaginationQueryDto {
   @ApiPropertyOptional({
-    description: "Filter ledgers by user ID",
+    description: "Filter ledgers by user ID.",
     format: "uuid",
   })
   @IsOptional()
@@ -15,7 +16,7 @@ export class ListLedgersQueryDto {
 
   @ApiPropertyOptional({
     enum: PaymentCurrency,
-    description: "Filter by currency",
+    description: "Filter by currency.",
   })
   @IsOptional()
   @IsEnum(PaymentCurrency)
@@ -23,14 +24,14 @@ export class ListLedgersQueryDto {
 
   @ApiPropertyOptional({
     enum: LedgerType,
-    description: "Filter by ledger type",
+    description: "Filter by ledger type.",
   })
   @IsOptional()
   @IsEnum(LedgerType)
   type?: LedgerType;
 
   @ApiPropertyOptional({
-    description: "Filter by the admin/user who performed the operation",
+    description: "Filter by the admin/user who performed the operation.",
     format: "uuid",
   })
   @IsOptional()
@@ -38,7 +39,7 @@ export class ListLedgersQueryDto {
   actorUserId?: string;
 
   @ApiPropertyOptional({
-    description: "Filter by reference ID",
+    description: "Filter by reference ID.",
     format: "uuid",
   })
   @IsOptional()
@@ -46,7 +47,7 @@ export class ListLedgersQueryDto {
   referenceId?: string;
 
   @ApiPropertyOptional({
-    description: "Return ledgers created from this date",
+    description: "Return ledgers created from this date.",
     example: "2026-09-01T00:00:00.000Z",
   })
   @IsOptional()
@@ -54,7 +55,7 @@ export class ListLedgersQueryDto {
   from?: string;
 
   @ApiPropertyOptional({
-    description: "Return ledgers created until this date",
+    description: "Return ledgers created until this date.",
     example: "2026-09-05T23:59:59.999Z",
   })
   @IsOptional()
@@ -62,34 +63,10 @@ export class ListLedgersQueryDto {
   to?: string;
 
   @ApiPropertyOptional({
-    description: "Page number",
-    example: 1,
-    default: 1,
-  })
-  @IsOptional()
-  @Type(() => Number)
-  page?: number;
-
-  @ApiPropertyOptional({
-    description: "Number of records per page",
-    example: 20,
-    default: 20,
-  })
-  @IsOptional()
-  @Type(() => Number)
-  limit?: number;
-
-  @ApiPropertyOptional({
     enum: ["createdAt", "amount"],
     default: "createdAt",
   })
   @IsOptional()
-  sortBy?: "createdAt" | "amount";
-
-  @ApiPropertyOptional({
-    enum: ["ASC", "DESC"],
-    default: "DESC",
-  })
-  @IsOptional()
-  sortDirection?: "ASC" | "DESC";
+  @IsEnum(["createdAt", "amount"])
+  sortBy: "createdAt" | "amount" = "createdAt";
 }
