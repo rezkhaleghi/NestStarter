@@ -3,12 +3,14 @@ import { randomUUID } from "crypto";
 import { PaymentCurrency } from "../enums/payment-currency.enum";
 import { PaymentProvider } from "../enums/payment-provider.enum";
 import { DepositStatus } from "../enums/deposit-status.enum";
+
 import {
   DepositCannotFailException,
   DepositChangeStatusNotAllowedException,
   InvalidDepositAmountException,
   InvalidDepositCompletionException,
 } from "@domain/exceptions/domain.exception";
+
 import { isNegativeDecimal, isZeroDecimal } from "../utils/decimal.util";
 
 export interface CreateDepositProps {
@@ -24,6 +26,21 @@ export interface CreateDepositProps {
   completedAt?: Date | null;
   createdAt?: Date;
   updatedAt?: Date;
+}
+
+export interface RestoreDepositProps {
+  id: string;
+  userId: string;
+  currency: PaymentCurrency;
+  amount: string;
+  provider: PaymentProvider;
+  status: DepositStatus;
+  referenceId: string;
+  providerPaymentId: string | null;
+  transactionId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  completedAt: Date | null;
 }
 
 export class Deposit {
@@ -42,6 +59,13 @@ export class Deposit {
     public completedAt: Date | null,
   ) {}
 
+  /**
+   * Creates a new deposit in the application domain.
+   *
+   * This path is intentionally separate from restore() because creation
+   * represents a new business operation and therefore applies creation-time
+   * invariants/defaults.
+   */
   static create(props: CreateDepositProps): Deposit {
     if (isNegativeDecimal(props.amount) || isZeroDecimal(props.amount)) {
       throw new InvalidDepositAmountException();
@@ -54,6 +78,9 @@ export class Deposit {
     if (props.status === DepositStatus.COMPLETED && props.completedAt == null) {
       throw new InvalidDepositCompletionException();
     }
+
+    const now = new Date();
+
     return new Deposit(
       props.id ?? randomUUID(),
       props.userId,
@@ -64,9 +91,33 @@ export class Deposit {
       props.referenceId ?? randomUUID(),
       props.providerPaymentId ?? null,
       props.transactionId ?? null,
-      props.createdAt ?? new Date(),
-      props.updatedAt ?? new Date(),
+      props.createdAt ?? now,
+      props.updatedAt ?? now,
       props.completedAt ?? null,
+    );
+  }
+
+  /**
+   * Rehydrates an existing deposit from persistence.
+   *
+   * Restore must preserve database state exactly, including historical
+   * timestamps and provider/payment identifiers. It must not behave like
+   * creating a new deposit.
+   */
+  static restore(props: RestoreDepositProps): Deposit {
+    return new Deposit(
+      props.id,
+      props.userId,
+      props.currency,
+      props.amount,
+      props.provider,
+      props.status,
+      props.referenceId,
+      props.providerPaymentId,
+      props.transactionId,
+      props.createdAt,
+      props.updatedAt,
+      props.completedAt,
     );
   }
 

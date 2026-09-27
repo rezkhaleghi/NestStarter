@@ -7,6 +7,7 @@ import {
   DepositRepository,
   DepositSearchFilters,
 } from "@domain/repositories/deposit.repository";
+
 import { DepositOrmEntity } from "../orm-entities/deposit.orm-entity";
 import { PageQuery, PageResult } from "@shared/pagination/page-query";
 
@@ -21,11 +22,13 @@ export class DepositRepositoryImpl extends DepositRepository {
 
   async create(deposit: Deposit): Promise<Deposit> {
     const saved = await this.repository.save(this.toOrm(deposit));
+
     return this.toDomain(saved);
   }
 
   async save(deposit: Deposit): Promise<Deposit> {
     const saved = await this.repository.save(this.toOrm(deposit));
+
     return this.toDomain(saved);
   }
 
@@ -148,7 +151,7 @@ export class DepositRepositoryImpl extends DepositRepository {
   }
 
   private toDomain(row: DepositOrmEntity): Deposit {
-    return Deposit.create({
+    return Deposit.restore({
       id: row.id,
       userId: row.userId,
       currency: row.currency,
