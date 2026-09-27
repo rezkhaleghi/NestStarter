@@ -19,5 +19,5 @@ export class SearchUsersQueryDto extends PaginationQueryDto {
   @IsString()
   @IsNotEmpty()
   @MinLength(2)
-  q: string;
+  q!: string;
 }
