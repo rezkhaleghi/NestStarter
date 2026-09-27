@@ -2,22 +2,37 @@ import { randomUUID } from "crypto";
 
 import { PaymentCurrency } from "../enums/payment-currency.enum";
 import { WithdrawalStatus } from "../enums/withdrawal-status.enum";
-import { WithdrawalStatusChangeNotAllowedException } from "../exceptions/domain.exception";
+import {
+  InvalidWithdrawalAmountException,
+  WithdrawalStatusChangeNotAllowedException,
+} from "../exceptions/domain.exception";
+import { isNegativeDecimal, isZeroDecimal } from "../utils/decimal.util";
 
 export interface CreateWithdrawalProps {
   id?: string;
   userId: string;
   currency: PaymentCurrency;
   amount: string;
-  status?: WithdrawalStatus;
   destination: string;
   referenceId?: string;
-  providerWithdrawalId?: string | null;
-  transactionId?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
-  completedAt?: Date | null;
-  rejectionReason?: string | null;
+}
+
+export interface RestoreWithdrawalProps {
+  id: string;
+  userId: string;
+  currency: PaymentCurrency;
+  amount: string;
+  status: WithdrawalStatus;
+  destination: string;
+  referenceId: string;
+  providerWithdrawalId: string | null;
+  transactionId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  completedAt: Date | null;
+  rejectionReason: string | null;
 }
 
 export class Withdrawal {
@@ -41,24 +56,63 @@ export class Withdrawal {
     return this.status;
   }
 
+  /**
+   * Creates a brand-new withdrawal.
+   *
+   * A new withdrawal can only start as PENDING. Later states are reached
+   * exclusively through the domain lifecycle methods below.
+   */
   static create(props: CreateWithdrawalProps): Withdrawal {
+    if (isNegativeDecimal(props.amount) || isZeroDecimal(props.amount)) {
+      throw new InvalidWithdrawalAmountException();
+    }
+
+    const now = new Date();
+
     return new Withdrawal(
       props.id ?? randomUUID(),
       props.userId,
       props.currency,
       props.amount,
-      props.status ?? WithdrawalStatus.PENDING,
+      WithdrawalStatus.PENDING,
       props.destination,
       props.referenceId ?? randomUUID(),
-      props.providerWithdrawalId ?? null,
-      props.transactionId ?? null,
-      props.createdAt ?? new Date(),
-      props.updatedAt ?? new Date(),
-      props.completedAt ?? null,
-      props.rejectionReason ?? null,
+      null,
+      null,
+      props.createdAt ?? now,
+      props.updatedAt ?? now,
+      null,
+      null,
     );
   }
 
+  /**
+   * Reconstructs an existing withdrawal from persistence.
+   *
+   * This is intentionally separate from create(): loading a COMPLETED or
+   * REJECTED withdrawal is not the same business operation as creating one.
+   */
+  static restore(props: RestoreWithdrawalProps): Withdrawal {
+    return new Withdrawal(
+      props.id,
+      props.userId,
+      props.currency,
+      props.amount,
+      props.status,
+      props.destination,
+      props.referenceId,
+      props.providerWithdrawalId,
+      props.transactionId,
+      props.createdAt,
+      props.updatedAt,
+      props.completedAt,
+      props.rejectionReason,
+    );
+  }
+
+  /**
+   * Admin approval is the first step before the external/manual transfer.
+   */
   approve(): void {
     if (this.status !== WithdrawalStatus.PENDING) {
       throw new WithdrawalStatusChangeNotAllowedException(
@@ -71,6 +125,9 @@ export class Withdrawal {
     this.updatedAt = new Date();
   }
 
+  /**
+   * Rejecting is only possible while the withdrawal is still pending.
+   */
   reject(reason?: string): void {
     if (this.status !== WithdrawalStatus.PENDING) {
       throw new WithdrawalStatusChangeNotAllowedException(
@@ -84,6 +141,13 @@ export class Withdrawal {
     this.updatedAt = new Date();
   }
 
+  /**
+   * Completion represents the final confirmation that the manual/external
+   * transfer was actually performed.
+   *
+   * There is intentionally no PROCESSING or FAILED state here: those are
+   * not part of this application's current withdrawal lifecycle.
+   */
   complete(transactionId?: string): void {
     if (this.status !== WithdrawalStatus.APPROVED) {
       throw new WithdrawalStatusChangeNotAllowedException(

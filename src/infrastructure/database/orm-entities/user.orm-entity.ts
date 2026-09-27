@@ -6,13 +6,19 @@ import {
   PrimaryColumn,
   UpdateDateColumn,
 } from "typeorm";
+
 import { UserRole } from "@domain/enums/user-role.enum";
 import { UserStatus } from "@domain/enums/user-status.enum";
 
 /**
  * ORM entity — TypeORM-specific shape of a user row.
- * This is DELIBERATELY separate from the domain User entity.
+ *
+ * This is deliberately separate from the domain User entity.
  * The domain never imports this file.
+ *
+ * TypeORM creates and hydrates these entities, so the `!` definite
+ * assignment assertions tell TypeScript that these properties will be
+ * initialized by the ORM rather than by a constructor.
  */
 @Entity("users")
 @Index(["createdAt"])
@@ -21,51 +27,55 @@ import { UserStatus } from "@domain/enums/user-status.enum";
 @Index(["emailVerified"])
 export class UserOrmEntity {
   @PrimaryColumn("uuid")
-  id: string;
+  id!: string;
 
   @Column({ unique: true })
-  email: string;
+  email!: string;
 
   @Column({ nullable: true, type: "varchar" })
-  hashedPassword: string | null;
+  hashedPassword!: string | null;
 
   @Column({ nullable: true, unique: true, type: "varchar" })
-  googleId: string | null;
+  googleId!: string | null;
 
   @Column({ nullable: true, type: "varchar" })
-  firstName: string | null;
+  firstName!: string | null;
 
   @Column({ nullable: true, type: "varchar" })
-  lastName: string | null;
+  lastName!: string | null;
 
   @Column({ nullable: true, unique: true, type: "varchar" })
-  userName: string | null;
+  userName!: string | null;
 
   @Column({ nullable: true, type: "date" })
-  dateOfBirth: Date | null;
+  dateOfBirth!: Date | null;
 
-  @Column({ type: "enum", enum: UserRole, default: UserRole.USER })
-  role: UserRole;
+  @Column({
+    type: "enum",
+    enum: UserRole,
+    default: UserRole.USER,
+  })
+  role!: UserRole;
 
   @Column({ default: false })
-  emailVerified: boolean;
+  emailVerified!: boolean;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 
   @Column({ nullable: true, type: "varchar" })
-  avatar: string | null;
+  avatar!: string | null;
 
   @Column({ nullable: true, type: "varchar" })
-  bio: string | null;
+  bio!: string | null;
 
   @Column({
     type: "enum",
     enum: UserStatus,
     default: UserStatus.ACTIVE,
   })
-  status: UserStatus;
+  status!: UserStatus;
 }

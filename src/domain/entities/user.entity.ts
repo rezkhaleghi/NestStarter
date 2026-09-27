@@ -1,23 +1,18 @@
+import { randomUUID } from "crypto";
+
 import { UserStatus } from "@domain/enums/user-status.enum";
 import { UserRole } from "../enums/user-role.enum";
 import { GoogleAccountConflictException } from "../exceptions/domain.exception";
-import { randomUUID } from "crypto";
 
 /**
- * Fields that can be updated as ordinary user profile data.
+ * Fields that can be changed through a normal profile update.
  *
- * This type intentionally does not include fields such as:
- * - role
- * - status
- * - emailVerified
- * - googleId
- * - hashedPassword
+ * Fields with their own business rules (role, status, password,
+ * email verification, Google account) intentionally cannot be
+ * changed through this method.
  *
- * Those fields have domain-specific behavior and should only be
- * changed through their dedicated domain methods.
- *
- * `undefined` means "do not change this field".
- * `null` means "explicitly clear this field".
+ * `undefined` means "do not change".
+ * `null` means "explicitly clear the value".
  */
 export type UpdateUserParams = Partial<{
   firstName: string | null;
@@ -27,6 +22,15 @@ export type UpdateUserParams = Partial<{
   avatar: string | null;
   bio: string | null;
 }>;
+
+export interface CreateUserProps {
+  id?: string;
+  email: string;
+  hashedPassword: string | null;
+  role?: UserRole;
+  emailVerified?: boolean;
+  googleId?: string | null;
+}
 
 export interface RestoreUserProps {
   id: string;
@@ -47,41 +51,47 @@ export interface RestoreUserProps {
 }
 
 /**
- * Domain entity — represents the business truth about a User.
+ * Domain entity representing the business state of a User.
  *
- * No ORM decorators, no framework-specific persistence logic.
- * This class should be instantiable and testable with plain `new User(...)`.
+ * This class deliberately contains no ORM decorators or persistence
+ * concerns. Database mapping belongs to the infrastructure layer.
  *
- * The entity owns business state and business behavior.
- * Persistence is handled by UserRepository.
+ * Construction is restricted to `create()` and `restore()` so callers
+ * cannot accidentally bypass the entity's intended creation/recovery
+ * paths.
  */
 export class User {
   private _emailVerified: boolean;
   private _googleId: string | null;
+  private _updatedAt: Date;
 
-  constructor(
+  /**
+   * Private constructor prevents arbitrary construction from outside
+   * the domain entity.
+   *
+   * New users should use `User.create()`.
+   * Existing users loaded from persistence should use `User.restore()`.
+   */
+  private constructor(
     public readonly id: string,
     public email: string,
     public hashedPassword: string | null,
-    public role: UserRole = UserRole.USER,
-    emailVerified = false,
-    public readonly createdAt: Date = new Date(),
-    public readonly updatedAt: Date = new Date(),
-    googleId: string | null = null,
-
-    // Ordinary profile fields can be changed through update().
-    public firstName: string | null = null,
-    public lastName: string | null = null,
-    public userName: string | null = null,
-    public dateOfBirth: Date | null = null,
-    public avatar: string | null = null,
-    public bio: string | null = null,
-
-    // Status is changed through activate()/restrict().
-    public status: UserStatus = UserStatus.ACTIVE,
+    public role: UserRole,
+    emailVerified: boolean,
+    public readonly createdAt: Date,
+    updatedAt: Date,
+    googleId: string | null,
+    public firstName: string | null,
+    public lastName: string | null,
+    public userName: string | null,
+    public dateOfBirth: Date | null,
+    public avatar: string | null,
+    public bio: string | null,
+    public status: UserStatus,
   ) {
     this._emailVerified = emailVerified;
     this._googleId = googleId;
+    this._updatedAt = updatedAt;
   }
 
   get emailVerified(): boolean {
@@ -93,16 +103,88 @@ export class User {
   }
 
   /**
-   * Updates ordinary user profile fields.
+   * The domain owns updatedAt.
    *
-   * Only fields explicitly provided in `params` are changed.
+   * Keeping this mutable internally prevents the domain object from
+   * carrying a stale timestamp after a business state change.
+   */
+  get updatedAt(): Date {
+    return this._updatedAt;
+  }
+
+  /**
+   * Marks the entity as modified.
    *
-   * `undefined` = field was not provided → keep the current value.
-   * `null`      = field was explicitly cleared → set it to null.
+   * This is intentionally private: only domain operations that actually
+   * mutate the entity should be able to advance updatedAt.
+   */
+  private touch(): void {
+    this._updatedAt = new Date();
+  }
+
+  /**
+   * Creates a brand-new User.
    *
-   * Fields with special business rules such as status, role,
-   * email verification, password, and Google account linking
-   * are intentionally excluded from this method.
+   * Creation defaults belong here instead of being scattered across
+   * controllers, use cases, or persistence code.
+   */
+  static create(params: CreateUserProps): User {
+    const now = new Date();
+
+    return new User(
+      params.id ?? randomUUID(),
+      params.email,
+      params.hashedPassword,
+      params.role ?? UserRole.USER,
+      params.emailVerified ?? false,
+      now,
+      now,
+      params.googleId ?? null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      UserStatus.ACTIVE,
+    );
+  }
+
+  /**
+   * Reconstitutes an existing User from persistence.
+   *
+   * Unlike create(), this method must preserve the exact persisted state,
+   * including IDs, timestamps, profile data, role, and account status.
+   *
+   * It must not apply creation defaults or modify updatedAt.
+   */
+  static restore(params: RestoreUserProps): User {
+    return new User(
+      params.id,
+      params.email,
+      params.hashedPassword,
+      params.role,
+      params.emailVerified,
+      params.createdAt,
+      params.updatedAt,
+      params.googleId,
+      params.firstName,
+      params.lastName,
+      params.userName,
+      params.dateOfBirth,
+      params.avatar,
+      params.bio,
+      params.status,
+    );
+  }
+
+  /**
+   * Updates ordinary profile information.
+   *
+   * `undefined` keeps the current value.
+   * `null` explicitly clears the value.
+   *
+   * Sensitive/business-controlled fields are intentionally excluded.
    */
   update(params: UpdateUserParams): void {
     if (params.firstName !== undefined) {
@@ -128,65 +210,63 @@ export class User {
     if (params.bio !== undefined) {
       this.bio = params.bio;
     }
+
+    this.touch();
   }
 
   /**
-   * Business operation with rules/invariants.
+   * Changes the user's email.
    *
-   * Changes the user's email address.
-   * Email normalization and uniqueness checks are handled
-   * by the application/use-case layer before this operation.
+   * Email normalization and uniqueness checks belong to the
+   * application/infrastructure layers.
    */
   changeEmail(email: string): void {
     this.email = email;
+    this.touch();
   }
 
   /**
-   * Business operation with rules/invariants.
-   *
    * Changes the user's role.
-   * Administrator-specific rules are enforced by the application
-   * and repository layers.
+   *
+   * Authorization for who is allowed to perform this operation belongs
+   * to the application layer; the entity owns the state transition.
    */
   changeRole(role: UserRole): void {
     this.role = role;
+    this.touch();
   }
 
   /**
-   * Business operation with rules/invariants.
-   *
    * Changes the email verification state.
    */
   setEmailVerified(verified: boolean): void {
     this._emailVerified = verified;
+    this.touch();
   }
 
   /**
-   * Business operation with rules/invariants.
-   *
    * Replaces the user's password with an already-hashed password.
    *
-   * The domain never hashes passwords itself. Password hashing
-   * is an infrastructure concern handled by PasswordHasher.
+   * Password hashing is deliberately not performed inside the domain.
    */
   changePassword(hashedPassword: string): void {
     this.hashedPassword = hashedPassword;
+    this.touch();
   }
 
   /**
-   * Business operation with rules/invariants.
-   *
-   * Marks the user's email address as verified.
+   * Marks the user's email as verified.
    */
   verifyEmail(): void {
     this._emailVerified = true;
+    this.touch();
   }
 
   /**
-   * Business operation with rules/invariants.
+   * Links a Google account.
    *
-   * Links a Google account to this user.
-   * A different Google account cannot replace an already-linked account.
+   * Once a Google account is linked, a different Google account cannot
+   * silently replace it.
    */
   linkGoogleAccount(googleId: string): void {
     if (this.googleId && this.googleId !== googleId) {
@@ -194,72 +274,25 @@ export class User {
     }
 
     this._googleId = googleId;
+    this.touch();
   }
 
   /**
-   * Business operation with rules/invariants.
-   *
-   * Activates the user's account and allows normal authenticated access.
+   * Activates the user account.
    */
   activate(): void {
     this.status = UserStatus.ACTIVE;
+    this.touch();
   }
 
   /**
-   * Business operation with rules/invariants.
+   * Restricts the user account.
    *
-   * Restricts the user's account.
-   * Authentication guards can use this state to prevent restricted
-   * users from accessing protected functionality.
+   * Authentication/authorization layers can use this state to prevent
+   * restricted users from accessing protected functionality.
    */
   restrict(): void {
     this.status = UserStatus.RESTRICTED;
-  }
-
-  /**
-   * Factory method for creating a new regular user.
-   *
-   * Creation rules are kept here so callers do not need to know
-   * the constructor's internal argument order or default values.
-   */
-  static create(params: {
-    id?: string;
-    email: string;
-    hashedPassword: string | null;
-    role?: UserRole;
-    emailVerified?: boolean;
-    googleId?: string;
-  }): User {
-    return new User(
-      params.id ?? randomUUID(),
-      params.email,
-      params.hashedPassword,
-      params.role ?? UserRole.USER,
-      params.emailVerified ?? false,
-      new Date(),
-      new Date(),
-      params.googleId ?? null,
-    );
-  }
-
-  /** * Reconstitutes an existing user from persistence. * * This method intentionally accepts the complete persisted state * instead of applying creation defaults. */
-  static restore(params: RestoreUserProps): User {
-    return new User(
-      params.id,
-      params.email,
-      params.hashedPassword,
-      params.role,
-      params.emailVerified,
-      params.createdAt,
-      params.updatedAt,
-      params.googleId,
-      params.firstName,
-      params.lastName,
-      params.userName,
-      params.dateOfBirth,
-      params.avatar,
-      params.bio,
-      params.status,
-    );
+    this.touch();
   }
 }

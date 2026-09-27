@@ -7,8 +7,9 @@ import {
   WithdrawalRepository,
   WithdrawalSearchFilters,
 } from "@domain/repositories/withdrawal.repository";
-import { WithdrawalOrmEntity } from "../orm-entities/withdrawal.orm-entity";
 import { PageQuery, PageResult } from "@shared/pagination/page-query";
+
+import { WithdrawalOrmEntity } from "../orm-entities/withdrawal.orm-entity";
 
 @Injectable()
 export class WithdrawalRepositoryImpl extends WithdrawalRepository {
@@ -21,11 +22,13 @@ export class WithdrawalRepositoryImpl extends WithdrawalRepository {
 
   async create(withdrawal: Withdrawal): Promise<Withdrawal> {
     const saved = await this.repository.save(this.toOrm(withdrawal));
+
     return this.toDomain(saved);
   }
 
   async save(withdrawal: Withdrawal): Promise<Withdrawal> {
     const saved = await this.repository.save(this.toOrm(withdrawal));
+
     return this.toDomain(saved);
   }
 
@@ -127,8 +130,15 @@ export class WithdrawalRepositoryImpl extends WithdrawalRepository {
     };
   }
 
+  /**
+   * Persistence reconstruction must use restore(), not create().
+   *
+   * create() represents a new business operation and intentionally starts
+   * every withdrawal at PENDING. Repository hydration must preserve the
+   * actual persisted lifecycle state.
+   */
   private toDomain(row: WithdrawalOrmEntity): Withdrawal {
-    return Withdrawal.create({
+    return Withdrawal.restore({
       id: row.id,
       userId: row.userId,
       currency: row.currency,

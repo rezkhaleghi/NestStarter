@@ -63,6 +63,8 @@ export class AuditLogRepositoryImpl implements AuditLogRepository {
 
     qb.orderBy("audit.createdAt", params.sortDirection ?? "DESC");
 
+    // createdAt can theoretically be identical for multiple records.
+    // UUID provides deterministic pagination ordering in that case.
     qb.addOrderBy("audit.id", "ASC");
 
     const [rows, total] = await qb
@@ -80,12 +82,13 @@ export class AuditLogRepositoryImpl implements AuditLogRepository {
   }
 
   private toDomain(row: AuditLogOrmEntity): AuditLog {
-    return AuditLog.create({
+    return AuditLog.restore({
       id: row.id,
       actorUserId: row.actorUserId,
       action: row.action,
       targetUserId: row.targetUserId,
       metadata: row.metadata,
+      createdAt: row.createdAt,
     });
   }
 
@@ -97,6 +100,10 @@ export class AuditLogRepositoryImpl implements AuditLogRepository {
     row.action = log.action;
     row.targetUserId = log.targetUserId;
     row.metadata = log.metadata;
+
+    // Preserve the domain creation timestamp instead of allowing the ORM
+    // layer to silently replace it with a different historical timestamp.
+    row.createdAt = log.createdAt;
 
     return row;
   }

@@ -3,12 +3,16 @@ import {
   CreateDateColumn,
   Entity,
   Index,
+  JoinColumn,
+  ManyToOne,
   PrimaryColumn,
   UpdateDateColumn,
 } from "typeorm";
 
 import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
 import { WithdrawalStatus } from "@domain/enums/withdrawal-status.enum";
+
+import { UserOrmEntity } from "./user.orm-entity";
 
 @Entity("withdrawals")
 @Index(["userId", "createdAt"])
@@ -20,6 +24,15 @@ export class WithdrawalOrmEntity {
   @Index()
   @Column({ type: "uuid" })
   userId!: string;
+
+  // Keep the user relationship in infrastructure only. The domain entity
+  // intentionally remains independent from TypeORM and UserOrmEntity.
+  @ManyToOne(() => UserOrmEntity, {
+    nullable: false,
+    onDelete: "RESTRICT",
+  })
+  @JoinColumn({ name: "userId" })
+  user!: UserOrmEntity;
 
   @Column({ type: "enum", enum: PaymentCurrency })
   currency!: PaymentCurrency;

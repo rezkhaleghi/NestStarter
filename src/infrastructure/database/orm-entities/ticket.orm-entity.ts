@@ -9,8 +9,10 @@ import {
   PrimaryColumn,
   UpdateDateColumn,
 } from "typeorm";
+
 import { TicketPriority } from "@domain/enums/ticket-priority.enum";
 import { TicketStatus } from "@domain/enums/ticket-status.enum";
+
 import { TicketMessageOrmEntity } from "./ticket-message.orm-entity";
 import { UserOrmEntity } from "./user.orm-entity";
 import { TicketCategoryOrmEntity } from "./ticket-category.orm-entity";
@@ -25,16 +27,30 @@ export class TicketOrmEntity {
   @PrimaryColumn("uuid")
   id!: string;
 
+  /**
+   * The user who owns/created the ticket.
+   *
+   * A ticket is historical support data, so its owner must remain a valid
+   * user reference. We therefore deliberately prevent deleting a referenced
+   * user instead of silently converting the ticket into an orphan.
+   */
   @Column({ type: "uuid" })
   userId!: string;
 
-  @ManyToOne(() => UserOrmEntity, { nullable: true, onDelete: "SET NULL" })
+  @ManyToOne(() => UserOrmEntity, {
+    nullable: false,
+    onDelete: "RESTRICT",
+  })
   @JoinColumn({ name: "userId" })
-  user?: UserOrmEntity;
+  user!: UserOrmEntity;
 
   @Column({ type: "uuid", nullable: true })
   categoryId!: string | null;
 
+  /**
+   * Categories are optional metadata. Removing a category should not remove
+   * or invalidate an existing ticket.
+   */
   @ManyToOne(() => TicketCategoryOrmEntity, {
     nullable: true,
     onDelete: "SET NULL",
@@ -45,7 +61,11 @@ export class TicketOrmEntity {
   @Column({ type: "varchar", length: 255 })
   subject!: string;
 
-  @Column({ type: "enum", enum: TicketStatus, default: TicketStatus.OPEN })
+  @Column({
+    type: "enum",
+    enum: TicketStatus,
+    default: TicketStatus.OPEN,
+  })
   status!: TicketStatus;
 
   @Column({
@@ -58,7 +78,14 @@ export class TicketOrmEntity {
   @Column({ type: "uuid", nullable: true })
   assignedToUserId!: string | null;
 
-  @ManyToOne(() => UserOrmEntity, { nullable: true, onDelete: "SET NULL" })
+  /**
+   * Assignment is optional and belongs to an operational relationship.
+   * If an admin is removed, the ticket should simply become unassigned.
+   */
+  @ManyToOne(() => UserOrmEntity, {
+    nullable: true,
+    onDelete: "SET NULL",
+  })
   @JoinColumn({ name: "assignedToUserId" })
   assignedToUser?: UserOrmEntity;
 

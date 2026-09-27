@@ -3,73 +3,86 @@ import {
   CreateDateColumn,
   Entity,
   Index,
+  JoinColumn,
+  ManyToOne,
   PrimaryColumn,
 } from "typeorm";
 
 import { LedgerType } from "@domain/enums/ledger-type.enum";
 import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
 
+import { UserOrmEntity } from "./user.orm-entity";
+
 @Entity("ledgers")
 @Index(["userId", "createdAt"])
 export class LedgerOrmEntity {
   @PrimaryColumn("uuid")
-  id: string;
+  id!: string;
 
   @Index()
   @Column({ type: "uuid" })
-  userId: string;
+  userId!: string;
+
+  // The ledger entry belongs to a real user. The FK protects financial
+  // history from becoming orphaned if application-level checks are bypassed.
+  @ManyToOne(() => UserOrmEntity, {
+    nullable: false,
+    onDelete: "RESTRICT",
+  })
+  @JoinColumn({ name: "userId" })
+  user!: UserOrmEntity;
 
   @Column({
     type: "enum",
     enum: PaymentCurrency,
   })
-  currency: PaymentCurrency;
+  currency!: PaymentCurrency;
 
   @Column({
     type: "decimal",
     precision: 30,
     scale: 18,
   })
-  amount: string;
+  amount!: string;
 
   @Column({
     type: "decimal",
     precision: 30,
     scale: 18,
   })
-  balanceBefore: string;
+  balanceBefore!: string;
 
   @Column({
     type: "decimal",
     precision: 30,
     scale: 18,
   })
-  balanceAfter: string;
+  balanceAfter!: string;
 
   @Column({
     type: "enum",
     enum: LedgerType,
   })
-  type: LedgerType;
+  type!: LedgerType;
 
   @Column({
     type: "uuid",
     nullable: true,
   })
-  actorUserId: string | null;
+  actorUserId!: string | null;
 
   @Column({
     type: "uuid",
     nullable: true,
   })
-  referenceId: string | null;
+  referenceId!: string | null;
 
   @Column({
     type: "jsonb",
     nullable: true,
   })
-  metadata: Record<string, unknown> | null;
+  metadata!: Record<string, unknown> | null;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 }

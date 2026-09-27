@@ -8,6 +8,7 @@ import {
   PrimaryColumn,
   UpdateDateColumn,
 } from "typeorm";
+
 import { TicketOrmEntity } from "./ticket.orm-entity";
 import { UserOrmEntity } from "./user.orm-entity";
 
@@ -18,6 +19,11 @@ export class TicketMessageOrmEntity {
   @PrimaryColumn("uuid")
   id!: string;
 
+  /**
+   * A message cannot exist without its ticket.
+   *
+   * Deleting a ticket removes its messages as part of the aggregate cleanup.
+   */
   @Column({ type: "uuid" })
   ticketId!: string;
 
@@ -28,12 +34,21 @@ export class TicketMessageOrmEntity {
   @JoinColumn({ name: "ticketId" })
   ticket!: TicketOrmEntity;
 
+  /**
+   * Keep the sender reference intact.
+   *
+   * Support messages are part of the historical record. Deleting a user
+   * must therefore not cascade-delete their messages.
+   */
   @Column({ type: "uuid" })
   senderUserId!: string;
 
-  @ManyToOne(() => UserOrmEntity, { nullable: false, onDelete: "CASCADE" })
+  @ManyToOne(() => UserOrmEntity, {
+    nullable: false,
+    onDelete: "RESTRICT",
+  })
   @JoinColumn({ name: "senderUserId" })
-  sender?: UserOrmEntity;
+  sender!: UserOrmEntity;
 
   @Column({ type: "text" })
   body!: string;
