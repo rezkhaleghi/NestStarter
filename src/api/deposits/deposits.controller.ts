@@ -20,8 +20,8 @@ import { ListDepositsUseCase } from "@application/use-cases/deposits/list-deposi
 import { VerifyDepositUseCase } from "@application/use-cases/deposits/verify-deposit.use-case";
 
 import { AuthSessionGuard } from "../auth/auth-session.guard";
-import { CreateDepositRequestDto } from "./dtos/create-deposit.dto";
 import { ListDepositsQueryDto } from "./dtos/list-deposits.query.dto";
+import { CreateDepositDto } from "./dtos/create-deposit.dto";
 
 @ApiTags("deposits")
 @Controller("deposits")
@@ -67,7 +67,7 @@ export class DepositsController {
   })
   @ApiResponse({ status: 201, description: "Deposit created" })
   async create(
-    @Body() dto: CreateDepositRequestDto,
+    @Body() dto: CreateDepositDto,
     @Req() req: Request,
     @Headers("Idempotency-Key") idempotencyKey: string | undefined,
   ) {

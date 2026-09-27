@@ -19,15 +19,14 @@ import {
 import type { Request } from "express";
 
 import { AuthSessionGuard } from "../auth/auth-session.guard";
-import { ListTicketsQueryDto } from "./dtos/ticket-query.dto";
-import {
-  CreateTicketMessageRequestDto,
-  CreateTicketRequestDto,
-} from "./dtos/ticket.request.dto";
+
 import { CreateTicketUseCase } from "@application/use-cases/tickets/create-ticket.use-case";
 import { ListUserTicketsUseCase } from "@application/use-cases/tickets/list-user-tickets.use-case";
 import { GetTicketUseCase } from "@application/use-cases/tickets/get-ticket.use-case";
 import { CreateTicketMessageUseCase } from "@application/use-cases/tickets/create-ticket-message.use-case";
+import { CreateTicketDto } from "./dtos/create-ticket.dto";
+import { ListTicketsQueryDto } from "./dtos/list-tickets.query.dto";
+import { CreateTicketMessageDto } from "./dtos/create-ticket-message.dto";
 
 @ApiTags("tickets")
 @Controller("tickets")
@@ -42,10 +41,10 @@ export class TicketsController {
 
   @Post()
   @ApiOperation({ summary: "Create a ticket" })
-  @ApiBody({ type: CreateTicketRequestDto })
+  @ApiBody({ type: CreateTicketDto })
   @ApiResponse({ status: 201, description: "Ticket created" })
   @ApiResponse({ status: 400, description: "Invalid ticket data" })
-  async create(@Body() dto: CreateTicketRequestDto, @Req() req: Request) {
+  async create(@Body() dto: CreateTicketDto, @Req() req: Request) {
     return this.createTicketUseCase.execute({
       userId: req.session.userId!,
       subject: dto.subject,
@@ -86,13 +85,13 @@ export class TicketsController {
   @Post(":id/messages")
   @ApiOperation({ summary: "Reply to a ticket" })
   @ApiParam({ name: "id", description: "Ticket UUID", format: "uuid" })
-  @ApiBody({ type: CreateTicketMessageRequestDto })
+  @ApiBody({ type: CreateTicketMessageDto })
   @ApiResponse({ status: 201, description: "Message created" })
   @ApiResponse({ status: 400, description: "Invalid ticket UUID or message" })
   @ApiResponse({ status: 404, description: "Ticket not found" })
   async createMessage(
     @Param("id", ParseUUIDPipe) id: string,
-    @Body() dto: CreateTicketMessageRequestDto,
+    @Body() dto: CreateTicketMessageDto,
     @Req() req: Request,
   ) {
     return this.createTicketMessageUseCase.execute({

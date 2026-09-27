@@ -41,14 +41,13 @@ import { DeleteUserAvatarUseCase } from "@application/use-cases/users/delete-use
 
 import { SearchUsersUseCase } from "@application/use-cases/users/search-users.use-case";
 
-import { UpdateProfileRequestDto } from "../auth/dtos/update-profile.request.dto";
-
-import { SearchUsersQueryDto } from "./dtos/search-users.request.dto";
+import { UpdateProfileDto } from "../auth/dtos/update-profile.dto";
 
 import { AuthenticatedUserResponseDto } from "../auth/dtos/authenticated-user.response.dto";
 
 import { GetUserBalancesUseCase } from "@application/use-cases/users/get-user-balances.use-case";
-import { ListUserBalancesQueryDto } from "@api/users/dtos/user-balance.request.dto";
+import { ListUserBalancesQueryDto } from "./dtos/list-user-balances.query.dto";
+import { SearchUsersQueryDto } from "./dtos/search-users.query.dto";
 
 @ApiTags("users")
 @Controller("users")
@@ -121,7 +120,7 @@ export class UsersController {
     status: 409,
     description: "Username already exists",
   })
-  async updateMe(@Body() dto: UpdateProfileRequestDto, @Req() req: Request) {
+  async updateMe(@Body() dto: UpdateProfileDto, @Req() req: Request) {
     const user = await this.updateCurrentUserUseCase.execute(
       req.session.userId!,
       {

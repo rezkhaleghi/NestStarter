@@ -17,8 +17,8 @@ import { CreateWithdrawalUseCase } from "@application/use-cases/withdrawals/crea
 import { ListWithdrawalsUseCase } from "@application/use-cases/withdrawals/list-withdrawals.use-case";
 import { GetWithdrawalUseCase } from "@application/use-cases/withdrawals/get-withdrawal.use-case";
 
-import { CreateWithdrawalRequestDto } from "./dtos/create-withdrawal.dto";
 import { ListWithdrawalsQueryDto } from "./dtos/list-withdrawals.query.dto";
+import { CreateWithdrawalDto } from "./dtos/create-withdrawal.dto";
 
 @ApiTags("withdrawals")
 @Controller("withdrawals")
@@ -56,7 +56,7 @@ export class WithdrawalsController {
   @Post()
   @ApiOperation({ summary: "Request a withdrawal" })
   @ApiResponse({ status: 201, description: "Withdrawal created" })
-  async create(@Body() dto: CreateWithdrawalRequestDto, @Req() req: Request) {
+  async create(@Body() dto: CreateWithdrawalDto, @Req() req: Request) {
     return this.createWithdrawalUseCase.execute({
       userId: req.session.userId!,
       currency: dto.currency,

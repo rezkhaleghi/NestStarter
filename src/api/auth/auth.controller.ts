@@ -25,13 +25,11 @@ import { ChangeUserPasswordUseCase } from "@application/use-cases/users/change-u
 
 import { AuthSessionGuard } from "./auth-session.guard";
 import { AuthenticatedUserResponseDto } from "./dtos/authenticated-user.response.dto";
-import {
-  SignUpRequestDto,
-  RequestOtpDto,
-  LoginPasswordRequestDto,
-  LoginOtpRequestDto,
-} from "./dtos/auth.request.dto";
-import { ChangePasswordRequestDto } from "./dtos/change-password.request.dto";
+import { RequestOtpDto } from "./dtos/request-otp.dto";
+import { SignUpDto } from "./dtos/sign-up.dto";
+import { LoginPasswordDto } from "./dtos/login-password.dto";
+import { LoginOtpDto } from "./dtos/login-otp.dto";
+import { UpdatePasswordDto } from "./dtos/update-password.dto";
 
 /**
  * Authentication controller.
@@ -85,7 +83,7 @@ export class AuthController {
     status: 400,
     description: "Invalid OTP or user already exists",
   })
-  async signUp(@Body() dto: SignUpRequestDto, @Req() req: Request) {
+  async signUp(@Body() dto: SignUpDto, @Req() req: Request) {
     // OTP verification and user creation are intentionally
     // separate use cases.
     await this.verifyOtpUseCase.execute({
@@ -127,10 +125,7 @@ export class AuthController {
     status: 401,
     description: "Invalid email or password",
   })
-  async loginPassword(
-    @Body() dto: LoginPasswordRequestDto,
-    @Req() req: Request,
-  ) {
+  async loginPassword(@Body() dto: LoginPasswordDto, @Req() req: Request) {
     const user = await this.loginWithPasswordUseCase.execute({
       email: dto.email,
       password: dto.password,
@@ -164,7 +159,7 @@ export class AuthController {
     status: 401,
     description: "Invalid OTP",
   })
-  async loginOtp(@Body() dto: LoginOtpRequestDto, @Req() req: Request) {
+  async loginOtp(@Body() dto: LoginOtpDto, @Req() req: Request) {
     const user = await this.loginWithOtpUseCase.execute(dto.email, dto.otp);
 
     await this.establishSession(req, user.id);
@@ -226,10 +221,7 @@ export class AuthController {
     status: 401,
     description: "Not authenticated",
   })
-  async changePassword(
-    @Body() dto: ChangePasswordRequestDto,
-    @Req() req: Request,
-  ) {
+  async changePassword(@Body() dto: UpdatePasswordDto, @Req() req: Request) {
     await this.changeUserPasswordUseCase.execute({
       userId: req.session.userId!,
       password: dto.password,
