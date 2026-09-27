@@ -25,6 +25,11 @@ export abstract class DepositRepository {
     id: string,
   ): Promise<Deposit | null>;
 
+  abstract findByUserIdAndIdempotencyKey(
+    userId: string,
+    idempotencyKey: string,
+  ): Promise<Deposit | null>;
+
   abstract findByIdForUpdate(id: string): Promise<Deposit | null>;
 
   abstract findByUserIdAndIdForUpdate(

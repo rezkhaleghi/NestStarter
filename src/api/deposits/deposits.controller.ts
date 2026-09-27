@@ -1,7 +1,9 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
+  Headers,
   Param,
   ParseUUIDPipe,
   Post,
@@ -9,16 +11,18 @@ import {
   Req,
   UseGuards,
 } from "@nestjs/common";
-import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { ApiHeader, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 
-import { AuthSessionGuard } from "../auth/auth-session.guard";
 import { CreateDepositUseCase } from "@application/use-cases/deposits/create-deposit.use-case";
-import { VerifyDepositUseCase } from "@application/use-cases/deposits/verify-deposit.use-case";
-import { ListDepositsUseCase } from "@application/use-cases/deposits/list-deposits.use-case";
 import { GetDepositUseCase } from "@application/use-cases/deposits/get-deposit.use-case";
+import { ListDepositsUseCase } from "@application/use-cases/deposits/list-deposits.use-case";
+import { VerifyDepositUseCase } from "@application/use-cases/deposits/verify-deposit.use-case";
+
+import { AuthSessionGuard } from "../auth/auth-session.guard";
 import { CreateDepositRequestDto } from "./dtos/create-deposit.request.dto";
 import { ListDepositsQueryDto } from "./dtos/list-deposits.query.dto";
+
 @ApiTags("deposits")
 @Controller("deposits")
 @UseGuards(AuthSessionGuard)
@@ -55,13 +59,32 @@ export class DepositsController {
 
   @Post()
   @ApiOperation({ summary: "Create a deposit" })
+  @ApiHeader({
+    name: "Idempotency-Key",
+    description:
+      "Client-generated key used to safely retry the same deposit creation request.",
+    required: true,
+  })
   @ApiResponse({ status: 201, description: "Deposit created" })
-  async create(@Body() dto: CreateDepositRequestDto, @Req() req: Request) {
+  async create(
+    @Body() dto: CreateDepositRequestDto,
+    @Req() req: Request,
+    @Headers("Idempotency-Key") idempotencyKey: string | undefined,
+  ) {
+    const normalizedIdempotencyKey = idempotencyKey?.trim();
+
+    // The idempotency key is an HTTP request requirement, not a domain rule.
+    // Reject it here so the application layer never receives an empty key.
+    if (!normalizedIdempotencyKey) {
+      throw new BadRequestException("Idempotency-Key header is required.");
+    }
+
     return this.createDepositUseCase.execute({
       userId: req.session.userId!,
       currency: dto.currency,
       amount: dto.amount,
       provider: dto.provider,
+      idempotencyKey: normalizedIdempotencyKey,
     });
   }
 

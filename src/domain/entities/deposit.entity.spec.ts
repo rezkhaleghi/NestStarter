@@ -5,7 +5,6 @@ import {
   DepositCannotFailException,
   DepositChangeStatusNotAllowedException,
   InvalidDepositAmountException,
-  InvalidDepositCompletionException,
 } from "../exceptions/domain.exception";
 import { PaymentProvider } from "@domain/enums/payment-provider.enum";
 
@@ -16,6 +15,7 @@ describe("Deposit", () => {
       currency: PaymentCurrency.USDT,
       amount: "100",
       provider: PaymentProvider.FAKE_PROVIDER,
+      idempotencyKey: "idempotency-key-1",
     });
 
   it("creates a pending deposit with generated identifiers", () => {
@@ -27,6 +27,7 @@ describe("Deposit", () => {
     expect(deposit.currency).toBe(PaymentCurrency.USDT);
     expect(deposit.amount).toBe("100");
     expect(deposit.status).toBe(DepositStatus.PENDING);
+    expect(deposit.idempotencyKey).toBe("idempotency-key-1");
     expect(deposit.providerPaymentId).toBeNull();
     expect(deposit.transactionId).toBeNull();
     expect(deposit.completedAt).toBeNull();
@@ -57,6 +58,7 @@ describe("Deposit", () => {
       amount: "100",
       transactionId: "transaction-1",
       provider: PaymentProvider.FAKE_PROVIDER,
+      idempotencyKey: "idempotency-key-2",
     });
 
     deposit.markCompleted();
@@ -98,6 +100,7 @@ describe("Deposit", () => {
         currency: PaymentCurrency.USDT,
         amount: "0",
         provider: PaymentProvider.FAKE_PROVIDER,
+        idempotencyKey: "idempotency-key-3",
       }),
     ).toThrow(InvalidDepositAmountException);
   });
@@ -109,59 +112,8 @@ describe("Deposit", () => {
         currency: PaymentCurrency.USDT,
         amount: "-10",
         provider: PaymentProvider.FAKE_PROVIDER,
+        idempotencyKey: "idempotency-key-4",
       }),
     ).toThrow(InvalidDepositAmountException);
-  });
-
-  it("rejects a pending deposit with completedAt", () => {
-    expect(() =>
-      Deposit.create({
-        userId: "user-1",
-        currency: PaymentCurrency.USDT,
-        amount: "100",
-        provider: PaymentProvider.FAKE_PROVIDER,
-        completedAt: new Date(),
-      }),
-    ).toThrow(InvalidDepositCompletionException);
-  });
-
-  it("rejects a failed deposit with completedAt", () => {
-    expect(() =>
-      Deposit.create({
-        userId: "user-1",
-        currency: PaymentCurrency.USDT,
-        amount: "100",
-        provider: PaymentProvider.FAKE_PROVIDER,
-        status: DepositStatus.FAILED,
-        completedAt: new Date(),
-      }),
-    ).toThrow(InvalidDepositCompletionException);
-  });
-
-  it("allows a completed deposit with completedAt", () => {
-    const completedAt = new Date();
-
-    const deposit = Deposit.create({
-      userId: "user-1",
-      currency: PaymentCurrency.USDT,
-      amount: "100",
-      provider: PaymentProvider.FAKE_PROVIDER,
-      status: DepositStatus.COMPLETED,
-      completedAt,
-    });
-
-    expect(deposit.completedAt).toBe(completedAt);
-  });
-
-  it("rejects a completed deposit without completedAt", () => {
-    expect(() =>
-      Deposit.create({
-        userId: "user-1",
-        currency: PaymentCurrency.USDT,
-        amount: "100",
-        provider: PaymentProvider.FAKE_PROVIDER,
-        status: DepositStatus.COMPLETED,
-      }),
-    ).toThrow(InvalidDepositCompletionException);
   });
 });

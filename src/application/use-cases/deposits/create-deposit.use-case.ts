@@ -5,6 +5,7 @@ import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
 import { PaymentProvider } from "@domain/enums/payment-provider.enum";
 import { DepositStatus } from "@domain/enums/deposit-status.enum";
 import {
+  DepositIdempotencyConflictException,
   DepositNotFoundException,
   InvalidDepositAmountException,
   UnsupportedPaymentCurrencyException,
@@ -22,6 +23,7 @@ export interface CreateDepositInput {
   provider: PaymentProvider;
   currency: PaymentCurrency;
   amount: string;
+  idempotencyKey: string;
 }
 
 @Injectable()
@@ -33,22 +35,23 @@ export class CreateDepositUseCase {
   ) {}
 
   async execute(input: CreateDepositInput): Promise<Deposit> {
-    // Resolve the provider selected by the user.
     const paymentProvider = this.paymentProviderResolver.resolve(
       input.provider,
     );
 
-    // Ensure the selected provider supports the requested currency.
     if (!paymentProvider.supportedCurrencies.includes(input.currency)) {
       throw new UnsupportedPaymentCurrencyException(input.currency);
     }
 
-    // Money amounts must be greater than zero.
     if (isNegativeDecimal(input.amount) || isZeroDecimal(input.amount)) {
       throw new InvalidDepositAmountException();
     }
 
-    // Create the pending deposit before requesting payment externally.
+    /*
+     * The idempotency lookup and creation happen inside the same database
+     * transaction. The database unique constraint remains the final
+     * concurrency guard when two requests reach INSERT simultaneously.
+     */
     const deposit = await this.unitOfWork.execute(
       async ({ userRepository, depositRepository }) => {
         const user = await userRepository.findById(input.userId);
@@ -57,29 +60,62 @@ export class CreateDepositUseCase {
           throw new UserNotFoundException();
         }
 
+        const existing = await depositRepository.findByUserIdAndIdempotencyKey(
+          input.userId,
+          input.idempotencyKey,
+        );
+
+        if (existing) {
+          this.assertSameIdempotentRequest(existing, input);
+
+          return existing;
+        }
+
         const newDeposit = Deposit.create({
           userId: input.userId,
           provider: input.provider,
           currency: input.currency,
           amount: input.amount,
           status: DepositStatus.PENDING,
+          idempotencyKey: input.idempotencyKey,
         });
 
-        return depositRepository.create(newDeposit);
+        /*
+         * If another concurrent request wins the unique constraint race,
+         * DepositRepositoryImpl.create() returns that existing deposit
+         * instead of exposing the database error.
+         */
+        const created = await depositRepository.create(newDeposit);
+
+        this.assertSameIdempotentRequest(created, input);
+
+        return created;
       },
     );
 
-    // Request payment from the resolved provider.
+    /*
+     * A retry may reach this point with a deposit that already has a
+     * provider payment ID. Never create another external payment in that
+     * case.
+     */
+    if (deposit.providerPaymentId) {
+      return deposit;
+    }
+
     const payment = await paymentProvider.createPayment({
       amount: deposit.amount,
       currency: deposit.currency,
       provider: deposit.provider,
       referenceId: deposit.referenceId,
       callbackUrl: "",
-      idempotencyKey: deposit.referenceId,
+      idempotencyKey: input.idempotencyKey,
     });
 
-    // Save the provider's payment ID for later verification.
+    /*
+     * Another request may have attached the provider payment while this
+     * request was waiting on the external provider. Lock before writing and
+     * never overwrite the winner's provider payment ID.
+     */
     return this.unitOfWork.execute(async ({ depositRepository }) => {
       const currentDeposit = await depositRepository.findByIdForUpdate(
         deposit.id,
@@ -89,9 +125,28 @@ export class CreateDepositUseCase {
         throw new DepositNotFoundException();
       }
 
+      if (currentDeposit.providerPaymentId) {
+        return currentDeposit;
+      }
+
       currentDeposit.setProviderPayment(payment.providerPaymentId);
 
       return depositRepository.save(currentDeposit);
     });
+  }
+
+  private assertSameIdempotentRequest(
+    existing: Deposit,
+    input: CreateDepositInput,
+  ): void {
+    const sameRequest =
+      existing.provider === input.provider &&
+      existing.currency === input.currency &&
+      existing.amount === input.amount &&
+      existing.idempotencyKey === input.idempotencyKey;
+
+    if (!sameRequest) {
+      throw new DepositIdempotencyConflictException();
+    }
   }
 }

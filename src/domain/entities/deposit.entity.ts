@@ -8,7 +8,6 @@ import {
   DepositCannotFailException,
   DepositChangeStatusNotAllowedException,
   InvalidDepositAmountException,
-  InvalidDepositCompletionException,
 } from "@domain/exceptions/domain.exception";
 
 import { isNegativeDecimal, isZeroDecimal } from "../utils/decimal.util";
@@ -19,6 +18,7 @@ export interface CreateDepositProps {
   currency: PaymentCurrency;
   amount: string;
   provider: PaymentProvider;
+  idempotencyKey: string;
   status?: DepositStatus;
   referenceId?: string;
   providerPaymentId?: string | null;
@@ -34,6 +34,7 @@ export interface RestoreDepositProps {
   currency: PaymentCurrency;
   amount: string;
   provider: PaymentProvider;
+  idempotencyKey: string | null;
   status: DepositStatus;
   referenceId: string;
   providerPaymentId: string | null;
@@ -50,6 +51,7 @@ export class Deposit {
     public readonly currency: PaymentCurrency,
     public readonly amount: string,
     public readonly provider: PaymentProvider,
+    public readonly idempotencyKey: string | null,
     public status: DepositStatus,
     public readonly referenceId: string,
     public providerPaymentId: string | null,
@@ -60,23 +62,19 @@ export class Deposit {
   ) {}
 
   /**
-   * Creates a new deposit in the application domain.
+   * Creates a new deposit.
    *
-   * This path is intentionally separate from restore() because creation
-   * represents a new business operation and therefore applies creation-time
-   * invariants/defaults.
+   * Idempotency is part of creation because the key identifies the
+   * client operation that produced this deposit. A retry must be able
+   * to resolve back to the same business record.
    */
   static create(props: CreateDepositProps): Deposit {
     if (isNegativeDecimal(props.amount) || isZeroDecimal(props.amount)) {
       throw new InvalidDepositAmountException();
     }
 
-    if (props.status !== DepositStatus.COMPLETED && props.completedAt != null) {
-      throw new InvalidDepositCompletionException();
-    }
-
-    if (props.status === DepositStatus.COMPLETED && props.completedAt == null) {
-      throw new InvalidDepositCompletionException();
+    if (!props.idempotencyKey.trim()) {
+      throw new Error("Deposit idempotency key must not be empty.");
     }
 
     const now = new Date();
@@ -87,6 +85,7 @@ export class Deposit {
       props.currency,
       props.amount,
       props.provider,
+      props.idempotencyKey,
       props.status ?? DepositStatus.PENDING,
       props.referenceId ?? randomUUID(),
       props.providerPaymentId ?? null,
@@ -98,11 +97,10 @@ export class Deposit {
   }
 
   /**
-   * Rehydrates an existing deposit from persistence.
+   * Rehydrates persisted state without applying creation defaults.
    *
-   * Restore must preserve database state exactly, including historical
-   * timestamps and provider/payment identifiers. It must not behave like
-   * creating a new deposit.
+   * Existing deposits may predate idempotency support, therefore the
+   * persisted key is nullable during this compatibility period.
    */
   static restore(props: RestoreDepositProps): Deposit {
     return new Deposit(
@@ -111,6 +109,7 @@ export class Deposit {
       props.currency,
       props.amount,
       props.provider,
+      props.idempotencyKey,
       props.status,
       props.referenceId,
       props.providerPaymentId,

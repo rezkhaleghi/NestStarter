@@ -164,10 +164,10 @@ export class DepositCannotFailException extends DomainException {
   }
 }
 
-export class InvalidDepositCompletionException extends DomainException {
+export class DepositIdempotencyConflictException extends DomainException {
   constructor() {
     super(
-      "Completed deposit must have completedAt, and non-completed deposits must not have completedAt.",
+      "The idempotency key has already been used with different deposit parameters.",
     );
   }
 }

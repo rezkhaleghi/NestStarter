@@ -19,6 +19,7 @@ import { UserOrmEntity } from "./user.orm-entity";
 @Index(["userId", "createdAt"])
 @Index(["referenceId"], { unique: true })
 @Index(["providerPaymentId"], { unique: true })
+@Index(["userId", "idempotencyKey"], { unique: true })
 export class DepositOrmEntity {
   @PrimaryColumn("uuid")
   id!: string;
@@ -27,8 +28,7 @@ export class DepositOrmEntity {
   @Column({ type: "uuid" })
   userId!: string;
 
-  // The domain only needs userId. This relation exists at the persistence
-  // boundary so PostgreSQL can enforce that every deposit belongs to a real user.
+  // Persistence-level FK. The domain continues to depend only on userId.
   @ManyToOne(() => UserOrmEntity, {
     nullable: false,
     onDelete: "RESTRICT",
@@ -54,6 +54,20 @@ export class DepositOrmEntity {
     enum: PaymentProvider,
   })
   provider!: PaymentProvider;
+
+  /**
+   * Nullable temporarily because existing development databases may
+   * contain deposits created before idempotency support was introduced.
+   *
+   * New deposits always receive a non-empty key through Deposit.create().
+   * Once migrations are introduced, this column can be made NOT NULL.
+   */
+  @Column({
+    type: "varchar",
+    length: 255,
+    nullable: true,
+  })
+  idempotencyKey!: string | null;
 
   @Column({ type: "uuid" })
   referenceId!: string;

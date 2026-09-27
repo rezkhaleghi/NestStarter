@@ -6,6 +6,7 @@ import { DepositStatus } from "@domain/enums/deposit-status.enum";
 import { PaymentProvider } from "@domain/enums/payment-provider.enum";
 
 import {
+  DepositIdempotencyConflictException,
   InvalidDepositAmountException,
   UnsupportedPaymentCurrencyException,
   UserNotFoundException,
@@ -21,7 +22,6 @@ describe("CreateDepositUseCase", () => {
 
   const paymentProviderMock = {
     name: PaymentProvider.FAKE_PROVIDER,
-    // Only support the currency used by the normal tests.
     supportedCurrencies: [currency],
     createPayment: jest.fn(),
     verifyPayment: jest.fn(),
@@ -37,6 +37,7 @@ describe("CreateDepositUseCase", () => {
 
   const depositRepositoryMock = {
     create: jest.fn(),
+    findByUserIdAndIdempotencyKey: jest.fn(),
     findByIdForUpdate: jest.fn(),
     save: jest.fn(),
   };
@@ -56,13 +57,55 @@ describe("CreateDepositUseCase", () => {
     );
   });
 
+  const createInput = (
+    overrides: Partial<{
+      userId: string;
+      currency: PaymentCurrency;
+      amount: string;
+      provider: PaymentProvider;
+      idempotencyKey: string;
+    }> = {},
+  ) => ({
+    userId: "user-1",
+    currency,
+    amount: "100",
+    provider: PaymentProvider.FAKE_PROVIDER,
+    idempotencyKey: "client-key-1",
+    ...overrides,
+  });
+
+  const setupFirstTransaction = ({
+    existingDeposit = null,
+    user = { id: "user-1" },
+  }: {
+    existingDeposit?: Deposit | null;
+    user?: unknown;
+  } = {}) => {
+    userRepositoryMock.findById.mockResolvedValue(user);
+    depositRepositoryMock.findByUserIdAndIdempotencyKey.mockResolvedValue(
+      existingDeposit,
+    );
+
+    unitOfWorkMock.execute.mockImplementationOnce(async (callback: any) =>
+      callback({
+        userRepository: userRepositoryMock,
+        depositRepository: depositRepositoryMock,
+      }),
+    );
+  };
+
+  const setupSecondTransaction = (currentDeposit: Deposit) => {
+    depositRepositoryMock.findByIdForUpdate.mockResolvedValue(currentDeposit);
+
+    unitOfWorkMock.execute.mockImplementationOnce(async (callback: any) =>
+      callback({
+        depositRepository: depositRepositoryMock,
+      }),
+    );
+  };
+
   it("should create a pending deposit and attach the provider payment ID", async () => {
-    const input = {
-      userId: "user-1",
-      currency,
-      amount: "100",
-      provider: PaymentProvider.FAKE_PROVIDER,
-    };
+    const input = createInput();
 
     const createdDeposit = {
       id: "deposit-1",
@@ -72,6 +115,7 @@ describe("CreateDepositUseCase", () => {
       provider: PaymentProvider.FAKE_PROVIDER,
       status: DepositStatus.PENDING,
       referenceId: "reference-1",
+      idempotencyKey: "client-key-1",
       providerPaymentId: null,
       setProviderPayment: jest.fn(function (
         this: Deposit & { providerPaymentId: string | null },
@@ -90,6 +134,7 @@ describe("CreateDepositUseCase", () => {
       id: "user-1",
     });
 
+    depositRepositoryMock.findByUserIdAndIdempotencyKey.mockResolvedValue(null);
     depositRepositoryMock.create.mockResolvedValue(createdDeposit);
     depositRepositoryMock.findByIdForUpdate.mockResolvedValue(createdDeposit);
     depositRepositoryMock.save.mockResolvedValue(savedDeposit);
@@ -119,6 +164,10 @@ describe("CreateDepositUseCase", () => {
       PaymentProvider.FAKE_PROVIDER,
     );
 
+    expect(
+      depositRepositoryMock.findByUserIdAndIdempotencyKey,
+    ).toHaveBeenCalledWith("user-1", "client-key-1");
+
     expect(userRepositoryMock.findById).toHaveBeenCalledWith("user-1");
 
     expect(depositRepositoryMock.create).toHaveBeenCalledTimes(1);
@@ -130,6 +179,7 @@ describe("CreateDepositUseCase", () => {
     expect(depositArgument.amount).toBe("100");
     expect(depositArgument.provider).toBe(PaymentProvider.FAKE_PROVIDER);
     expect(depositArgument.status).toBe(DepositStatus.PENDING);
+    expect(depositArgument.idempotencyKey).toBe("client-key-1");
 
     expect(paymentProviderMock.createPayment).toHaveBeenCalledWith({
       amount: "100",
@@ -137,7 +187,7 @@ describe("CreateDepositUseCase", () => {
       provider: PaymentProvider.FAKE_PROVIDER,
       referenceId: "reference-1",
       callbackUrl: "",
-      idempotencyKey: "reference-1",
+      idempotencyKey: "client-key-1",
     });
 
     expect(depositRepositoryMock.findByIdForUpdate).toHaveBeenCalledWith(
@@ -147,6 +197,175 @@ describe("CreateDepositUseCase", () => {
     expect(depositRepositoryMock.save).toHaveBeenCalledWith(createdDeposit);
 
     expect(createdDeposit.providerPaymentId).toBe("payment-123");
+  });
+
+  it("should return the existing deposit for the same idempotency key and parameters", async () => {
+    const input = createInput();
+
+    const existingDeposit = {
+      id: "deposit-existing",
+      userId: "user-1",
+      currency,
+      amount: "100",
+      provider: PaymentProvider.FAKE_PROVIDER,
+      status: DepositStatus.PENDING,
+      idempotencyKey: "client-key-1",
+      providerPaymentId: "payment-existing",
+    } as unknown as Deposit;
+
+    setupFirstTransaction({
+      existingDeposit,
+    });
+
+    const result = await useCase.execute(input);
+
+    expect(result).toBe(existingDeposit);
+
+    expect(depositRepositoryMock.create).not.toHaveBeenCalled();
+    expect(paymentProviderMock.createPayment).not.toHaveBeenCalled();
+
+    // Returning the existing deposit must not open another transaction.
+    expect(unitOfWorkMock.execute).toHaveBeenCalledTimes(1);
+  });
+
+  it("should reject reuse of an idempotency key with different parameters", async () => {
+    const existingDeposit = {
+      id: "deposit-existing",
+      userId: "user-1",
+      currency,
+      amount: "100",
+      provider: PaymentProvider.FAKE_PROVIDER,
+      status: DepositStatus.PENDING,
+      idempotencyKey: "client-key-1",
+      providerPaymentId: "payment-existing",
+    } as unknown as Deposit;
+
+    setupFirstTransaction({
+      existingDeposit,
+    });
+
+    await expect(
+      useCase.execute(
+        createInput({
+          amount: "250",
+        }),
+      ),
+    ).rejects.toBeInstanceOf(DepositIdempotencyConflictException);
+
+    expect(depositRepositoryMock.create).not.toHaveBeenCalled();
+    expect(paymentProviderMock.createPayment).not.toHaveBeenCalled();
+  });
+
+  it("should resume an existing pending deposit when it has no provider payment ID", async () => {
+    const input = createInput();
+
+    const existingDeposit = {
+      id: "deposit-existing",
+      userId: "user-1",
+      currency,
+      amount: "100",
+      provider: PaymentProvider.FAKE_PROVIDER,
+      status: DepositStatus.PENDING,
+      referenceId: "reference-existing",
+      idempotencyKey: "client-key-1",
+      providerPaymentId: null,
+      setProviderPayment: jest.fn(function (
+        this: Deposit & { providerPaymentId: string | null },
+        providerPaymentId: string,
+      ) {
+        this.providerPaymentId = providerPaymentId;
+      }),
+    } as unknown as Deposit;
+
+    const savedDeposit = {
+      ...existingDeposit,
+      providerPaymentId: "payment-recovered",
+    } as Deposit;
+
+    setupFirstTransaction({
+      existingDeposit,
+    });
+
+    depositRepositoryMock.findByIdForUpdate.mockResolvedValue(existingDeposit);
+    depositRepositoryMock.save.mockResolvedValue(savedDeposit);
+
+    paymentProviderMock.createPayment.mockResolvedValue({
+      providerPaymentId: "payment-recovered",
+    });
+
+    unitOfWorkMock.execute.mockImplementationOnce(async (callback: any) =>
+      callback({
+        depositRepository: depositRepositoryMock,
+      }),
+    );
+
+    const result = await useCase.execute(input);
+
+    expect(result).toBe(savedDeposit);
+
+    expect(depositRepositoryMock.create).not.toHaveBeenCalled();
+
+    expect(paymentProviderMock.createPayment).toHaveBeenCalledWith({
+      amount: "100",
+      currency,
+      provider: PaymentProvider.FAKE_PROVIDER,
+      referenceId: "reference-existing",
+      callbackUrl: "",
+      idempotencyKey: "client-key-1",
+    });
+
+    expect(existingDeposit.setProviderPayment).toHaveBeenCalledWith(
+      "payment-recovered",
+    );
+  });
+
+  it("should not overwrite a provider payment ID attached by another request", async () => {
+    const input = createInput();
+
+    const existingDeposit = {
+      id: "deposit-existing",
+      userId: "user-1",
+      currency,
+      amount: "100",
+      provider: PaymentProvider.FAKE_PROVIDER,
+      status: DepositStatus.PENDING,
+      referenceId: "reference-existing",
+      idempotencyKey: "client-key-1",
+      providerPaymentId: null,
+    } as unknown as Deposit;
+
+    const concurrentlyUpdatedDeposit = {
+      ...existingDeposit,
+      providerPaymentId: "payment-from-other-request",
+    } as Deposit;
+
+    setupFirstTransaction({
+      existingDeposit,
+    });
+
+    paymentProviderMock.createPayment.mockResolvedValue({
+      providerPaymentId: "payment-from-this-request",
+    });
+
+    depositRepositoryMock.findByIdForUpdate.mockResolvedValue(
+      concurrentlyUpdatedDeposit,
+    );
+
+    unitOfWorkMock.execute.mockImplementationOnce(async (callback: any) =>
+      callback({
+        depositRepository: depositRepositoryMock,
+      }),
+    );
+
+    const result = await useCase.execute(input);
+
+    expect(result).toBe(concurrentlyUpdatedDeposit);
+
+    expect(depositRepositoryMock.save).not.toHaveBeenCalled();
+
+    expect(concurrentlyUpdatedDeposit.providerPaymentId).toBe(
+      "payment-from-other-request",
+    );
   });
 
   it("should throw when the currency is not supported", async () => {
@@ -161,12 +380,11 @@ describe("CreateDepositUseCase", () => {
     }
 
     await expect(
-      useCase.execute({
-        userId: "user-1",
-        currency: unsupportedCurrency,
-        amount: "100",
-        provider: PaymentProvider.FAKE_PROVIDER,
-      }),
+      useCase.execute(
+        createInput({
+          currency: unsupportedCurrency,
+        }),
+      ),
     ).rejects.toBeInstanceOf(UnsupportedPaymentCurrencyException);
 
     expect(paymentProviderResolverMock.resolve).toHaveBeenCalledWith(
@@ -179,12 +397,11 @@ describe("CreateDepositUseCase", () => {
 
   it("should throw when the amount is zero", async () => {
     await expect(
-      useCase.execute({
-        userId: "user-1",
-        currency,
-        amount: "0",
-        provider: PaymentProvider.FAKE_PROVIDER,
-      }),
+      useCase.execute(
+        createInput({
+          amount: "0",
+        }),
+      ),
     ).rejects.toBeInstanceOf(InvalidDepositAmountException);
 
     expect(unitOfWorkMock.execute).not.toHaveBeenCalled();
@@ -193,12 +410,11 @@ describe("CreateDepositUseCase", () => {
 
   it("should throw when the amount is negative", async () => {
     await expect(
-      useCase.execute({
-        userId: "user-1",
-        currency,
-        amount: "-10",
-        provider: PaymentProvider.FAKE_PROVIDER,
-      }),
+      useCase.execute(
+        createInput({
+          amount: "-10",
+        }),
+      ),
     ).rejects.toBeInstanceOf(InvalidDepositAmountException);
 
     expect(unitOfWorkMock.execute).not.toHaveBeenCalled();
@@ -216,13 +432,18 @@ describe("CreateDepositUseCase", () => {
     );
 
     await expect(
-      useCase.execute({
-        userId: "missing-user",
-        currency,
-        amount: "100",
-        provider: PaymentProvider.FAKE_PROVIDER,
-      }),
+      useCase.execute(
+        createInput({
+          userId: "missing-user",
+        }),
+      ),
     ).rejects.toBeInstanceOf(UserNotFoundException);
+
+    expect(userRepositoryMock.findById).toHaveBeenCalledWith("missing-user");
+
+    expect(
+      depositRepositoryMock.findByUserIdAndIdempotencyKey,
+    ).not.toHaveBeenCalled();
 
     expect(depositRepositoryMock.create).not.toHaveBeenCalled();
     expect(paymentProviderMock.createPayment).not.toHaveBeenCalled();
