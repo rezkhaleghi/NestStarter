@@ -24,6 +24,7 @@ import { CreateTicketUseCase } from "@application/use-cases/tickets/create-ticke
 import { ListUserTicketsUseCase } from "@application/use-cases/tickets/list-user-tickets.use-case";
 import { GetTicketUseCase } from "@application/use-cases/tickets/get-ticket.use-case";
 import { CreateTicketMessageUseCase } from "@application/use-cases/tickets/create-ticket-message.use-case";
+
 import { CreateTicketDto } from "./dtos/create-ticket.dto";
 import { ListTicketsQueryDto } from "./dtos/list-tickets.query.dto";
 import { CreateTicketMessageDto } from "./dtos/create-ticket-message.dto";
@@ -58,11 +59,14 @@ export class TicketsController {
   @ApiOperation({ summary: "List my tickets" })
   @ApiResponse({ status: 200, description: "Tickets list" })
   async list(@Query() query: ListTicketsQueryDto, @Req() req: Request) {
+    // Pagination defaults are owned by the DTO layer.
+    // The global ValidationPipe transforms query strings and applies
+    // the DTO property initializers before this controller receives them.
     return this.listUserTicketsUseCase.execute(req.session.userId!, {
-      page: query.page ?? 1,
-      limit: query.limit ?? 20,
-      sortBy: query.sortBy ?? "createdAt",
-      sortDirection: query.sortDirection ?? "DESC",
+      page: query.page,
+      limit: query.limit,
+      sortBy: query.sortBy,
+      sortDirection: query.sortDirection,
       status: query.status,
       priority: query.priority,
       categoryId: query.categoryId,

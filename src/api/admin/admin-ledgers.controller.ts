@@ -30,8 +30,8 @@ export class AdminLedgersController {
       referenceId: query.referenceId,
       from: query.from ? new Date(query.from) : undefined,
       to: query.to ? new Date(query.to) : undefined,
-      page: query.page ?? 1,
-      limit: query.limit ?? 20,
+      page: query.page,
+      limit: query.limit,
       sortBy: query.sortBy,
       sortDirection: query.sortDirection,
     });

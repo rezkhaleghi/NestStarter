@@ -103,10 +103,10 @@ export class AdminUsersController {
         to: query.to ? new Date(query.to) : undefined,
       },
       {
-        page: query.page ?? 1,
-        limit: query.limit ?? 20,
+        page: query.page,
+        limit: query.limit,
         sortBy: "createdAt",
-        sortDirection: query.sortDirection ?? "DESC",
+        sortDirection: query.sortDirection,
       },
     );
 

@@ -31,8 +31,9 @@ import { ListTicketCategoriesUseCase } from "@application/use-cases/admin-ticket
 import { CreateTicketCategoryUseCase } from "@application/use-cases/admin-tickets/create-ticket-category.use-case";
 import { UpdateTicketCategoryUseCase } from "@application/use-cases/admin-tickets/update-ticket-category.use-case";
 import { DeactivateTicketCategoryUseCase } from "@application/use-cases/admin-tickets/deactive-ticket-category.use-case";
+
 import { ListTicketsQueryDto } from "./dtos/tickets/list-tickets.query.dto";
-import { ListTicketCategoriesQueryDto } from "./dtos/tickets/list-ticket-categories.query";
+import { ListTicketCategoriesQueryDto } from "./dtos/tickets/list-ticket-categories.query.dto";
 import { CreateTicketCategoryDto } from "./dtos/tickets/create-ticket-category.dto";
 import { UpdateTicketCategoryDto } from "./dtos/tickets/update-ticket-category.dto";
 import { CreateTicketMessageDto } from "./dtos/tickets/create-ticket-message.dto";
@@ -64,10 +65,10 @@ export class AdminTicketsController {
   @ApiResponse({ status: 403, description: "Administrator access required" })
   async list(@Query() query: ListTicketsQueryDto) {
     return this.listAdminTicketsUseCase.execute({
-      page: query.page ?? 1,
-      limit: query.limit ?? 20,
-      sortBy: query.sortBy ?? "createdAt",
-      sortDirection: query.sortDirection ?? "DESC",
+      page: query.page,
+      limit: query.limit,
+      sortBy: query.sortBy,
+      sortDirection: query.sortDirection,
       status: query.status,
       priority: query.priority,
       categoryId: query.categoryId,
@@ -83,10 +84,10 @@ export class AdminTicketsController {
   @ApiResponse({ status: 403, description: "Administrator access required" })
   async listCategories(@Query() query: ListTicketCategoriesQueryDto) {
     return this.listTicketCategoriesUseCase.execute({
-      page: query.page ?? 1,
-      limit: query.limit ?? 20,
-      sortBy: query.sortBy ?? "createdAt",
-      sortDirection: query.sortDirection ?? "DESC",
+      page: query.page,
+      limit: query.limit,
+      sortBy: query.sortBy,
+      sortDirection: query.sortDirection,
     });
   }
 
@@ -189,6 +190,7 @@ export class AdminTicketsController {
       ticketId: id,
       assignedToUserId: dto.assignedToUserId,
     });
+
     return { success: true };
   }
 
@@ -208,6 +210,7 @@ export class AdminTicketsController {
       ticketId: id,
       status: dto.status,
     });
+
     return { success: true };
   }
 
@@ -227,6 +230,7 @@ export class AdminTicketsController {
       ticketId: id,
       priority: dto.priority,
     });
+
     return { success: true };
   }
 }

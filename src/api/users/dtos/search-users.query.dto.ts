@@ -1,14 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { PaginationQueryDto } from "@shared/pagination/pagination.query.dto";
-import { Type } from "class-transformer";
-import {
-  IsInt,
-  IsNotEmpty,
-  IsString,
-  Max,
-  Min,
-  MinLength,
-} from "class-validator";
+import { IsNotEmpty, IsString, MinLength } from "class-validator";
 
 export class SearchUsersQueryDto extends PaginationQueryDto {
   @ApiProperty({
