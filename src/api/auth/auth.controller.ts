@@ -22,6 +22,7 @@ import { LoginWithPasswordUseCase } from "@application/use-cases/auth/login-with
 import { LoginWithOtpUseCase } from "@application/use-cases/auth/login-with-otp.use-case";
 import { OtpService } from "@application/interfaces/otp.service.interface";
 import { ChangeUserPasswordUseCase } from "@application/use-cases/users/change-user-password.use-case";
+import { SessionManager } from "@application/interfaces/session-manager.interface";
 
 import { AuthSessionGuard } from "./auth-session.guard";
 import { AuthenticatedUserResponseDto } from "./dtos/authenticated-user.response.dto";
@@ -50,6 +51,7 @@ export class AuthController {
     private readonly loginWithOtpUseCase: LoginWithOtpUseCase,
     private readonly otpService: OtpService,
     private readonly changeUserPasswordUseCase: ChangeUserPasswordUseCase,
+    private readonly sessionManager: SessionManager,
   ) {}
 
   @Post("request-otp")
@@ -84,8 +86,6 @@ export class AuthController {
     description: "Invalid OTP or user already exists",
   })
   async signUp(@Body() dto: SignUpDto, @Req() req: Request) {
-    // OTP verification and user creation are intentionally
-    // separate use cases.
     await this.verifyOtpUseCase.execute({
       email: dto.email,
       otp: dto.otp,
@@ -96,7 +96,6 @@ export class AuthController {
       password: dto.password,
     });
 
-    // Create an authenticated session immediately after signup.
     await this.establishSession(req, user.id);
 
     return {
@@ -222,10 +221,18 @@ export class AuthController {
     description: "Not authenticated",
   })
   async changePassword(@Body() dto: UpdatePasswordDto, @Req() req: Request) {
+    const userId = req.session.userId!;
+
     await this.changeUserPasswordUseCase.execute({
-      userId: req.session.userId!,
+      userId,
       password: dto.password,
     });
+
+    /**
+     * Keep the session used for this request alive while invalidating
+     * sessions belonging to the same user on other devices/browsers.
+     */
+    await this.sessionManager.destroyOtherSessions(userId, req.sessionID);
 
     return {
       message: "Password changed",
@@ -241,12 +248,24 @@ export class AuthController {
     description: "Logged out",
   })
   logout(@Req() req: Request, @Res() res: Response) {
-    req.session.destroy((error) => {
+    const userId = req.session.userId;
+    const sessionId = req.sessionID;
+
+    req.session.destroy(async (error) => {
       if (error) {
         res.status(500).json({
           message: "Could not log out",
         });
         return;
+      }
+
+      /**
+       * The Express session has already been destroyed. Remove its ID from
+       * our per-user index so the index does not accumulate unnecessary
+       * entries during normal logout.
+       */
+      if (userId) {
+        await this.sessionManager.unregister(userId, sessionId);
       }
 
       res.clearCookie("connect.sid");
@@ -261,19 +280,31 @@ export class AuthController {
    * Creates a new session for the authenticated user.
    *
    * Regenerating the session ID prevents session fixation attacks.
+   *
+   * When an already-authenticated session is regenerated, its old session ID
+   * is removed from our per-user index as well.
    */
-  private establishSession(req: Request, userId: string): Promise<void> {
-    return new Promise((resolve, reject) => {
+  private async establishSession(req: Request, userId: string): Promise<void> {
+    const previousUserId = req.session.userId;
+    const previousSessionId = req.sessionID;
+
+    await new Promise<void>((resolve, reject) => {
       req.session.regenerate((error) => {
         if (error) {
           reject(error);
           return;
         }
 
-        req.session.userId = userId;
-
         resolve();
       });
     });
+
+    if (previousUserId && previousSessionId) {
+      await this.sessionManager.unregister(previousUserId, previousSessionId);
+    }
+
+    req.session.userId = userId;
+
+    await this.sessionManager.register(userId, req.sessionID);
   }
 }

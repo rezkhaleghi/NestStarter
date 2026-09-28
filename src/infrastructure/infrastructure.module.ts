@@ -76,6 +76,9 @@ import {
 import { PaymentProviderResolverService } from "./services/payment-provider-resolver.service";
 import { PaymentProviderInterface } from "@application/interfaces/payment-provider.interface";
 
+import { RedisSessionManager } from "./services/redis-session-manager.service";
+import { SessionManager } from "@application/interfaces/session-manager.interface";
+
 import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
 
 /**
@@ -387,6 +390,10 @@ import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
       provide: PAYMENT_PROVIDER_RESOLVER,
       useClass: PaymentProviderResolverService,
     },
+    {
+      provide: SessionManager,
+      useClass: RedisSessionManager,
+    },
   ],
 
   exports: [
@@ -409,6 +416,7 @@ import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
     TicketMessageRepository,
     TicketCategoryRepository,
     PAYMENT_PROVIDER_RESOLVER,
+    SessionManager,
   ],
 })
 export class InfrastructureModule {}
