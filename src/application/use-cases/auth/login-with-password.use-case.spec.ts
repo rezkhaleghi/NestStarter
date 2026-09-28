@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
+
 import { User } from "@domain/entities/user.entity";
 import { InvalidCredentialsException } from "@domain/exceptions/domain.exception";
-import { LoginWithPasswordUseCase } from "./login-with-password.use-case";
 import { UserRole } from "@domain/enums/user-role.enum";
 import { UserStatus } from "@domain/enums/user-status.enum";
+
+import { LoginWithPasswordUseCase } from "./login-with-password.use-case";
 
 describe("LoginWithPasswordUseCase", () => {
   const findByEmail = jest.fn<() => Promise<User | null>>();
@@ -11,9 +13,10 @@ describe("LoginWithPasswordUseCase", () => {
     jest.fn<(plain: string, hashed: string) => Promise<boolean>>();
 
   const loginProtection = {
-    isLocked: jest.fn<(identifier: string) => Promise<boolean>>(),
-    recordFailure: jest.fn<(identifier: string) => Promise<void>>(),
-    clear: jest.fn<(identifier: string) => Promise<void>>(),
+    isLocked: jest.fn<(email: string, clientIp: string) => Promise<boolean>>(),
+    recordFailure:
+      jest.fn<(email: string, clientIp: string) => Promise<void>>(),
+    clear: jest.fn<(email: string, clientIp: string) => Promise<void>>(),
   };
 
   const useCase = new LoginWithPasswordUseCase(
@@ -21,6 +24,8 @@ describe("LoginWithPasswordUseCase", () => {
     { compare } as any,
     loginProtection,
   );
+
+  const clientIp = "203.0.113.10";
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -43,12 +48,20 @@ describe("LoginWithPasswordUseCase", () => {
       useCase.execute({
         email: " USER@example.com ",
         password: "password",
+        clientIp,
       }),
     ).resolves.toBe(user);
 
+    expect(loginProtection.isLocked).toHaveBeenCalledWith(
+      "user@example.com",
+      clientIp,
+    );
     expect(findByEmail).toHaveBeenCalledWith("user@example.com");
     expect(compare).toHaveBeenCalledWith("password", "hashed-password");
-    expect(loginProtection.clear).toHaveBeenCalledWith("user@example.com");
+    expect(loginProtection.clear).toHaveBeenCalledWith(
+      "user@example.com",
+      clientIp,
+    );
     expect(loginProtection.recordFailure).not.toHaveBeenCalled();
   });
 
@@ -68,26 +81,32 @@ describe("LoginWithPasswordUseCase", () => {
       useCase.execute({
         email: user.email,
         password: "wrong",
+        clientIp,
       }),
     ).rejects.toBeInstanceOf(InvalidCredentialsException);
 
     expect(loginProtection.recordFailure).toHaveBeenCalledWith(
       "user@example.com",
+      clientIp,
     );
     expect(loginProtection.clear).not.toHaveBeenCalled();
   });
 
-  it("rejects login when the account is locked", async () => {
+  it("rejects login when the account and client IP are locked", async () => {
     loginProtection.isLocked.mockResolvedValue(true);
 
     await expect(
       useCase.execute({
         email: "user@example.com",
         password: "password",
+        clientIp,
       }),
     ).rejects.toBeInstanceOf(InvalidCredentialsException);
 
-    expect(loginProtection.isLocked).toHaveBeenCalledWith("user@example.com");
+    expect(loginProtection.isLocked).toHaveBeenCalledWith(
+      "user@example.com",
+      clientIp,
+    );
     expect(findByEmail).not.toHaveBeenCalled();
     expect(compare).not.toHaveBeenCalled();
     expect(loginProtection.recordFailure).not.toHaveBeenCalled();
@@ -100,12 +119,14 @@ describe("LoginWithPasswordUseCase", () => {
       useCase.execute({
         email: "missing@example.com",
         password: "password",
+        clientIp,
       }),
     ).rejects.toBeInstanceOf(InvalidCredentialsException);
 
     expect(compare).not.toHaveBeenCalled();
     expect(loginProtection.recordFailure).toHaveBeenCalledWith(
       "missing@example.com",
+      clientIp,
     );
     expect(loginProtection.clear).not.toHaveBeenCalled();
   });
@@ -125,12 +146,14 @@ describe("LoginWithPasswordUseCase", () => {
       useCase.execute({
         email: "user@example.com",
         password: "password",
+        clientIp,
       }),
     ).rejects.toBeInstanceOf(InvalidCredentialsException);
 
     expect(compare).not.toHaveBeenCalled();
     expect(loginProtection.recordFailure).toHaveBeenCalledWith(
       "user@example.com",
+      clientIp,
     );
   });
 
@@ -149,9 +172,13 @@ describe("LoginWithPasswordUseCase", () => {
     await useCase.execute({
       email: " USER@example.com ",
       password: "password",
+      clientIp,
     });
 
     expect(loginProtection.clear).toHaveBeenCalledTimes(1);
-    expect(loginProtection.clear).toHaveBeenCalledWith("user@example.com");
+    expect(loginProtection.clear).toHaveBeenCalledWith(
+      "user@example.com",
+      clientIp,
+    );
   });
 });

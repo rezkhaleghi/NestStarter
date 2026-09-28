@@ -128,6 +128,9 @@ export class AuthController {
     const user = await this.loginWithPasswordUseCase.execute({
       email: dto.email,
       password: dto.password,
+      // Express may type req.ip as undefined, so fall back to the
+      // underlying socket address when the proxy/client IP is unavailable.
+      clientIp: req.ip ?? req.socket.remoteAddress ?? "unknown",
     });
 
     await this.establishSession(req, user.id);
