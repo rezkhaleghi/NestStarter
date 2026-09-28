@@ -4,12 +4,18 @@ import { Repository } from "typeorm";
 
 import { UserBalance } from "@domain/entities/user-balance.entity";
 import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
+import { UserBalanceAlreadyExistsException } from "@domain/exceptions/domain.exception";
 import {
   UserBalanceRepository,
   UserBalanceSortBy,
 } from "@domain/repositories/user-balance.repository";
-import { UserBalanceOrmEntity } from "../orm-entities/user-balance.orm-entity";
 import { PageQuery, PageResult } from "@shared/pagination/page-query";
+
+import { UserBalanceOrmEntity } from "../orm-entities/user-balance.orm-entity";
+import {
+  getPostgresUniqueViolationColumns,
+  isPostgresUniqueViolation,
+} from "../utils/postgres-error.util";
 
 @Injectable()
 export class UserBalanceRepositoryImpl implements UserBalanceRepository {
@@ -19,11 +25,28 @@ export class UserBalanceRepositoryImpl implements UserBalanceRepository {
   ) {}
 
   async create(balance: UserBalance): Promise<UserBalance> {
-    const row = this.toOrm(balance);
+    try {
+      const row = this.toOrm(balance);
+      const saved = await this.repository.save(row);
 
-    const saved = await this.repository.save(row);
+      return this.toDomain(saved);
+    } catch (error) {
+      /**
+       * `(userId, currency)` is the database invariant that guarantees
+       * one materialized balance per user/currency.
+       *
+       * The application may check first, but concurrent requests can both
+       * pass that check. PostgreSQL must therefore remain the final guard.
+       */
+      if (
+        isPostgresUniqueViolation(error) &&
+        this.isUserCurrencyUniqueViolation(error)
+      ) {
+        throw new UserBalanceAlreadyExistsException(balance.currency);
+      }
 
-    return this.toDomain(saved);
+      throw error;
+    }
   }
 
   async findByUserIdAndCurrency(
@@ -40,7 +63,6 @@ export class UserBalanceRepositoryImpl implements UserBalanceRepository {
     return row ? this.toDomain(row) : null;
   }
 
-  // for locking the row for update, we need to use a transaction and a pessimistic lock
   async findByUserIdAndCurrencyForUpdate(
     userId: string,
     currency: PaymentCurrency,
@@ -97,10 +119,19 @@ export class UserBalanceRepositoryImpl implements UserBalanceRepository {
 
   async save(balance: UserBalance): Promise<UserBalance> {
     const row = this.toOrm(balance);
-
     const saved = await this.repository.save(row);
 
     return this.toDomain(saved);
+  }
+
+  private isUserCurrencyUniqueViolation(error: unknown): boolean {
+    const columns = getPostgresUniqueViolationColumns(error);
+
+    return (
+      columns.length === 2 &&
+      columns.includes("userId") &&
+      columns.includes("currency")
+    );
   }
 
   private toDomain(row: UserBalanceOrmEntity): UserBalance {

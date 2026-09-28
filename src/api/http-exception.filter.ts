@@ -45,6 +45,7 @@ import {
   UsernameAlreadyExistsException,
   WithdrawalNotFoundException,
   WithdrawalStatusChangeNotAllowedException,
+  TicketCategoryAlreadyExistsException,
 } from "@domain/exceptions/domain.exception";
 
 @Catch()
@@ -142,7 +143,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
       exception instanceof DepositCannotFailException ||
       exception instanceof WithdrawalStatusChangeNotAllowedException ||
       exception instanceof TicketClosedException ||
-      exception instanceof TicketStatusTransitionException
+      exception instanceof TicketStatusTransitionException ||
+      exception instanceof TicketCategoryAlreadyExistsException
     ) {
       return HttpStatus.CONFLICT;
     }

@@ -1,29 +1,31 @@
 import { Injectable } from "@nestjs/common";
-
 import { InjectRepository } from "@nestjs/typeorm";
-
 import { Repository } from "typeorm";
 
 import { User } from "@domain/entities/user.entity";
+import {
+  GoogleAccountConflictException,
+  UserAlreadyExistsException,
+  UsernameAlreadyExistsException,
+} from "@domain/exceptions/domain.exception";
+import { UserRole } from "@domain/enums/user-role.enum";
+import { UserSearchResult } from "@domain/repositories/user-search-result";
+import { UserRepository } from "@domain/repositories/user.repository";
+import { AdminUserSearchFilters } from "@domain/repositories/admin-user-search-filters";
+import { PageQuery, PageResult } from "@shared/pagination/page-query";
 
 import { UserOrmEntity } from "../orm-entities/user.orm-entity";
-
-import { UserRole } from "@domain/enums/user-role.enum";
-
-import { UserSearchResult } from "@domain/repositories/user-search-result";
-
-import { UserRepository } from "@domain/repositories/user.repository";
-
-import { AdminUserSearchFilters } from "@domain/repositories/admin-user-search-filters";
-
-import { PageQuery, PageResult } from "@shared/pagination/page-query";
+import {
+  getPostgresUniqueViolationColumns,
+  isPostgresUniqueViolation,
+} from "../utils/postgres-error.util";
 
 /**
  * Concrete implementation of the domain's UserRepository contract.
  *
  * This is the ONLY place that translates between the domain entity
- * and the ORM entity — that translation logic (toDomain/toOrm) never
- * leaks into domain or application.
+ * and the ORM entity — that translation logic never leaks into
+ * domain or application.
  */
 @Injectable()
 export class UserRepositoryImpl implements UserRepository {
@@ -37,7 +39,6 @@ export class UserRepositoryImpl implements UserRepository {
     return row ? this.toDomain(row) : null;
   }
 
-  // For locking the row for update, we need to use a transaction and a pessimistic lock.
   async findByIdForUpdate(id: string): Promise<User | null> {
     const row = await this.repo.findOne({
       where: { id },
@@ -92,10 +93,15 @@ export class UserRepositoryImpl implements UserRepository {
   }
 
   async save(user: User): Promise<User> {
-    const row = this.toOrm(user);
-    const saved = await this.repo.save(row);
+    try {
+      const row = this.toOrm(user);
+      const saved = await this.repo.save(row);
 
-    return this.toDomain(saved);
+      return this.toDomain(saved);
+    } catch (error) {
+      this.throwUserUniqueViolation(error);
+      throw error;
+    }
   }
 
   async saveAdminMutation(user: User, wasAdmin: boolean): Promise<User | null> {
@@ -113,9 +119,14 @@ export class UserRepositoryImpl implements UserRepository {
         return null;
       }
 
-      const saved = await manager.save(UserOrmEntity, this.toOrm(user));
+      try {
+        const saved = await manager.save(UserOrmEntity, this.toOrm(user));
 
-      return this.toDomain(saved);
+        return this.toDomain(saved);
+      } catch (error) {
+        this.throwUserUniqueViolation(error);
+        throw error;
+      }
     });
   }
 
@@ -172,17 +183,6 @@ export class UserRepositoryImpl implements UserRepository {
     const firstNameQuery = nameParts[0];
     const lastNameQuery = nameParts.slice(1).join(" ");
 
-    /*
-     * Supported birthday search formats:
-     *
-     * 1990       -> year
-     * 01-01      -> month-day
-     * 1990-01    -> year-month
-     * 1990-01-01 -> exact date
-     *
-     * PostgreSQL's TO_CHAR is used because dateOfBirth is stored
-     * as a PostgreSQL DATE column.
-     */
     qb.where(
       `
       user.email ILIKE :exactEmail
@@ -204,8 +204,6 @@ export class UserRepositoryImpl implements UserRepository {
       },
     );
 
-    // Support full-name searches such as:
-    // "john doe" → firstName starts with "john" AND lastName starts with "doe"
     if (nameParts.length >= 2) {
       qb.orWhere(
         `
@@ -258,8 +256,6 @@ export class UserRepositoryImpl implements UserRepository {
 
     qb.orderBy("search_rank", "ASC");
     qb.addOrderBy("user.createdAt", "DESC");
-
-    // Stable ordering when two users have the same ranking and createdAt.
     qb.addOrderBy("user.id", "ASC");
 
     const [rows, total] = await qb
@@ -361,7 +357,6 @@ export class UserRepositoryImpl implements UserRepository {
       params.sortDirection ?? "DESC",
     );
 
-    // Stable ordering when two users have the same primary sort value.
     qb.addOrderBy("user.id", "ASC");
 
     const [rows, total] = await qb
@@ -379,13 +374,33 @@ export class UserRepositoryImpl implements UserRepository {
   }
 
   /**
-   * Converts a TypeORM entity into the domain User entity.
+   * Converts a persistence unique-key race into the domain exception that
+   * represents the conflicting user field.
    *
-   * ORM entities belong to the infrastructure layer and should
-   * never leak into the domain or application layers.
-   *
-   * Database → ORM Entity → Domain Entity
+   * The pre-checks in the application layer remain useful for fast,
+   * user-friendly failures, but they cannot prevent two concurrent requests
+   * from passing the check. The database constraint is the final authority.
    */
+  private throwUserUniqueViolation(error: unknown): void {
+    if (!isPostgresUniqueViolation(error)) {
+      return;
+    }
+
+    const columns = getPostgresUniqueViolationColumns(error);
+
+    if (columns.length === 1 && columns[0] === "email") {
+      throw new UserAlreadyExistsException("the requested email");
+    }
+
+    if (columns.length === 1 && columns[0] === "userName") {
+      throw new UsernameAlreadyExistsException("the requested username");
+    }
+
+    if (columns.length === 1 && columns[0] === "googleId") {
+      throw new GoogleAccountConflictException();
+    }
+  }
+
   private toDomain(row: UserOrmEntity): User {
     return User.restore({
       id: row.id,
@@ -406,17 +421,6 @@ export class UserRepositoryImpl implements UserRepository {
     });
   }
 
-  /**
-   * Converts a domain User into a TypeORM entity.
-   *
-   * This keeps ORM-specific persistence details inside the
-   * infrastructure layer.
-   *
-   * Domain Entity → TypeORM Entity → Database
-   *
-   * Whenever a new property is added to the User domain entity,
-   * it should also be mapped here and in toDomain().
-   */
   private toOrm(user: User): UserOrmEntity {
     const row = new UserOrmEntity();
 

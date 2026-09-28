@@ -208,6 +208,12 @@ export class TicketStatusTransitionException extends DomainException {
   }
 }
 
+export class TicketCategoryAlreadyExistsException extends DomainException {
+  constructor(name: string) {
+    super(`A ticket category named "${name}" already exists.`);
+  }
+}
+
 // Decimal utility exceptions
 export class InvalidDecimalValueException extends DomainException {
   constructor(value: string) {

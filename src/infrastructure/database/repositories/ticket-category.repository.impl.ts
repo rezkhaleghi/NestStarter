@@ -3,9 +3,15 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
 import { TicketCategory } from "@domain/entities/ticket-category.entity";
+import { TicketCategoryAlreadyExistsException } from "@domain/exceptions/domain.exception";
 import { TicketCategoryRepository } from "@domain/repositories/ticket-category.repository";
-import { TicketCategoryOrmEntity } from "../orm-entities/ticket-category.orm-entity";
 import { PageQuery, PageResult } from "@shared/pagination/page-query";
+
+import { TicketCategoryOrmEntity } from "../orm-entities/ticket-category.orm-entity";
+import {
+  getPostgresUniqueViolationColumns,
+  isPostgresUniqueViolation,
+} from "../utils/postgres-error.util";
 
 @Injectable()
 export class TicketCategoryRepositoryImpl extends TicketCategoryRepository {
@@ -17,13 +23,37 @@ export class TicketCategoryRepositoryImpl extends TicketCategoryRepository {
   }
 
   async create(category: TicketCategory): Promise<TicketCategory> {
-    const saved = await this.repository.save(this.toOrm(category));
-    return this.toDomain(saved);
+    try {
+      const saved = await this.repository.save(this.toOrm(category));
+
+      return this.toDomain(saved);
+    } catch (error) {
+      if (
+        isPostgresUniqueViolation(error) &&
+        this.isNameUniqueViolation(error)
+      ) {
+        throw new TicketCategoryAlreadyExistsException(category.name);
+      }
+
+      throw error;
+    }
   }
 
   async save(category: TicketCategory): Promise<TicketCategory> {
-    const saved = await this.repository.save(this.toOrm(category));
-    return this.toDomain(saved);
+    try {
+      const saved = await this.repository.save(this.toOrm(category));
+
+      return this.toDomain(saved);
+    } catch (error) {
+      if (
+        isPostgresUniqueViolation(error) &&
+        this.isNameUniqueViolation(error)
+      ) {
+        throw new TicketCategoryAlreadyExistsException(category.name);
+      }
+
+      throw error;
+    }
   }
 
   async findById(id: string): Promise<TicketCategory | null> {
@@ -36,6 +66,7 @@ export class TicketCategoryRepositoryImpl extends TicketCategoryRepository {
       where: { id },
       lock: { mode: "pessimistic_write" },
     });
+
     return row ? this.toDomain(row) : null;
   }
 
@@ -43,7 +74,9 @@ export class TicketCategoryRepositoryImpl extends TicketCategoryRepository {
     params: PageQuery<"createdAt" | "name">,
   ): Promise<PageResult<TicketCategory>> {
     const [rows, total] = await this.repository.findAndCount({
-      order: { [params.sortBy ?? "createdAt"]: params.sortDirection ?? "DESC" },
+      order: {
+        [params.sortBy ?? "createdAt"]: params.sortDirection ?? "DESC",
+      },
       skip: (params.page - 1) * params.limit,
       take: params.limit,
     });
@@ -62,11 +95,18 @@ export class TicketCategoryRepositoryImpl extends TicketCategoryRepository {
       where: { isActive: true },
       order: { name: "ASC" },
     });
+
     return rows.map((row) => this.toDomain(row));
   }
 
   async deleteById(id: string): Promise<void> {
     await this.repository.delete(id);
+  }
+
+  private isNameUniqueViolation(error: unknown): boolean {
+    const columns = getPostgresUniqueViolationColumns(error);
+
+    return columns.length === 1 && columns[0] === "name";
   }
 
   private toDomain(row: TicketCategoryOrmEntity): TicketCategory {
@@ -82,12 +122,14 @@ export class TicketCategoryRepositoryImpl extends TicketCategoryRepository {
 
   private toOrm(category: TicketCategory): TicketCategoryOrmEntity {
     const row = new TicketCategoryOrmEntity();
+
     row.id = category.id;
     row.name = category.name;
     row.description = category.description;
     row.isActive = category.isActive;
     row.createdAt = category.createdAt;
     row.updatedAt = category.updatedAt;
+
     return row;
   }
 }
