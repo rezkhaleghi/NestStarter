@@ -28,17 +28,14 @@ export class RedisLoginProtectionService implements LoginProtection {
     private readonly configService: ConfigService<EnvironmentConfig>,
     @Inject("REDIS_CLIENT") private readonly redis: RedisClientType,
   ) {
-    this.maxAttempts = Number(
-      this.configService.get("LOGIN_MAX_ATTEMPTS", "5"),
+    this.maxAttempts = this.configService.get("LOGIN_MAX_ATTEMPTS", 5);
+
+    this.windowSeconds = this.configService.get(
+      "LOGIN_ATTEMPT_WINDOW_SECONDS",
+      900,
     );
 
-    this.windowSeconds = Number(
-      this.configService.get("LOGIN_ATTEMPT_WINDOW_SECONDS", "900"),
-    );
-
-    this.lockSeconds = Number(
-      this.configService.get("LOGIN_LOCK_SECONDS", "900"),
-    );
+    this.lockSeconds = this.configService.get("LOGIN_LOCK_SECONDS", 900);
   }
 
   async isLocked(email: string, clientIp: string): Promise<boolean> {

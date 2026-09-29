@@ -15,12 +15,13 @@ export class RedisOtpStore {
     private readonly configService: ConfigService<EnvironmentConfig>,
     @Inject("REDIS_CLIENT") private readonly redis: RedisClientType,
   ) {
-    this.expirySeconds = Number(
-      this.configService.get("OTP_EXPIRY_SECONDS", "300"),
-    );
-    this.maxAttempts = Number(this.configService.get("OTP_MAX_ATTEMPTS", "5"));
-    this.resendCooldownSeconds = Number(
-      this.configService.get("OTP_RESEND_COOLDOWN_SECONDS", "60"),
+    this.expirySeconds = this.configService.get("OTP_EXPIRY_SECONDS", 300);
+
+    this.maxAttempts = this.configService.get("OTP_MAX_ATTEMPTS", 5);
+
+    this.resendCooldownSeconds = this.configService.get(
+      "OTP_RESEND_COOLDOWN_SECONDS",
+      60,
     );
   }
 
