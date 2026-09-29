@@ -3,24 +3,27 @@ import { ConfigService } from "@nestjs/config";
 import { Client } from "minio";
 import { FileStorage } from "@application/interfaces/file-storage.interface";
 import { Readable } from "stream";
+import { EnvironmentConfig } from "@infrastructure/config/environment.config";
 
 @Injectable()
 export class MinioService extends FileStorage implements OnModuleInit {
   private readonly client: Client;
   private readonly bucket: string;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService<EnvironmentConfig>,
+  ) {
     super();
 
     this.client = new Client({
-      endPoint: this.configService.get<string>("MINIO_ENDPOINT", "localhost"),
-      port: Number(this.configService.get<string>("MINIO_PORT", "9000")),
+      endPoint: this.configService.get("MINIO_ENDPOINT", "localhost"),
+      port: Number(this.configService.get("MINIO_PORT", "9000")),
       useSSL: false,
-      accessKey: this.configService.getOrThrow<string>("MINIO_ACCESS_KEY"),
-      secretKey: this.configService.getOrThrow<string>("MINIO_SECRET_KEY"),
+      accessKey: this.configService.getOrThrow("MINIO_ACCESS_KEY"),
+      secretKey: this.configService.getOrThrow("MINIO_SECRET_KEY"),
     });
 
-    this.bucket = this.configService.get<string>("MINIO_BUCKET", "app");
+    this.bucket = this.configService.get("MINIO_BUCKET", "app");
   }
 
   async onModuleInit(): Promise<void> {
@@ -67,12 +70,9 @@ export class MinioService extends FileStorage implements OnModuleInit {
   }
 
   getUrl(objectName: string): string {
-    const endpoint = this.configService.get<string>(
-      "MINIO_ENDPOINT",
-      "localhost",
-    );
+    const endpoint = this.configService.get("MINIO_ENDPOINT", "localhost");
 
-    const port = this.configService.get<string>("MINIO_PORT", "9000");
+    const port = this.configService.get("MINIO_PORT", "9000");
 
     return `http://${endpoint}:${port}/${this.bucket}/${objectName}`;
   }

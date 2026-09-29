@@ -31,6 +31,7 @@ import { SignUpDto } from "./dtos/sign-up.dto";
 import { LoginPasswordDto } from "./dtos/login-password.dto";
 import { LoginOtpDto } from "./dtos/login-otp.dto";
 import { UpdatePasswordDto } from "./dtos/update-password.dto";
+import { EnvironmentConfig } from "@infrastructure/config/environment.config";
 
 /**
  * Authentication controller.
@@ -43,7 +44,7 @@ import { UpdatePasswordDto } from "./dtos/update-password.dto";
 @Controller("auth")
 export class AuthController {
   constructor(
-    private readonly configService: ConfigService,
+    private readonly configService: ConfigService<EnvironmentConfig>,
     private readonly createUserUseCase: CreateUserUseCase,
     private readonly verifyOtpUseCase: VerifyOtpUseCase,
     private readonly googleAuthUseCase: GoogleAuthUseCase,
@@ -205,7 +206,7 @@ export class AuthController {
     await this.establishSession(req, user.id);
 
     res.redirect(
-      this.configService.get<string>("FRONTEND_URL", "http://localhost:3000"),
+      this.configService.get("FRONTEND_URL", "http://localhost:3000"),
     );
   }
 

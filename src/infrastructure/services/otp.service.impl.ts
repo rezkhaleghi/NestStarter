@@ -5,6 +5,7 @@ import { OtpService } from "@application/interfaces/otp.service.interface";
 import { NotificationService } from "@application/interfaces/notification.service.interface";
 import { RedisOtpStore } from "./redis-otp.store";
 import { normalizeEmail } from "@domain/utils/normalize-email";
+import { EnvironmentConfig } from "@infrastructure/config/environment.config";
 
 @Injectable()
 export class OtpServiceImpl implements OtpService {
@@ -12,14 +13,13 @@ export class OtpServiceImpl implements OtpService {
   private readonly logCodeOnEmailFailure: boolean;
 
   constructor(
-    private readonly configService: ConfigService,
+    private readonly configService: ConfigService<EnvironmentConfig>,
     private readonly otpStore: RedisOtpStore,
     private readonly notificationService: NotificationService,
   ) {
     this.logCodeOnEmailFailure =
-      this.configService.get<string>("OTP_LOG_CODE", "false") === "true" &&
-      this.configService.get<string>("NODE_ENV", "development") !==
-        "production";
+      this.configService.get("OTP_LOG_CODE", "false") === "true" &&
+      this.configService.get("NODE_ENV", "development") !== "production";
   }
 
   async generateAndSend(email: string): Promise<void> {
@@ -27,7 +27,7 @@ export class OtpServiceImpl implements OtpService {
     const otp = randomInt(100000, 1000000).toString();
     await this.otpStore.save(email, otp);
     const expirySeconds = Number(
-      this.configService.get<string>("OTP_EXPIRY_SECONDS", "300"),
+      this.configService.get("OTP_EXPIRY_SECONDS", "300"),
     );
 
     try {

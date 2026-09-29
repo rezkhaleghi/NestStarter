@@ -3,6 +3,7 @@ import { ConfigService } from "@nestjs/config";
 import * as nodemailer from "nodemailer";
 
 import { NotificationService as NotificationPort } from "@application/interfaces/notification.service.interface";
+import { EnvironmentConfig } from "@infrastructure/config/environment.config";
 
 /**
  * Escapes untrusted values before they are inserted into an HTML email.
@@ -31,23 +32,23 @@ export class SmtpNotificationService implements NotificationPort, OnModuleInit {
   private readonly smtpSecure: boolean;
   private readonly smtpPassword: string;
 
-  constructor(private readonly configService: ConfigService) {
-    this.smtpHost = this.configService.getOrThrow<string>("SMTP_HOST");
-    this.smtpPort = Number(this.configService.get<string>("SMTP_PORT", "587"));
+  constructor(
+    private readonly configService: ConfigService<EnvironmentConfig>,
+  ) {
+    this.smtpHost = this.configService.getOrThrow("SMTP_HOST");
+    this.smtpPort = Number(this.configService.get("SMTP_PORT", "587"));
 
-    const configuredSecure = this.configService.get<boolean | string>(
-      "SMTP_SECURE",
-    );
+    const configuredSecure = this.configService.get("SMTP_SECURE");
 
-    this.smtpPassword = this.configService.getOrThrow<string>("SMTP_PASSWORD");
+    this.smtpPassword = this.configService.getOrThrow("SMTP_PASSWORD");
 
     this.smtpSecure =
       configuredSecure === undefined
         ? this.smtpPort === 465
         : configuredSecure === true || configuredSecure === "true";
 
-    this.smtpUser = this.configService.getOrThrow<string>("SMTP_USER");
-    this.smtpFrom = this.configService.getOrThrow<string>("SMTP_FROM");
+    this.smtpUser = this.configService.getOrThrow("SMTP_USER");
+    this.smtpFrom = this.configService.getOrThrow("SMTP_FROM");
 
     this.transporter = nodemailer.createTransport({
       host: this.smtpHost,
@@ -73,10 +74,7 @@ export class SmtpNotificationService implements NotificationPort, OnModuleInit {
         `SMTP connection check failed: ${this.smtpError(error)}`,
       );
 
-      if (
-        this.configService.get<string>("NODE_ENV", "development") ===
-        "production"
-      ) {
+      if (this.configService.get("NODE_ENV", "development") === "production") {
         throw error;
       }
     }

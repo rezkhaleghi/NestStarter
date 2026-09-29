@@ -9,13 +9,14 @@ import { UserBalance } from "@domain/entities/user-balance.entity";
 import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
 import { UnitOfWork } from "@application/interfaces/unit-of-work.interface";
 import { ConfigService } from "@nestjs/config";
+import { EnvironmentConfig } from "@infrastructure/config/environment.config";
 
 @Injectable()
 export class CreateUserUseCase {
   constructor(
     private readonly passwordHasher: PasswordHasher,
     private readonly unitOfWork: UnitOfWork,
-    private readonly configService: ConfigService,
+    private readonly configService: ConfigService<EnvironmentConfig>,
   ) {}
 
   async execute(input: CreateUserInput): Promise<User> {

@@ -3,6 +3,7 @@ import { ConfigService } from "@nestjs/config";
 import { createHash } from "crypto";
 import type { RedisClientType } from "redis";
 import { OtpCooldownException } from "@domain/exceptions/domain.exception";
+import { EnvironmentConfig } from "@infrastructure/config/environment.config";
 
 @Injectable()
 export class RedisOtpStore {
@@ -11,17 +12,15 @@ export class RedisOtpStore {
   private readonly resendCooldownSeconds: number;
 
   constructor(
-    private readonly configService: ConfigService,
+    private readonly configService: ConfigService<EnvironmentConfig>,
     @Inject("REDIS_CLIENT") private readonly redis: RedisClientType,
   ) {
     this.expirySeconds = Number(
-      this.configService.get<string>("OTP_EXPIRY_SECONDS", "300"),
+      this.configService.get("OTP_EXPIRY_SECONDS", "300"),
     );
-    this.maxAttempts = Number(
-      this.configService.get<string>("OTP_MAX_ATTEMPTS", "5"),
-    );
+    this.maxAttempts = Number(this.configService.get("OTP_MAX_ATTEMPTS", "5"));
     this.resendCooldownSeconds = Number(
-      this.configService.get<string>("OTP_RESEND_COOLDOWN_SECONDS", "60"),
+      this.configService.get("OTP_RESEND_COOLDOWN_SECONDS", "60"),
     );
   }
 

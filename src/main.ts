@@ -11,6 +11,7 @@ import { RedisStore } from "connect-redis";
 import type { RedisClientType } from "redis";
 import type { Request, Response } from "express";
 import { AppModule } from "./app.module";
+import { EnvironmentConfig } from "@infrastructure/config/environment.config";
 
 /**
  * Application bootstrap function.
@@ -23,7 +24,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Access environment configuration.
-  const configService = app.get(ConfigService);
+  const configService = app.get(ConfigService<EnvironmentConfig>);
 
   // Close resources(eg. db,redis) when the app receives SIGTERM or SIGINT.
   app.enableShutdownHooks();
@@ -33,11 +34,11 @@ async function bootstrap() {
   app
     .getHttpAdapter()
     .getInstance()
-    .set("trust proxy", configService.get<number>("TRUST_PROXY", 1));
+    .set("trust proxy", configService.get("TRUST_PROXY", 1));
 
   // Enabls CORS.
   app.enableCors({
-    origin: configService.getOrThrow<string>("FRONTEND_URL"),
+    origin: configService.getOrThrow("FRONTEND_URL"),
     credentials: true,
   });
 
@@ -73,7 +74,7 @@ async function bootstrap() {
   const redisClient = app.get<RedisClientType>("REDIS_CLIENT");
 
   // Get the secret used to sign/encrypt session information. app failes if SESSION_SECRET is not set in the env.
-  const sessionSecret = configService.getOrThrow<string>("SESSION_SECRET");
+  const sessionSecret = configService.getOrThrow("SESSION_SECRET");
 
   // Configure Express server-side sessions.
   app.use(
@@ -87,7 +88,7 @@ async function bootstrap() {
       cookie: {
         httpOnly: true, // Prevents client-side JavaScript from accessing the session cookie.
         sameSite: "lax", // Restrict when the browser sends the cookie cross-site.
-        secure: configService.get<string>("NODE_ENV") === "production", // Prod: HTTPS, Dev: HTTP
+        secure: configService.get("NODE_ENV") === "production", // Prod: HTTPS, Dev: HTTP
         maxAge: 1000 * 60 * 60 * 24, // Session cookie expires after 24 hours.
       },
     }),
@@ -96,7 +97,7 @@ async function bootstrap() {
   app.use(passport.session()); // Enables Passport to restore the authenticated user from the existing Express session.
 
   // Swagger/OpenAPI documentation setup.
-  const swaggerEnabled = configService.get<boolean>("SWAGGER_ENABLED");
+  const swaggerEnabled = configService.get("SWAGGER_ENABLED");
 
   if (swaggerEnabled) {
     const config = new DocumentBuilder()
@@ -109,6 +110,6 @@ async function bootstrap() {
     SwaggerModule.setup("api/docs", app, document);
   }
 
-  await app.listen(configService.get<number>("PORT", 3000)); // Start the HTTP server.
+  await app.listen(configService.get("PORT", 3000)); // Start the HTTP server.
 }
 bootstrap();
