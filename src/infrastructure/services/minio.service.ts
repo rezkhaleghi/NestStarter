@@ -16,9 +16,9 @@ export class MinioService extends FileStorage implements OnModuleInit {
     super();
 
     this.client = new Client({
-      endPoint: this.configService.get("MINIO_ENDPOINT", "localhost"),
-      port: Number(this.configService.get("MINIO_PORT", "9000")),
-      useSSL: false,
+      endPoint: this.configService.getOrThrow("MINIO_ENDPOINT"),
+      port: this.configService.getOrThrow("MINIO_PORT"),
+      useSSL: this.configService.get("MINIO_USE_SSL", false),
       accessKey: this.configService.getOrThrow("MINIO_ACCESS_KEY"),
       secretKey: this.configService.getOrThrow("MINIO_SECRET_KEY"),
     });
@@ -70,11 +70,13 @@ export class MinioService extends FileStorage implements OnModuleInit {
   }
 
   getUrl(objectName: string): string {
-    const endpoint = this.configService.get("MINIO_ENDPOINT", "localhost");
+    const endpoint = this.configService.getOrThrow("MINIO_ENDPOINT");
+    const port = this.configService.getOrThrow("MINIO_PORT");
+    const useSSL = this.configService.get("MINIO_USE_SSL", false);
 
-    const port = this.configService.get("MINIO_PORT", "9000");
+    const protocol = useSSL ? "https" : "http";
 
-    return `http://${endpoint}:${port}/${this.bucket}/${objectName}`;
+    return `${protocol}://${endpoint}:${port}/${this.bucket}/${objectName}`;
   }
 
   async healthCheck(): Promise<void> {

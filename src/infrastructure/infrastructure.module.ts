@@ -233,6 +233,11 @@ import { EnvironmentConfig } from "./config/environment.config";
         MINIO_SECRET_KEY: Joi.string().required(),
 
         MINIO_BUCKET: Joi.string().required(),
+
+        MINIO_USE_SSL: Joi.boolean()
+          .truthy("true")
+          .falsy("false")
+          .default(false),
       }),
     }),
 

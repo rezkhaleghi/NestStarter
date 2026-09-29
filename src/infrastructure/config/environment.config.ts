@@ -64,4 +64,5 @@ export interface EnvironmentConfig {
   MINIO_ACCESS_KEY: string;
   MINIO_SECRET_KEY: string;
   MINIO_BUCKET: string;
+  MINIO_USE_SSL: boolean;
 }
