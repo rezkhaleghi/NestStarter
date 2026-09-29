@@ -1,7 +1,24 @@
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import * as nodemailer from "nodemailer";
+
 import { NotificationService as NotificationPort } from "@application/interfaces/notification.service.interface";
+
+/**
+ * Escapes untrusted values before they are inserted into an HTML email.
+ *
+ * We intentionally escape at the point where values cross into HTML rather
+ * than sanitizing the complete email. The template itself is trusted HTML;
+ * only dynamic values need protection.
+ */
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
 
 @Injectable()
 export class SmtpNotificationService implements NotificationPort, OnModuleInit {
@@ -17,14 +34,18 @@ export class SmtpNotificationService implements NotificationPort, OnModuleInit {
   constructor(private readonly configService: ConfigService) {
     this.smtpHost = this.configService.getOrThrow<string>("SMTP_HOST");
     this.smtpPort = Number(this.configService.get<string>("SMTP_PORT", "587"));
+
     const configuredSecure = this.configService.get<boolean | string>(
       "SMTP_SECURE",
     );
+
     this.smtpPassword = this.configService.getOrThrow<string>("SMTP_PASSWORD");
+
     this.smtpSecure =
       configuredSecure === undefined
         ? this.smtpPort === 465
         : configuredSecure === true || configuredSecure === "true";
+
     this.smtpUser = this.configService.getOrThrow<string>("SMTP_USER");
     this.smtpFrom = this.configService.getOrThrow<string>("SMTP_FROM");
 
@@ -43,6 +64,7 @@ export class SmtpNotificationService implements NotificationPort, OnModuleInit {
     this.logger.log(
       `SMTP configuration: host=${this.smtpHost}, port=${this.smtpPort}, secure=${this.smtpSecure}, user=${this.maskEmail(this.smtpUser)}, from=${this.maskEmail(this.smtpFrom)}`,
     );
+
     try {
       await this.transporter.verify();
       this.logger.log("SMTP connection and credentials verified");
@@ -50,6 +72,7 @@ export class SmtpNotificationService implements NotificationPort, OnModuleInit {
       this.logger.error(
         `SMTP connection check failed: ${this.smtpError(error)}`,
       );
+
       if (
         this.configService.get<string>("NODE_ENV", "development") ===
         "production"
@@ -65,11 +88,17 @@ export class SmtpNotificationService implements NotificationPort, OnModuleInit {
     expirySeconds: number,
   ): Promise<void> {
     const expiryMinutes = expirySeconds / 60;
+
+    // OTP is normally numeric, but escaping here keeps this method safe even
+    // if the OTP format changes in the future.
+    const safeOtp = escapeHtml(otp);
+    const safeExpiryMinutes = escapeHtml(String(Math.ceil(expiryMinutes)));
+
     await this.sendEmail(
       email,
       "Your verification code",
       `Your verification code is ${otp}. It expires in ${Math.ceil(expiryMinutes)} minutes.`,
-      `<p>Your verification code is <strong>${otp}</strong>.</p><p>It expires in ${Math.ceil(expiryMinutes)} minutes.</p>`,
+      `<p>Your verification code is <strong>${safeOtp}</strong>.</p><p>It expires in ${safeExpiryMinutes} minutes.</p>`,
     );
   }
 
@@ -154,6 +183,7 @@ export class SmtpNotificationService implements NotificationPort, OnModuleInit {
         text,
         html,
       });
+
       this.logger.log(
         `Email sent: recipient=${this.maskEmail(to)}, from=${this.maskEmail(this.smtpFrom)}`,
       );
@@ -171,10 +201,17 @@ export class SmtpNotificationService implements NotificationPort, OnModuleInit {
     message: string;
     details: Array<[string, string]>;
   }): string {
+    // Escape every dynamic field at the final HTML boundary. This prevents a
+    // user-controlled value such as `<img src=x onerror=...>` from becoming
+    // executable markup while leaving the trusted email structure untouched.
+    const title = escapeHtml(params.title);
+    const heading = escapeHtml(params.heading);
+    const message = escapeHtml(params.message);
+
     const rows = params.details
       .map(
         ([label, value]) =>
-          `<tr><td style="padding:8px 16px;border-bottom:1px solid #e5e7eb;color:#4b5563;font-weight:600;">${label}</td><td style="padding:8px 16px;border-bottom:1px solid #e5e7eb;color:#111827;">${value}</td></tr>`,
+          `<tr><td style="padding:8px 16px;border-bottom:1px solid #e5e7eb;color:#4b5563;font-weight:600;">${escapeHtml(label)}</td><td style="padding:8px 16px;border-bottom:1px solid #e5e7eb;color:#111827;">${escapeHtml(value)}</td></tr>`,
       )
       .join("");
 
@@ -183,17 +220,17 @@ export class SmtpNotificationService implements NotificationPort, OnModuleInit {
         <div style="max-width:640px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
           <div style="background:#111827;padding:24px 32px;color:#ffffff;">
             <div style="font-size:12px;letter-spacing:1.5px;text-transform:uppercase;opacity:0.8;">NestStarter</div>
-            <h1 style="margin:8px 0 0;font-size:28px;line-height:1.3;">${params.heading}</h1>
+            <h1 style="margin:8px 0 0;font-size:28px;line-height:1.3;">${heading}</h1>
           </div>
           <div style="padding:24px 32px;">
             <p style="margin:0 0 16px;font-size:16px;color:#111827;">Hello,</p>
-            <p style="margin:0 0 20px;font-size:16px;line-height:1.6;color:#374151;">${params.message}</p>
+            <p style="margin:0 0 20px;font-size:16px;line-height:1.6;color:#374151;">${message}</p>
             <table style="width:100%;border-collapse:collapse;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
               <tbody>${rows}</tbody>
             </table>
           </div>
           <div style="padding:0 32px 24px;color:#6b7280;font-size:12px;">
-            <p style="margin:0;">${params.title}</p>
+            <p style="margin:0;">${title}</p>
           </div>
         </div>
       </div>
@@ -202,9 +239,11 @@ export class SmtpNotificationService implements NotificationPort, OnModuleInit {
 
   private maskEmail(email: string): string {
     const [localPart, domain] = email.split("@");
+
     if (!domain || localPart.length < 2) {
       return "[invalid-email]";
     }
+
     return `${localPart[0]}***@${domain}`;
   }
 
@@ -212,12 +251,14 @@ export class SmtpNotificationService implements NotificationPort, OnModuleInit {
     if (!error || typeof error !== "object") {
       return "Unknown SMTP error";
     }
+
     const smtpError = error as {
       code?: string;
       responseCode?: number;
       command?: string;
       message?: string;
     };
+
     return (
       [
         smtpError.code,
