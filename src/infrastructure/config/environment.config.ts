@@ -25,6 +25,7 @@ export interface EnvironmentConfig {
   REDIS_HOST: string;
   REDIS_PORT: number;
   REDIS_PASSWORD: string;
+  REDIS_TLS: boolean;
 
   // OTP
   OTP_EXPIRY_SECONDS: number;

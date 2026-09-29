@@ -147,6 +147,8 @@ import { EnvironmentConfig } from "./config/environment.config";
 
         REDIS_PASSWORD: Joi.string().allow("").default(""),
 
+        REDIS_TLS: Joi.boolean().truthy("true").falsy("false").default(false),
+
         // -------------------------------------------------------------------
         // OTP / authentication protection
         // -------------------------------------------------------------------
@@ -256,12 +258,23 @@ import { EnvironmentConfig } from "./config/environment.config";
       provide: "REDIS_CLIENT",
       inject: [ConfigService],
       useFactory: async (configService: ConfigService<EnvironmentConfig>) => {
+        const redisTls = configService.get("REDIS_TLS");
+
         const client = createClient({
           socket: {
             host: configService.getOrThrow("REDIS_HOST"),
             port: configService.getOrThrow("REDIS_PORT"),
+            ...(redisTls ? { tls: true } : {}),
+            connectTimeout: 10_000,
+            reconnectStrategy: (retries) => Math.min(100 * 2 ** retries, 5_000),
           },
           password: configService.get("REDIS_PASSWORD") || undefined,
+        });
+
+        client.on("error", (error) => {
+          // Redis emits connection errors asynchronously.
+          // Keeping a listener prevents an unhandled Redis "error" event.
+          console.error("Redis client error:", error);
         });
 
         await client.connect();
