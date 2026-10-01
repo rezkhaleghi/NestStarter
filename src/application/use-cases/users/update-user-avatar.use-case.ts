@@ -43,7 +43,7 @@ export class UpdateUserAvatarUseCase {
     // Every user's avatar uses the same deterministic object path.
     const objectName = `avatars/${userId}/avatar.webp`;
 
-    // Store the processed image rather than the original upload.
+    // Store the processed image before changing the database reference.
     await this.fileStorage.upload(objectName, processedImage, "image/webp");
 
     const oldAvatar = user.avatar;
@@ -56,32 +56,19 @@ export class UpdateUserAvatarUseCase {
       avatar: objectName,
     });
 
+    /**
+     * Save the database change only after the new file
+     * has been successfully uploaded.
+     *
+     * The database reference is the source of truth. If this
+     * save fails, the new object is cleaned up so the failed
+     * operation does not leave an unnecessary file behind.
+     */
+    let saved: User;
+
     try {
-      /**
-       * Save the database change only after the new file
-       * has been successfully uploaded.
-       */
-      const saved = await this.userRepository.save(user);
-
-      /**
-       * Delete the old file only after the database update succeeds.
-       *
-       * This avoids deleting the previous avatar if saving the user fails.
-       */
-      if (oldAvatar && oldAvatar !== objectName) {
-        await this.fileStorage.delete(oldAvatar);
-      }
-
-      return saved;
+      saved = await this.userRepository.save(user);
     } catch (error) {
-      /**
-       * The database update failed after the new object was uploaded.
-       *
-       * Remove the newly uploaded object so we don't leave an
-       * orphaned file in storage.
-       *
-       * Cleanup errors must not hide the original database error.
-       */
       try {
         await this.fileStorage.delete(objectName);
       } catch {
@@ -90,5 +77,23 @@ export class UpdateUserAvatarUseCase {
 
       throw error;
     }
+
+    /**
+     * Delete the old file only after the database update succeeds.
+     *
+     * If cleanup fails, keep the new database reference intact.
+     * The old object becomes orphaned storage and can be cleaned up
+     * separately; deleting the new object here would create a
+     * broken database reference.
+     */
+    if (oldAvatar && oldAvatar !== objectName) {
+      try {
+        await this.fileStorage.delete(oldAvatar);
+      } catch {
+        // Preserve the successful database update.
+      }
+    }
+
+    return saved;
   }
 }
