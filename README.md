@@ -420,15 +420,13 @@ Current withdrawal statuses are:
 ```text
 PENDING
 APPROVED
-PROCESSING
-COMPLETED
-FAILED
 REJECTED
+COMPLETED
 ```
 
 The domain controls valid state transitions.
 
-The current administrative workflow is intentionally simple:
+The current lifecycle is intentionally simple:
 
 ```text
 User creates withdrawal
@@ -438,27 +436,84 @@ User creates withdrawal
       /    \
      /      \
 APPROVED   REJECTED
-             │
-             ▼
-          REFUND
+   │          │
+   │          ▼
+   │        REFUND
+   │
+   ▼
+COMPLETED
 ```
 
-The future provider-oriented lifecycle can support:
+`PROCESSING` and `FAILED` are not part of the current withdrawal domain lifecycle.
+
+The current implementation models the administrative workflow around approval, rejection/refund, and final completion after the external/manual transfer has actually been performed.
+
+# Administrative Withdrawal Workflow
+
+The current administrative workflow intentionally has two actions:
+
+```text
+Approve
+Reject
+```
+
+## Approve
+
+An administrator can approve a pending withdrawal:
+
+```text
+PENDING
+   │
+   ▼
+APPROVED
+```
+
+The approval is transactional and audit logged.
+
+Approval does not mean that the external transfer has already been completed.
+
+After the transfer is actually performed, the withdrawal can be completed:
 
 ```text
 APPROVED
-    │
-    ▼
-PROCESSING
-    │
-    ├──► COMPLETED
-    │
-    └──► FAILED
+   │
+   ▼
+COMPLETED
 ```
 
-The provider-specific processing workflow can be extended when a real payment provider is integrated.
+Completion records the optional external transaction ID when one is available.
+
+The current implementation does not introduce separate `PROCESSING` or `FAILED` states because the application currently uses a manual/external transfer workflow rather than a provider-managed withdrawal lifecycle.
 
 ---
+
+## Reject
+
+When an administrator rejects a pending withdrawal:
+
+```text
+PENDING
+   │
+   ▼
+REJECTED
+   │
+   ▼
+REFUND
+```
+
+The rejection workflow:
+
+1. Locks the withdrawal
+2. Changes its state to `REJECTED`
+3. Locks the user's balance
+4. Refunds the withdrawal amount
+5. Creates a `REFUND` ledger entry
+6. Saves the withdrawal
+7. Creates an audit record
+
+All database operations execute in one transaction.
+
+## The refund restores the amount that was deducted when the withdrawal was originally created.
 
 # Ticket
 
@@ -1064,10 +1119,6 @@ APPROVED
 ```
 
 The approval is transactional and audit logged.
-
-The current implementation does **not** require an additional administrator "processing" or "failed" action.
-
-Those states exist in the domain to support a future real provider workflow.
 
 ---
 

@@ -12,7 +12,8 @@
     "migration:generate": "npm run typeorm -- migration:generate",
     "migration:run": "npm run typeorm -- migration:run",
     "migration:revert": "npm run typeorm -- migration:revert",
-    "migration:run:prod": "typeorm -d dist/infrastructure/config/data-source.js migration:run"
+    "migration:run:prod": "typeorm -d dist/infrastructure/config/data-source.js migration:run",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@nestjs/common": "^10.4.9",
