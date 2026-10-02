@@ -160,33 +160,6 @@ export interface VerifyPaymentResult {
  * The application layer depends on this abstraction instead of
  * depending directly on any payment provider or SDK.
  */
-export interface CreateWithdrawalInput {
-  amount: string;
-  currency: PaymentCurrency;
-  referenceId: string;
-  destination: string;
-  metadata?: Record<string, string>;
-}
-
-export interface CreateWithdrawalResult {
-  provider: PaymentProvider;
-  providerWithdrawalId: string;
-  status?: string;
-  transactionId?: string;
-}
-
-export interface GetWithdrawalStatusInput {
-  providerWithdrawalId: string;
-  referenceId?: string;
-}
-
-export interface GetWithdrawalStatusResult {
-  providerWithdrawalId: string;
-  status: string;
-  transactionId?: string;
-  amount?: string;
-  currency?: PaymentCurrency;
-}
 
 export interface PaymentProviderInterface {
   readonly name: PaymentProvider;
@@ -194,10 +167,4 @@ export interface PaymentProviderInterface {
 
   createPayment(input: CreatePaymentInput): Promise<CreatePaymentResult>;
   verifyPayment(input: VerifyPaymentInput): Promise<VerifyPaymentResult>;
-  createWithdrawal?(
-    input: CreateWithdrawalInput,
-  ): Promise<CreateWithdrawalResult>;
-  getWithdrawalStatus?(
-    input: GetWithdrawalStatusInput,
-  ): Promise<GetWithdrawalStatusResult>;
 }

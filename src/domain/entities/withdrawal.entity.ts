@@ -27,7 +27,6 @@ export interface RestoreWithdrawalProps {
   status: WithdrawalStatus;
   destination: string;
   referenceId: string;
-  providerWithdrawalId: string | null;
   transactionId: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -44,7 +43,6 @@ export class Withdrawal {
     private status: WithdrawalStatus,
     public readonly destination: string,
     public readonly referenceId: string,
-    public providerWithdrawalId: string | null,
     public transactionId: string | null,
     public readonly createdAt: Date,
     public updatedAt: Date,
@@ -78,7 +76,6 @@ export class Withdrawal {
       props.destination,
       props.referenceId ?? randomUUID(),
       null,
-      null,
       props.createdAt ?? now,
       props.updatedAt ?? now,
       null,
@@ -101,7 +98,6 @@ export class Withdrawal {
       props.status,
       props.destination,
       props.referenceId,
-      props.providerWithdrawalId,
       props.transactionId,
       props.createdAt,
       props.updatedAt,

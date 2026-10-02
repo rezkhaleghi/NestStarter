@@ -11,7 +11,6 @@ export interface ListWithdrawalsInput extends PageQuery<
   currency?: string;
   status?: string;
   referenceId?: string;
-  providerWithdrawalId?: string;
   from?: Date;
   to?: Date;
 }
@@ -27,7 +26,6 @@ export class ListWithdrawalsUseCase {
         currency: input.currency,
         status: input.status,
         referenceId: input.referenceId,
-        providerWithdrawalId: input.providerWithdrawalId,
         from: input.from,
         to: input.to,
       },

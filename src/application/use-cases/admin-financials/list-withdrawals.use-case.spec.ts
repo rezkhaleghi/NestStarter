@@ -32,7 +32,6 @@ describe("AdminListWithdrawalsUseCase", () => {
         currency: undefined,
         status: undefined,
         referenceId: undefined,
-        providerWithdrawalId: undefined,
         from: undefined,
         to: undefined,
       }),

@@ -43,7 +43,6 @@ export class AdminWithdrawalsController {
       currency: query.currency,
       status: query.status,
       referenceId: query.referenceId,
-      providerWithdrawalId: query.providerWithdrawalId,
       from: query.from ? new Date(query.from) : undefined,
       to: query.to ? new Date(query.to) : undefined,
       sortBy: query.sortBy,

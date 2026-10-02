@@ -8,7 +8,6 @@ export interface WithdrawalSearchFilters {
   currency?: string;
   status?: string;
   referenceId?: string;
-  providerWithdrawalId?: string;
   from?: Date;
   to?: Date;
 }

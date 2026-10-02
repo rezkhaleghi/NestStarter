@@ -25,7 +25,6 @@ describe("Withdrawal", () => {
     expect(withdrawal.amount).toBe("100");
     expect(withdrawal.destination).toBe("destination-1");
     expect(withdrawal.getStatus()).toBe(WithdrawalStatus.PENDING);
-    expect(withdrawal.providerWithdrawalId).toBeNull();
     expect(withdrawal.transactionId).toBeNull();
     expect(withdrawal.completedAt).toBeNull();
     expect(withdrawal.rejectionReason).toBeNull();
@@ -119,7 +118,6 @@ describe("Withdrawal", () => {
       status: WithdrawalStatus.APPROVED,
       destination: "destination-1",
       referenceId: "reference-1",
-      providerWithdrawalId: null,
       transactionId: "tx-existing",
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -176,7 +174,6 @@ describe("Withdrawal", () => {
       status: WithdrawalStatus.COMPLETED,
       destination: "destination-1",
       referenceId: "reference-1",
-      providerWithdrawalId: "provider-123",
       transactionId: "tx-123",
       createdAt,
       updatedAt,
@@ -186,7 +183,6 @@ describe("Withdrawal", () => {
 
     expect(withdrawal.id).toBe("withdrawal-1");
     expect(withdrawal.getStatus()).toBe(WithdrawalStatus.COMPLETED);
-    expect(withdrawal.providerWithdrawalId).toBe("provider-123");
     expect(withdrawal.transactionId).toBe("tx-123");
     expect(withdrawal.createdAt).toBe(createdAt);
     expect(withdrawal.updatedAt).toBe(updatedAt);

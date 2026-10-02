@@ -4,10 +4,6 @@ import { randomUUID } from "crypto";
 import {
   CreatePaymentInput,
   CreatePaymentResult,
-  CreateWithdrawalInput,
-  CreateWithdrawalResult,
-  GetWithdrawalStatusInput,
-  GetWithdrawalStatusResult,
   PaymentProviderInterface,
   VerifyPaymentInput,
   VerifyPaymentResult,
@@ -36,29 +32,6 @@ export class FakePaymentProvider implements PaymentProviderInterface {
       transactionId: `fake-tx-${randomUUID()}`,
       amount: input.amount,
       currency: input.currency,
-    };
-  }
-
-  async createWithdrawal(
-    input: CreateWithdrawalInput,
-  ): Promise<CreateWithdrawalResult> {
-    return {
-      provider: this.name,
-      providerWithdrawalId: `fake-withdrawal-${randomUUID()}`,
-      status: "PROCESSING",
-      transactionId: `fake-withdrawal-tx-${randomUUID()}`,
-    };
-  }
-
-  async getWithdrawalStatus(
-    input: GetWithdrawalStatusInput,
-  ): Promise<GetWithdrawalStatusResult> {
-    return {
-      providerWithdrawalId: input.providerWithdrawalId,
-      status: "COMPLETED",
-      transactionId: `fake-withdrawal-tx-${randomUUID()}`,
-      amount: "0",
-      currency: PaymentCurrency.USD,
     };
   }
 }

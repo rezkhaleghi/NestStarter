@@ -407,7 +407,6 @@ Withdrawal
 ├── status
 ├── destination
 ├── referenceId
-├── providerWithdrawalId
 ├── transactionId
 ├── rejectionReason
 ├── createdAt
@@ -1331,7 +1330,6 @@ currency
 status
 referenceId
 providerPaymentId
-providerWithdrawalId
 from
 to
 ```

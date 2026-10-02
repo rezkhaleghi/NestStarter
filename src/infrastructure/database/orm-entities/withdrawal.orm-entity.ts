@@ -54,9 +54,6 @@ export class WithdrawalOrmEntity {
   referenceId!: string;
 
   @Column({ type: "varchar", nullable: true })
-  providerWithdrawalId!: string | null;
-
-  @Column({ type: "varchar", nullable: true })
   transactionId!: string | null;
 
   @Column({ type: "text", nullable: true })

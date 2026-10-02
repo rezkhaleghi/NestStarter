@@ -36,10 +36,6 @@ export class ListWithdrawalsQueryDto extends SortablePaginationQueryDto {
     description: "Provider withdrawal identifier.",
     example: "withdrawal_123456789",
   })
-  @IsOptional()
-  @IsString()
-  providerWithdrawalId?: string;
-
   @ApiPropertyOptional({ example: "2026-09-01T00:00:00.000Z" })
   @IsOptional()
   @IsDateString()
