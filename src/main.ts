@@ -1,7 +1,7 @@
 import { HttpExceptionFilter } from "./api/http-exception.filter";
 import { randomUUID } from "crypto";
 import { NestFactory } from "@nestjs/core";
-import { ValidationPipe } from "@nestjs/common";
+import { Logger, ValidationPipe } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import helmet from "helmet";
@@ -20,32 +20,37 @@ import { EnvironmentConfig } from "@infrastructure/config/environment.config";
  * authentication, sessions, Swagger, and finally starts the HTTP server.
  */
 async function bootstrap() {
-  // Create the NestJS application from the root AppModule.
   const app = await NestFactory.create(AppModule);
+  const logger = new Logger("HTTP");
 
   // Access environment configuration.
   const configService = app.get(ConfigService<EnvironmentConfig>);
 
-  // Close resources(eg. db,redis) when the app receives SIGTERM or SIGINT.
+  // Close resources (eg. db, redis) when the app receives SIGTERM or SIGINT.
   app.enableShutdownHooks();
 
-  // Tell Express to trust the first proxy When running behind a reverse proxy/load balancer in prod.
+  // Tell Express to trust the first proxy when running behind a reverse proxy/load balancer in prod.
   // (eg. detecting HTTPS correctly, secure cookies, client IP handling)
   app
     .getHttpAdapter()
     .getInstance()
     .set("trust proxy", configService.get("TRUST_PROXY", 1));
 
-  // Enabls CORS.
+  // Enables CORS.
   app.enableCors({
     origin: configService.getOrThrow("FRONTEND_URL"),
     credentials: true,
   });
 
-  // Helmet helps setting appropriate security-related response headers.
+  // Helmet helps set appropriate security-related response headers.
   app.use(helmet());
 
-  // Adds a correlation ID to each request and response for tracing.
+  /**
+   * Adds a correlation ID to each request and response for tracing.
+   *
+   * We generate the ID server-side rather than trusting a client-supplied
+   * value, so clients cannot inject arbitrary values into our logs.
+   */
   app.use((request: Request, response: Response, next: () => void) => {
     const requestId = randomUUID();
 
@@ -56,45 +61,81 @@ async function bootstrap() {
     next();
   });
 
+  /**
+   * Logs completed HTTP requests.
+   *
+   * Only operational metadata is logged:
+   * - method
+   * - path (without query parameters)
+   * - status code
+   * - duration
+   * - request ID
+   *
+   * We intentionally do not log request bodies, cookies, authorization
+   * headers, or query strings because they may contain credentials,
+   * tokens, OTPs, or other sensitive user data.
+   *
+   * The 5xx exception details themselves are logged by HttpExceptionFilter.
+   */
+  app.use((request: Request, response: Response, next: () => void) => {
+    const startedAt = process.hrtime.bigint();
+    const requestId =
+      (request as Request & { requestId?: string }).requestId ?? "unknown";
+
+    response.on("finish", () => {
+      const durationMs =
+        Number(process.hrtime.bigint() - startedAt) / 1_000_000;
+
+      logger.log(
+        `${request.method} ${request.path} ${response.statusCode} ${durationMs.toFixed(1)}ms requestId=${requestId}`,
+      );
+    });
+
+    next();
+  });
+
   // Enable global DTO validation.
   // This means every controller using DTO validation automatically gets the same validation behavior.
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true, // Remove properties that are not defined in the DTO.
-      forbidNonWhitelisted: true, // Throw an error if there are properties that are not defined in the DTO.
-      transform: true, // Automatically transform incoming values to DTO property types
-      // when possible (for example, query string values to numbers).
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
     }),
   );
 
-  // HTTP/application exceptions converts into consistent HTTP responses.
+  // HTTP/application exceptions convert into consistent HTTP responses.
   app.useGlobalFilters(new HttpExceptionFilter());
 
   // Retrieve the Redis client registered by AppModule.
   const redisClient = app.get<RedisClientType>("REDIS_CLIENT");
 
-  // Get the secret used to sign/encrypt session information. app failes if SESSION_SECRET is not set in the env.
+  // Get the secret used to sign/encrypt session information.
+  // The app fails if SESSION_SECRET is not set in the environment.
   const sessionSecret = configService.getOrThrow("SESSION_SECRET");
 
   // Configure Express server-side sessions.
   app.use(
     session({
       secret: sessionSecret,
-      store: new RedisStore({ client: redisClient, prefix: "session:" }), // Store session data in Redis rather than application memory.
-      resave: false, // Don't save the session back to Redis if nothing changed.
-      saveUninitialized: false, // Don't create empty sessions for unauthenticated requests.
+      store: new RedisStore({
+        client: redisClient,
+        prefix: "session:",
+      }),
+      resave: false,
+      saveUninitialized: false,
 
-      // Configure the browser session cookie.
       cookie: {
-        httpOnly: true, // Prevents client-side JavaScript from accessing the session cookie.
-        sameSite: "lax", // Restrict when the browser sends the cookie cross-site.
-        secure: configService.get("NODE_ENV") === "production", // Prod: HTTPS, Dev: HTTP
-        maxAge: 1000 * 60 * 60 * 24, // Session cookie expires after 24 hours.
+        httpOnly: true,
+        sameSite: "lax",
+        secure: configService.get("NODE_ENV") === "production",
+        maxAge: 1000 * 60 * 60 * 24,
       },
     }),
   );
-  app.use(passport.initialize()); // Enables Passport authentication strategies for Google OAuth.
-  app.use(passport.session()); // Enables Passport to restore the authenticated user from the existing Express session.
+
+  app.use(passport.initialize());
+  app.use(passport.session());
 
   // Swagger/OpenAPI documentation setup.
   const swaggerEnabled = configService.get("SWAGGER_ENABLED");
@@ -110,6 +151,7 @@ async function bootstrap() {
     SwaggerModule.setup("api/docs", app, document);
   }
 
-  await app.listen(configService.get("PORT", 3000)); // Start the HTTP server.
+  await app.listen(configService.get("PORT", 3000));
 }
+
 bootstrap();
