@@ -121,7 +121,7 @@ export class SmtpNotificationService implements NotificationPort, OnModuleInit {
       this.renderTemplate({
         title: "Your withdrawal request has been approved",
         heading: "Withdrawal approved",
-        message: `Your withdrawal request for ${payload.amount} ${payload.currency} has been approved and is now moving through processing.`,
+        message: `Your withdrawal request for ${payload.amount} ${payload.currency} has been approved and is now awaiting the transfer.`,
         details: [
           ["Withdrawal ID", payload.withdrawalId],
           ["Reference", payload.referenceId],

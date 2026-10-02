@@ -2227,7 +2227,6 @@ MINIO_BUCKET=app
 Refer to:
 
 ```text
-.env.example
 .env.production.example
 ```
 
@@ -2538,7 +2537,7 @@ npm install
 Create the environment file:
 
 ```bash
-cp .env.example .env
+cp .env.production.example .env
 ```
 
 Configure the environment variables.
