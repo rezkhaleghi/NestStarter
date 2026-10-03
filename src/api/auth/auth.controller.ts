@@ -79,7 +79,7 @@ export class AuthController {
   })
   @ApiResponse({
     status: 201,
-    description: "User created",
+    description: "Account created successfully",
     type: AuthenticatedUserResponseDto,
   })
   @ApiResponse({
