@@ -100,13 +100,7 @@ export class AuthController {
     await this.establishSession(req, user.id);
 
     return {
-      id: user.id,
-      email: user.email,
-      emailVerified: user.emailVerified,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      userName: user.userName,
-      dateOfBirth: user.dateOfBirth,
+      message: "Account created successfully",
     };
   }
 
@@ -137,13 +131,7 @@ export class AuthController {
     await this.establishSession(req, user.id);
 
     return {
-      id: user.id,
-      email: user.email,
-      emailVerified: user.emailVerified,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      userName: user.userName,
-      dateOfBirth: user.dateOfBirth,
+      message: "Logged in",
     };
   }
 
@@ -168,13 +156,7 @@ export class AuthController {
     await this.establishSession(req, user.id);
 
     return {
-      id: user.id,
-      email: user.email,
-      emailVerified: user.emailVerified,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      userName: user.userName,
-      dateOfBirth: user.dateOfBirth,
+      message: "Logged in",
     };
   }
 
