@@ -3,18 +3,22 @@ import { AdminListNotificationsUseCase } from "./list-notifications.use-case";
 import { NotificationChannel } from "@domain/enums/notification-channel.enum";
 import { NotificationStatus } from "@domain/enums/notification-status.enum";
 import { NotificationType } from "@domain/enums/notification-type.enum";
+import { NotificationRepository } from "@domain/repositories/notification.repository";
 
 describe("AdminListNotificationsUseCase", () => {
-  const notificationRepository = {
+  const notificationRepositoryMock = {
     findPage: jest.fn(),
   };
+
+  const notificationRepository =
+    notificationRepositoryMock as unknown as NotificationRepository;
 
   let useCase: AdminListNotificationsUseCase;
 
   beforeEach(() => {
     jest.clearAllMocks();
 
-    notificationRepository.findPage.mockResolvedValue({
+    notificationRepositoryMock.findPage.mockResolvedValue({
       data: [],
       page: 1,
       limit: 20,
@@ -39,7 +43,7 @@ describe("AdminListNotificationsUseCase", () => {
       sortDirection: "DESC",
     });
 
-    expect(notificationRepository.findPage).toHaveBeenCalledWith(
+    expect(notificationRepositoryMock.findPage).toHaveBeenCalledWith(
       {
         userId: "user-1",
         type: NotificationType.WITHDRAWAL_APPROVED,
@@ -65,7 +69,7 @@ describe("AdminListNotificationsUseCase", () => {
       sortDirection: "DESC",
     });
 
-    expect(notificationRepository.findPage).toHaveBeenCalledWith(
+    expect(notificationRepositoryMock.findPage).toHaveBeenCalledWith(
       {
         userId: undefined,
         type: undefined,

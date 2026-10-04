@@ -1,16 +1,21 @@
 import { ListUserNotificationsUseCase } from "./list-user-notifications.use-case";
 
+import { NotificationRepository } from "@domain/repositories/notification.repository";
+
 describe("ListUserNotificationsUseCase", () => {
-  const notificationRepository = {
+  const notificationRepositoryMock = {
     findByUserId: jest.fn(),
   };
+
+  const notificationRepository =
+    notificationRepositoryMock as unknown as NotificationRepository;
 
   let useCase: ListUserNotificationsUseCase;
 
   beforeEach(() => {
     jest.clearAllMocks();
 
-    notificationRepository.findByUserId.mockResolvedValue({
+    notificationRepositoryMock.findByUserId.mockResolvedValue({
       data: [],
       page: 1,
       limit: 20,
@@ -28,11 +33,14 @@ describe("ListUserNotificationsUseCase", () => {
       limit: 20,
     });
 
-    expect(notificationRepository.findByUserId).toHaveBeenCalledWith("user-1", {
-      page: 1,
-      limit: 20,
-      sortBy: "createdAt",
-      sortDirection: "DESC",
-    });
+    expect(notificationRepositoryMock.findByUserId).toHaveBeenCalledWith(
+      "user-1",
+      {
+        page: 1,
+        limit: 20,
+        sortBy: "createdAt",
+        sortDirection: "DESC",
+      },
+    );
   });
 });

@@ -3,21 +3,25 @@ import { MarkNotificationReadUseCase } from "./mark-notification-read.use-case";
 import { Notification } from "@domain/entities/notification.entity";
 import { NotificationChannel } from "@domain/enums/notification-channel.enum";
 import { NotificationType } from "@domain/enums/notification-type.enum";
+import { NotificationRepository } from "@domain/repositories/notification.repository";
 import { NotificationNotFoundException } from "@domain/exceptions/domain.exception";
 
 describe("MarkNotificationReadUseCase", () => {
-  const notificationRepository = {
+  const notificationRepositoryMock = {
     findByUserIdAndId: jest.fn(),
     save: jest.fn(),
   };
+
+  const notificationRepository =
+    notificationRepositoryMock as unknown as NotificationRepository;
 
   let useCase: MarkNotificationReadUseCase;
 
   beforeEach(() => {
     jest.clearAllMocks();
 
-    notificationRepository.save.mockImplementation(
-      async (notification) => notification,
+    notificationRepositoryMock.save.mockImplementation(
+      async (notification: Notification) => notification,
     );
 
     useCase = new MarkNotificationReadUseCase(notificationRepository);
@@ -34,21 +38,23 @@ describe("MarkNotificationReadUseCase", () => {
 
     notification.markSent();
 
-    notificationRepository.findByUserIdAndId.mockResolvedValue(notification);
+    notificationRepositoryMock.findByUserIdAndId.mockResolvedValue(
+      notification,
+    );
 
     const result = await useCase.execute("user-1", notification.id);
 
     expect(result.getReadAt()).toBeInstanceOf(Date);
-    expect(notificationRepository.save).toHaveBeenCalledWith(notification);
+    expect(notificationRepositoryMock.save).toHaveBeenCalledWith(notification);
   });
 
   it("throws when the notification does not belong to the user", async () => {
-    notificationRepository.findByUserIdAndId.mockResolvedValue(null);
+    notificationRepositoryMock.findByUserIdAndId.mockResolvedValue(null);
 
     await expect(useCase.execute("user-1", "notification-1")).rejects.toThrow(
       NotificationNotFoundException,
     );
 
-    expect(notificationRepository.save).not.toHaveBeenCalled();
+    expect(notificationRepositoryMock.save).not.toHaveBeenCalled();
   });
 });

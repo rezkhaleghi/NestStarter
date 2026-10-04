@@ -1,34 +1,42 @@
 import { SendNotificationUseCase } from "./send-notification.use-case";
 
+import { Notification } from "@domain/entities/notification.entity";
 import { NotificationChannel } from "@domain/enums/notification-channel.enum";
 import { NotificationStatus } from "@domain/enums/notification-status.enum";
 import { NotificationType } from "@domain/enums/notification-type.enum";
 import { NotificationRepository } from "@domain/repositories/notification.repository";
+import { NotificationService } from "@application/interfaces/notification.service.interface";
 
 describe("SendNotificationUseCase", () => {
-  const notificationRepository = {
+  const notificationRepositoryMock = {
     create: jest.fn(),
     save: jest.fn(),
-  } as unknown as NotificationRepository;
+  };
 
-  const notificationService = {
+  const notificationRepository =
+    notificationRepositoryMock as unknown as NotificationRepository;
+
+  const notificationServiceMock = {
     sendEmail: jest.fn(),
   };
+
+  const notificationService =
+    notificationServiceMock as unknown as NotificationService;
 
   let useCase: SendNotificationUseCase;
 
   beforeEach(() => {
     jest.clearAllMocks();
 
-    notificationRepository.create.mockImplementation(
-      async (notification) => notification,
+    notificationRepositoryMock.create.mockImplementation(
+      async (notification: Notification) => notification,
     );
 
-    notificationRepository.save.mockImplementation(
-      async (notification) => notification,
+    notificationRepositoryMock.save.mockImplementation(
+      async (notification: Notification) => notification,
     );
 
-    notificationService.sendEmail.mockResolvedValue(undefined);
+    notificationServiceMock.sendEmail.mockResolvedValue(undefined);
 
     useCase = new SendNotificationUseCase(
       notificationRepository,
@@ -49,9 +57,9 @@ describe("SendNotificationUseCase", () => {
     expect(result.getStatus()).toBe(NotificationStatus.SENT);
     expect(result.getSentAt()).toBeInstanceOf(Date);
 
-    expect(notificationRepository.create).toHaveBeenCalledTimes(1);
-    expect(notificationRepository.save).not.toHaveBeenCalled();
-    expect(notificationService.sendEmail).not.toHaveBeenCalled();
+    expect(notificationRepositoryMock.create).toHaveBeenCalledTimes(1);
+    expect(notificationRepositoryMock.save).not.toHaveBeenCalled();
+    expect(notificationServiceMock.sendEmail).not.toHaveBeenCalled();
   });
 
   it("creates an email notification and marks it as sent after successful delivery", async () => {
@@ -65,22 +73,22 @@ describe("SendNotificationUseCase", () => {
       referenceId: "withdrawal-1",
     });
 
-    expect(notificationRepository.create).toHaveBeenCalledTimes(1);
+    expect(notificationRepositoryMock.create).toHaveBeenCalledTimes(1);
 
-    expect(notificationService.sendEmail).toHaveBeenCalledWith(
+    expect(notificationServiceMock.sendEmail).toHaveBeenCalledWith(
       "user@example.com",
       "Withdrawal approved",
       "Your withdrawal was approved.",
     );
 
-    expect(notificationRepository.save).toHaveBeenCalledTimes(1);
+    expect(notificationRepositoryMock.save).toHaveBeenCalledTimes(1);
 
     expect(result.getStatus()).toBe(NotificationStatus.SENT);
     expect(result.getSentAt()).toBeInstanceOf(Date);
   });
 
   it("records an email failure instead of throwing", async () => {
-    notificationService.sendEmail.mockRejectedValue(
+    notificationServiceMock.sendEmail.mockRejectedValue(
       new Error("SMTP unavailable"),
     );
 
@@ -98,8 +106,8 @@ describe("SendNotificationUseCase", () => {
     expect(result.getFailureReason()).toBe("SMTP unavailable");
     expect(result.getSentAt()).toBeNull();
 
-    expect(notificationRepository.create).toHaveBeenCalledTimes(1);
-    expect(notificationRepository.save).toHaveBeenCalledTimes(1);
+    expect(notificationRepositoryMock.create).toHaveBeenCalledTimes(1);
+    expect(notificationRepositoryMock.save).toHaveBeenCalledTimes(1);
   });
 
   it("records failure when an email address is missing", async () => {
@@ -116,8 +124,8 @@ describe("SendNotificationUseCase", () => {
       "Email address is required for email notifications.",
     );
 
-    expect(notificationService.sendEmail).not.toHaveBeenCalled();
-    expect(notificationRepository.save).toHaveBeenCalledTimes(1);
+    expect(notificationServiceMock.sendEmail).not.toHaveBeenCalled();
+    expect(notificationRepositoryMock.save).toHaveBeenCalledTimes(1);
   });
 
   it("records failure for an unconfigured SMS provider", async () => {
@@ -134,7 +142,7 @@ describe("SendNotificationUseCase", () => {
       "SMS notification provider is not configured.",
     );
 
-    expect(notificationRepository.create).toHaveBeenCalledTimes(1);
-    expect(notificationRepository.save).toHaveBeenCalledTimes(1);
+    expect(notificationRepositoryMock.create).toHaveBeenCalledTimes(1);
+    expect(notificationRepositoryMock.save).toHaveBeenCalledTimes(1);
   });
 });

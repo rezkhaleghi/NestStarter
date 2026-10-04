@@ -198,6 +198,7 @@ import { AdminGetNotificationUseCase } from "./use-cases/admin-notifications/get
     // Notifications
     SendNotificationUseCase,
     MarkNotificationReadUseCase,
+    ListUserNotificationsUseCase,
 
     // Admin Notifications
     AdminListNotificationsUseCase,

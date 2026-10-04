@@ -40,9 +40,15 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
     create: jest.fn(),
   };
 
-  const sendNotificationUseCase = {
+  // Keep the mock separate from the use-case type.
+  // This preserves Jest's mock methods while satisfying the constructor's
+  // dependency type.
+  const sendNotificationUseCaseMock = {
     execute: jest.fn(),
-  } as unknown as SendNotificationUseCase;
+  };
+
+  const sendNotificationUseCase =
+    sendNotificationUseCaseMock as unknown as SendNotificationUseCase;
 
   const unitOfWork = {
     execute: jest.fn(),
@@ -98,7 +104,7 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
 
     ledgerRepository.create.mockResolvedValue(undefined);
     auditLogRepository.create.mockResolvedValue(undefined);
-    sendNotificationUseCase.execute.mockResolvedValue(undefined);
+    sendNotificationUseCaseMock.execute.mockResolvedValue(undefined);
 
     useCase = new AdminUpdateWithdrawalStatusUseCase(
       unitOfWork,
@@ -127,9 +133,9 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
       }),
     );
 
-    expect(sendNotificationUseCase.execute).toHaveBeenCalledTimes(2);
+    expect(sendNotificationUseCaseMock.execute).toHaveBeenCalledTimes(2);
 
-    expect(sendNotificationUseCase.execute).toHaveBeenNthCalledWith(
+    expect(sendNotificationUseCaseMock.execute).toHaveBeenNthCalledWith(
       1,
       expect.objectContaining({
         userId: withdrawal.userId,
@@ -139,7 +145,7 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
       }),
     );
 
-    expect(sendNotificationUseCase.execute).toHaveBeenNthCalledWith(
+    expect(sendNotificationUseCaseMock.execute).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({
         userId: withdrawal.userId,
@@ -204,9 +210,9 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
       }),
     );
 
-    expect(sendNotificationUseCase.execute).toHaveBeenCalledTimes(2);
+    expect(sendNotificationUseCaseMock.execute).toHaveBeenCalledTimes(2);
 
-    expect(sendNotificationUseCase.execute).toHaveBeenNthCalledWith(
+    expect(sendNotificationUseCaseMock.execute).toHaveBeenNthCalledWith(
       1,
       expect.objectContaining({
         type: NotificationType.WITHDRAWAL_REJECTED,
@@ -215,7 +221,7 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
       }),
     );
 
-    expect(sendNotificationUseCase.execute).toHaveBeenNthCalledWith(
+    expect(sendNotificationUseCaseMock.execute).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({
         email: "user@example.com",
@@ -232,7 +238,7 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
 
     withdrawalRepository.findByIdForUpdate.mockResolvedValue(withdrawal);
 
-    sendNotificationUseCase.execute.mockRejectedValue(
+    sendNotificationUseCaseMock.execute.mockRejectedValue(
       new Error("notification infrastructure failure"),
     );
 
@@ -244,7 +250,7 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
 
     expect(result.getStatus()).toBe(WithdrawalStatus.APPROVED);
     expect(withdrawalRepository.save).toHaveBeenCalledWith(withdrawal);
-    expect(sendNotificationUseCase.execute).toHaveBeenCalled();
+    expect(sendNotificationUseCaseMock.execute).toHaveBeenCalled();
   });
 
   it("does not send notifications when completing a withdrawal", async () => {
@@ -264,7 +270,7 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
     expect(result.getStatus()).toBe(WithdrawalStatus.COMPLETED);
     expect(result.transactionId).toBe("tx-123");
 
-    expect(sendNotificationUseCase.execute).not.toHaveBeenCalled();
+    expect(sendNotificationUseCaseMock.execute).not.toHaveBeenCalled();
 
     expect(auditLogRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -284,7 +290,7 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
       }),
     ).rejects.toThrow(WithdrawalNotFoundException);
 
-    expect(sendNotificationUseCase.execute).not.toHaveBeenCalled();
+    expect(sendNotificationUseCaseMock.execute).not.toHaveBeenCalled();
   });
 
   it("throws when rejecting and the balance does not exist", async () => {
@@ -307,7 +313,7 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
 
     expect(withdrawal.getStatus()).toBe(WithdrawalStatus.PENDING);
     expect(ledgerRepository.create).not.toHaveBeenCalled();
-    expect(sendNotificationUseCase.execute).not.toHaveBeenCalled();
+    expect(sendNotificationUseCaseMock.execute).not.toHaveBeenCalled();
   });
 
   it("does not refund an already rejected withdrawal", async () => {
@@ -339,7 +345,7 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
     expect(balance.amount).toBe("50");
     expect(userBalanceRepository.save).not.toHaveBeenCalled();
     expect(ledgerRepository.create).not.toHaveBeenCalled();
-    expect(sendNotificationUseCase.execute).not.toHaveBeenCalled();
+    expect(sendNotificationUseCaseMock.execute).not.toHaveBeenCalled();
   });
 
   it("refunds the exact withdrawal amount", async () => {
@@ -412,7 +418,7 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
 
     expect(withdrawalRepository.save).not.toHaveBeenCalled();
     expect(auditLogRepository.create).not.toHaveBeenCalled();
-    expect(sendNotificationUseCase.execute).not.toHaveBeenCalled();
+    expect(sendNotificationUseCaseMock.execute).not.toHaveBeenCalled();
   });
 
   it("does not allow completing a pending withdrawal", async () => {
@@ -431,7 +437,7 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
 
     expect(withdrawal.getStatus()).toBe(WithdrawalStatus.PENDING);
     expect(withdrawalRepository.save).not.toHaveBeenCalled();
-    expect(sendNotificationUseCase.execute).not.toHaveBeenCalled();
+    expect(sendNotificationUseCaseMock.execute).not.toHaveBeenCalled();
   });
 
   it("does not allow rejecting an approved withdrawal", async () => {
@@ -452,6 +458,6 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
 
     expect(withdrawal.getStatus()).toBe(WithdrawalStatus.APPROVED);
     expect(ledgerRepository.create).not.toHaveBeenCalled();
-    expect(sendNotificationUseCase.execute).not.toHaveBeenCalled();
+    expect(sendNotificationUseCaseMock.execute).not.toHaveBeenCalled();
   });
 });
