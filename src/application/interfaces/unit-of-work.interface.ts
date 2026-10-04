@@ -7,6 +7,7 @@ import { WithdrawalRepository } from "@domain/repositories/withdrawal.repository
 import { TicketRepository } from "@domain/repositories/ticket.repository";
 import { TicketMessageRepository } from "@domain/repositories/ticket-message.repository";
 import { TicketCategoryRepository } from "@domain/repositories/ticket-category.repository";
+import { NotificationRepository } from "@domain/repositories/notification.repository";
 
 export interface UnitOfWorkRepositories {
   userRepository: UserRepository;
@@ -18,6 +19,7 @@ export interface UnitOfWorkRepositories {
   ticketRepository: TicketRepository;
   ticketMessageRepository: TicketMessageRepository;
   ticketCategoryRepository: TicketCategoryRepository;
+  notificationRepository: NotificationRepository;
 }
 
 export abstract class UnitOfWork {

@@ -7,6 +7,7 @@ import { AdminLedgersController } from "./admin-ledgers.controller";
 import { AdminDepositsController } from "./admin-deposits.controller";
 import { AdminWithdrawalsController } from "./admin-withdrawals.controller";
 import { AdminTicketsController } from "./admin-tickets.controller";
+import { AdminNotificationsController } from "./admin-notifications.controller";
 
 @Module({
   imports: [ApplicationModule],
@@ -18,6 +19,7 @@ import { AdminTicketsController } from "./admin-tickets.controller";
     AdminDepositsController,
     AdminWithdrawalsController,
     AdminTicketsController,
+    AdminNotificationsController,
   ],
 
   providers: [AdminAuthGuard],

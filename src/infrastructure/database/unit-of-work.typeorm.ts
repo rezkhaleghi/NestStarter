@@ -10,6 +10,12 @@ import { UserRepositoryImpl } from "./repositories/user.repository.impl";
 import { UserBalanceRepositoryImpl } from "./repositories/user-balance.repository.impl";
 import { AuditLogRepositoryImpl } from "./repositories/audit-log.repository.impl";
 import { LedgerRepositoryImpl } from "./repositories/ledger.repository.impl";
+import { DepositRepositoryImpl } from "./repositories/deposit.repository.impl";
+import { WithdrawalRepositoryImpl } from "./repositories/withdrawal.repository.impl";
+import { TicketRepositoryImpl } from "./repositories/ticket.repository.impl";
+import { TicketMessageRepositoryImpl } from "./repositories/ticket-message.repository.impl";
+import { TicketCategoryRepositoryImpl } from "./repositories/ticket-category.repository.impl";
+import { NotificationRepositoryImpl } from "./repositories/notification.repository.impl";
 
 import { UserOrmEntity } from "./orm-entities/user.orm-entity";
 import { UserBalanceOrmEntity } from "./orm-entities/user-balance.orm-entity";
@@ -17,14 +23,10 @@ import { AuditLogOrmEntity } from "./orm-entities/audit-log.orm-entity";
 import { LedgerOrmEntity } from "./orm-entities/ledger.orm-entity";
 import { DepositOrmEntity } from "./orm-entities/deposit.orm-entity";
 import { WithdrawalOrmEntity } from "./orm-entities/withdrawal.orm-entity";
-import { DepositRepositoryImpl } from "./repositories/deposit.repository.impl";
-import { WithdrawalRepositoryImpl } from "./repositories/withdrawal.repository.impl";
 import { TicketOrmEntity } from "./orm-entities/ticket.orm-entity";
 import { TicketMessageOrmEntity } from "./orm-entities/ticket-message.orm-entity";
 import { TicketCategoryOrmEntity } from "./orm-entities/ticket-category.orm-entity";
-import { TicketRepositoryImpl } from "./repositories/ticket.repository.impl";
-import { TicketMessageRepositoryImpl } from "./repositories/ticket-message.repository.impl";
-import { TicketCategoryRepositoryImpl } from "./repositories/ticket-category.repository.impl";
+import { NotificationOrmEntity } from "./orm-entities/notification.orm-entity";
 
 @Injectable()
 export class TypeOrmUnitOfWork implements UnitOfWork {
@@ -70,6 +72,10 @@ export class TypeOrmUnitOfWork implements UnitOfWork {
         manager.getRepository(TicketCategoryOrmEntity),
       );
 
+      const notificationRepository = new NotificationRepositoryImpl(
+        manager.getRepository(NotificationOrmEntity),
+      );
+
       return work({
         userRepository,
         userBalanceRepository,
@@ -80,6 +86,7 @@ export class TypeOrmUnitOfWork implements UnitOfWork {
         ticketRepository,
         ticketMessageRepository,
         ticketCategoryRepository,
+        notificationRepository,
       });
     });
   }

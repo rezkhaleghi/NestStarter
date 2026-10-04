@@ -82,6 +82,9 @@ import { SessionManager } from "@application/interfaces/session-manager.interfac
 import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
 import { EnvironmentConfig } from "./config/environment.config";
 
+import { NotificationOrmEntity } from "./database/orm-entities/notification.orm-entity";
+import { NotificationRepositoryImpl } from "./database/repositories/notification.repository.impl";
+import { NotificationRepository } from "@domain/repositories/notification.repository";
 /**
  * Infrastructure composition root.
  *
@@ -255,6 +258,7 @@ import { EnvironmentConfig } from "./config/environment.config";
       TicketOrmEntity,
       TicketMessageOrmEntity,
       TicketCategoryOrmEntity,
+      NotificationOrmEntity,
     ]),
   ],
 
@@ -413,6 +417,11 @@ import { EnvironmentConfig } from "./config/environment.config";
       provide: SessionManager,
       useClass: RedisSessionManager,
     },
+
+    {
+      provide: NotificationRepository,
+      useClass: NotificationRepositoryImpl,
+    },
   ],
 
   exports: [
@@ -436,6 +445,7 @@ import { EnvironmentConfig } from "./config/environment.config";
     TicketCategoryRepository,
     PAYMENT_PROVIDER_RESOLVER,
     SessionManager,
+    NotificationRepository,
   ],
 })
 export class InfrastructureModule {}

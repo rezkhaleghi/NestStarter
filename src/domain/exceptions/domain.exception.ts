@@ -235,3 +235,10 @@ export class UnsupportedPaymentProviderException extends DomainException {
     super(`Payment provider ${provider} is not supported.`);
   }
 }
+
+// Notification
+export class NotificationNotFoundException extends DomainException {
+  constructor() {
+    super("Notification not found.");
+  }
+}

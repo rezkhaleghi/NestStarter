@@ -54,6 +54,12 @@ import { CreateTicketCategoryUseCase } from "./use-cases/admin-tickets/create-ti
 import { UpdateTicketCategoryUseCase } from "./use-cases/admin-tickets/update-ticket-category.use-case";
 import { DeactivateTicketCategoryUseCase } from "./use-cases/admin-tickets/deactive-ticket-category.use-case";
 
+import { SendNotificationUseCase } from "./use-cases/notifications/send-notification.use-case";
+import { ListUserNotificationsUseCase } from "./use-cases/notifications/list-user-notifications.use-case";
+import { MarkNotificationReadUseCase } from "./use-cases/notifications/mark-notification-read.use-case";
+
+import { AdminListNotificationsUseCase } from "./use-cases/admin-notifications/list-notifications.use-case";
+import { AdminGetNotificationUseCase } from "./use-cases/admin-notifications/get-notification.use-case";
 /**
  * Registers application use cases. Infrastructure bindings are supplied by
  * the composition root and injected through application interfaces.
@@ -94,6 +100,15 @@ import { DeactivateTicketCategoryUseCase } from "./use-cases/admin-tickets/deact
     ListUserTicketsUseCase,
     GetTicketUseCase,
     CreateTicketMessageUseCase,
+
+    // Notifications
+    SendNotificationUseCase,
+    ListUserNotificationsUseCase,
+    MarkNotificationReadUseCase,
+
+    // Admin Notifications
+    AdminListNotificationsUseCase,
+    AdminGetNotificationUseCase,
 
     // Admin tickets
     ListAdminTicketsUseCase,
@@ -179,6 +194,14 @@ import { DeactivateTicketCategoryUseCase } from "./use-cases/admin-tickets/deact
     ListUserTicketsUseCase,
     GetTicketUseCase,
     CreateTicketMessageUseCase,
+
+    // Notifications
+    SendNotificationUseCase,
+    MarkNotificationReadUseCase,
+
+    // Admin Notifications
+    AdminListNotificationsUseCase,
+    AdminGetNotificationUseCase,
 
     // Admin tickets
     ListAdminTicketsUseCase,

@@ -5,6 +5,13 @@ export abstract class NotificationService {
     expirySeconds: number,
   ): Promise<void>;
 
+  abstract sendEmail(
+    to: string,
+    subject: string,
+    text: string,
+    html?: string,
+  ): Promise<void>;
+
   abstract sendWithdrawalApproved(
     email: string,
     payload: {

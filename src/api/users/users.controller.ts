@@ -13,6 +13,8 @@ import {
   MaxFileSizeValidator,
   FileTypeValidator,
   Post,
+  Param,
+  ParseUUIDPipe,
 } from "@nestjs/common";
 
 import { FileInterceptor } from "@nestjs/platform-express";
@@ -48,6 +50,12 @@ import { AuthenticatedUserResponseDto } from "../auth/dtos/authenticated-user.re
 import { GetUserBalancesUseCase } from "@application/use-cases/users/get-user-balances.use-case";
 import { ListUserBalancesQueryDto } from "./dtos/list-user-balances.query.dto";
 import { SearchUsersQueryDto } from "./dtos/search-users.query.dto";
+import { ListUserNotificationsUseCase } from "@application/use-cases/notifications/list-user-notifications.use-case";
+
+import { MarkNotificationReadUseCase } from "@application/use-cases/notifications/mark-notification-read.use-case";
+
+import { ListNotificationsQueryDto } from "./dtos/list-notifications.query.dto";
+import { NotificationResponseDto } from "./dtos/notification.response.dto";
 
 @ApiTags("users")
 @Controller("users")
@@ -60,6 +68,8 @@ export class UsersController {
     private readonly updateUserAvatarUseCase: UpdateUserAvatarUseCase,
     private readonly deleteUserAvatarUseCase: DeleteUserAvatarUseCase,
     private readonly searchUsersUseCase: SearchUsersUseCase,
+    private readonly listUserNotificationsUseCase: ListUserNotificationsUseCase,
+    private readonly markNotificationReadUseCase: MarkNotificationReadUseCase,
   ) {}
 
   @Get("me")
@@ -227,6 +237,54 @@ export class UsersController {
       page: query.page,
       limit: query.limit,
     });
+  }
+
+  @Get("me/notifications")
+  @ApiOperation({
+    summary: "List the current user's notifications",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Current user's notifications",
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Not authenticated",
+  })
+  async getMyNotifications(
+    @Query() query: ListNotificationsQueryDto,
+    @Req() req: Request,
+  ) {
+    return this.listUserNotificationsUseCase.execute({
+      userId: req.session.userId!,
+      page: query.page,
+      limit: query.limit,
+      sortDirection: query.sortDirection,
+    });
+  }
+
+  @Patch("me/notifications/:id/read")
+  @ApiOperation({
+    summary: "Mark one of the current user's in-app notifications as read",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Notification marked as read",
+    type: NotificationResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Notification not found",
+  })
+  @ApiResponse({
+    status: 400,
+    description: "Notification cannot be marked as read",
+  })
+  async markNotificationAsRead(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Req() req: Request,
+  ) {
+    return this.markNotificationReadUseCase.execute(req.session.userId!, id);
   }
 
   private toUserResponse(user: User) {

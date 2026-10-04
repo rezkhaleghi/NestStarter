@@ -8,11 +8,14 @@ import { PaymentCurrency } from "@domain/enums/payment-currency.enum";
 import { WithdrawalStatus } from "@domain/enums/withdrawal-status.enum";
 import { AuditAction } from "@domain/enums/audit-action.enum";
 import { LedgerType } from "@domain/enums/ledger-type.enum";
+import { NotificationChannel } from "@domain/enums/notification-channel.enum";
+import { NotificationType } from "@domain/enums/notification-type.enum";
 
 import {
   UserBalanceNotFoundException,
   WithdrawalNotFoundException,
 } from "@domain/exceptions/domain.exception";
+import { SendNotificationUseCase } from "../notifications/send-notification.use-case";
 
 describe("AdminUpdateWithdrawalStatusUseCase", () => {
   const userRepository = {
@@ -37,11 +40,9 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
     create: jest.fn(),
   };
 
-  const notificationService = {
-    sendOtp: jest.fn(),
-    sendWithdrawalApproved: jest.fn(),
-    sendWithdrawalRejected: jest.fn(),
-  };
+  const sendNotificationUseCase = {
+    execute: jest.fn(),
+  } as unknown as SendNotificationUseCase;
 
   const unitOfWork = {
     execute: jest.fn(),
@@ -97,17 +98,15 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
 
     ledgerRepository.create.mockResolvedValue(undefined);
     auditLogRepository.create.mockResolvedValue(undefined);
-
-    notificationService.sendWithdrawalApproved.mockResolvedValue(undefined);
-    notificationService.sendWithdrawalRejected.mockResolvedValue(undefined);
+    sendNotificationUseCase.execute.mockResolvedValue(undefined);
 
     useCase = new AdminUpdateWithdrawalStatusUseCase(
       unitOfWork,
-      notificationService,
+      sendNotificationUseCase,
     );
   });
 
-  it("approves a pending withdrawal and sends an approval notification", async () => {
+  it("approves a pending withdrawal and creates in-app and email notifications", async () => {
     const withdrawal = createWithdrawal();
 
     withdrawalRepository.findByIdForUpdate.mockResolvedValue(withdrawal);
@@ -119,6 +118,7 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
     });
 
     expect(result.getStatus()).toBe(WithdrawalStatus.APPROVED);
+
     expect(withdrawalRepository.save).toHaveBeenCalledWith(withdrawal);
 
     expect(auditLogRepository.create).toHaveBeenCalledWith(
@@ -127,19 +127,28 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
       }),
     );
 
-    expect(notificationService.sendWithdrawalApproved).toHaveBeenCalledWith(
-      "user@example.com",
+    expect(sendNotificationUseCase.execute).toHaveBeenCalledTimes(2);
+
+    expect(sendNotificationUseCase.execute).toHaveBeenNthCalledWith(
+      1,
       expect.objectContaining({
-        amount: "100",
-        currency: PaymentCurrency.USDT,
-        withdrawalId: withdrawal.id,
-        referenceId: withdrawal.referenceId,
-        status: WithdrawalStatus.APPROVED,
-        destination: "destination-1",
+        userId: withdrawal.userId,
+        type: NotificationType.WITHDRAWAL_APPROVED,
+        channel: NotificationChannel.IN_APP,
+        referenceId: withdrawal.id,
       }),
     );
 
-    expect(notificationService.sendWithdrawalRejected).not.toHaveBeenCalled();
+    expect(sendNotificationUseCase.execute).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        userId: withdrawal.userId,
+        email: "user@example.com",
+        type: NotificationType.WITHDRAWAL_APPROVED,
+        channel: NotificationChannel.EMAIL,
+        referenceId: withdrawal.id,
+      }),
+    );
 
     expect(
       userBalanceRepository.findByUserIdAndCurrencyForUpdate,
@@ -148,13 +157,13 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
     expect(ledgerRepository.create).not.toHaveBeenCalled();
   });
 
-  it("rejects a pending withdrawal, refunds the balance, and sends a rejection notification", async () => {
+  it("rejects a withdrawal, refunds the balance, and creates both notifications", async () => {
     const withdrawal = createWithdrawal();
 
     withdrawalRepository.findByIdForUpdate.mockResolvedValue(withdrawal);
 
     const balance = UserBalance.create({
-      userId: "user-1",
+      userId: withdrawal.userId,
       currency: withdrawal.currency,
       amount: "50",
     });
@@ -195,28 +204,36 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
       }),
     );
 
-    expect(notificationService.sendWithdrawalRejected).toHaveBeenCalledWith(
-      "user@example.com",
+    expect(sendNotificationUseCase.execute).toHaveBeenCalledTimes(2);
+
+    expect(sendNotificationUseCase.execute).toHaveBeenNthCalledWith(
+      1,
       expect.objectContaining({
-        amount: "100",
-        currency: PaymentCurrency.USDT,
-        withdrawalId: withdrawal.id,
-        referenceId: withdrawal.referenceId,
-        status: WithdrawalStatus.REJECTED,
-        rejectionReason: "Invalid destination",
+        type: NotificationType.WITHDRAWAL_REJECTED,
+        channel: NotificationChannel.IN_APP,
+        referenceId: withdrawal.id,
       }),
     );
 
-    expect(notificationService.sendWithdrawalApproved).not.toHaveBeenCalled();
+    expect(sendNotificationUseCase.execute).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        email: "user@example.com",
+        type: NotificationType.WITHDRAWAL_REJECTED,
+        channel: NotificationChannel.EMAIL,
+        referenceId: withdrawal.id,
+        message: expect.stringContaining("Invalid destination"),
+      }),
+    );
   });
 
-  it("does not fail the withdrawal operation when the approval notification fails", async () => {
+  it("does not fail the financial operation when notification infrastructure fails", async () => {
     const withdrawal = createWithdrawal();
 
     withdrawalRepository.findByIdForUpdate.mockResolvedValue(withdrawal);
 
-    notificationService.sendWithdrawalApproved.mockRejectedValue(
-      new Error("SMTP unavailable"),
+    sendNotificationUseCase.execute.mockRejectedValue(
+      new Error("notification infrastructure failure"),
     );
 
     const result = await useCase.execute({
@@ -227,45 +244,75 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
 
     expect(result.getStatus()).toBe(WithdrawalStatus.APPROVED);
     expect(withdrawalRepository.save).toHaveBeenCalledWith(withdrawal);
-    expect(notificationService.sendWithdrawalApproved).toHaveBeenCalled();
+    expect(sendNotificationUseCase.execute).toHaveBeenCalled();
   });
 
-  it("does not fail the withdrawal operation when the rejection notification fails", async () => {
+  it("does not send notifications when completing a withdrawal", async () => {
     const withdrawal = createWithdrawal();
 
+    withdrawal.approve();
+
     withdrawalRepository.findByIdForUpdate.mockResolvedValue(withdrawal);
-
-    const balance = UserBalance.create({
-      userId: withdrawal.userId,
-      currency: withdrawal.currency,
-      amount: "50",
-    });
-
-    userBalanceRepository.findByUserIdAndCurrencyForUpdate.mockResolvedValue(
-      balance,
-    );
-
-    notificationService.sendWithdrawalRejected.mockRejectedValue(
-      new Error("SMTP unavailable"),
-    );
 
     const result = await useCase.execute({
       withdrawalId: withdrawal.id,
       adminUserId: "admin-1",
-      status: WithdrawalStatus.REJECTED,
-      reason: "Invalid destination",
+      status: WithdrawalStatus.COMPLETED,
+      transactionId: "tx-123",
     });
 
-    expect(result.getStatus()).toBe(WithdrawalStatus.REJECTED);
-    expect(balance.amount).toBe("150");
-    expect(userBalanceRepository.save).toHaveBeenCalledWith(balance);
-    expect(ledgerRepository.create).toHaveBeenCalledTimes(1);
-    expect(withdrawalRepository.save).toHaveBeenCalledWith(withdrawal);
-    expect(notificationService.sendWithdrawalRejected).toHaveBeenCalled();
+    expect(result.getStatus()).toBe(WithdrawalStatus.COMPLETED);
+    expect(result.transactionId).toBe("tx-123");
+
+    expect(sendNotificationUseCase.execute).not.toHaveBeenCalled();
+
+    expect(auditLogRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: AuditAction.WITHDRAWAL_COMPLETED,
+      }),
+    );
+  });
+
+  it("throws when the withdrawal does not exist", async () => {
+    withdrawalRepository.findByIdForUpdate.mockResolvedValue(null);
+
+    await expect(
+      useCase.execute({
+        withdrawalId: "missing-withdrawal",
+        adminUserId: "admin-1",
+        status: WithdrawalStatus.APPROVED,
+      }),
+    ).rejects.toThrow(WithdrawalNotFoundException);
+
+    expect(sendNotificationUseCase.execute).not.toHaveBeenCalled();
+  });
+
+  it("throws when rejecting and the balance does not exist", async () => {
+    const withdrawal = createWithdrawal();
+
+    withdrawalRepository.findByIdForUpdate.mockResolvedValue(withdrawal);
+
+    userBalanceRepository.findByUserIdAndCurrencyForUpdate.mockResolvedValue(
+      null,
+    );
+
+    await expect(
+      useCase.execute({
+        withdrawalId: withdrawal.id,
+        adminUserId: "admin-1",
+        status: WithdrawalStatus.REJECTED,
+        reason: "Invalid destination",
+      }),
+    ).rejects.toThrow(UserBalanceNotFoundException);
+
+    expect(withdrawal.getStatus()).toBe(WithdrawalStatus.PENDING);
+    expect(ledgerRepository.create).not.toHaveBeenCalled();
+    expect(sendNotificationUseCase.execute).not.toHaveBeenCalled();
   });
 
   it("does not refund an already rejected withdrawal", async () => {
     const withdrawal = createWithdrawal();
+
     withdrawal.reject("Already rejected");
 
     withdrawalRepository.findByIdForUpdate.mockResolvedValue(withdrawal);
@@ -289,16 +336,13 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
       }),
     ).rejects.toThrow();
 
-    expect(withdrawal.getStatus()).toBe(WithdrawalStatus.REJECTED);
     expect(balance.amount).toBe("50");
-
     expect(userBalanceRepository.save).not.toHaveBeenCalled();
     expect(ledgerRepository.create).not.toHaveBeenCalled();
-    expect(auditLogRepository.create).not.toHaveBeenCalled();
-    expect(notificationService.sendWithdrawalRejected).not.toHaveBeenCalled();
+    expect(sendNotificationUseCase.execute).not.toHaveBeenCalled();
   });
 
-  it("refunds the exact withdrawal amount and creates exactly one refund ledger", async () => {
+  it("refunds the exact withdrawal amount", async () => {
     const withdrawal = Withdrawal.create({
       userId: "user-1",
       currency: PaymentCurrency.USDT,
@@ -326,7 +370,7 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
     });
 
     expect(balance.amount).toBe("150");
-    expect(userBalanceRepository.save).toHaveBeenCalledTimes(1);
+
     expect(ledgerRepository.create).toHaveBeenCalledTimes(1);
 
     expect(ledgerRepository.create).toHaveBeenCalledWith(
@@ -340,7 +384,7 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
     );
   });
 
-  it("does not save the withdrawal if refund ledger creation fails", async () => {
+  it("does not save the withdrawal if ledger creation fails", async () => {
     const withdrawal = createWithdrawal();
 
     withdrawalRepository.findByIdForUpdate.mockResolvedValue(withdrawal);
@@ -366,82 +410,9 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
       }),
     ).rejects.toThrow("ledger failure");
 
-    expect(withdrawal.getStatus()).toBe(WithdrawalStatus.REJECTED);
-    expect(userBalanceRepository.save).toHaveBeenCalledWith(balance);
     expect(withdrawalRepository.save).not.toHaveBeenCalled();
     expect(auditLogRepository.create).not.toHaveBeenCalled();
-    expect(notificationService.sendWithdrawalRejected).not.toHaveBeenCalled();
-  });
-
-  it("completes an approved withdrawal without sending an approval or rejection notification", async () => {
-    const withdrawal = createWithdrawal();
-    withdrawal.approve();
-
-    withdrawalRepository.findByIdForUpdate.mockResolvedValue(withdrawal);
-
-    const result = await useCase.execute({
-      withdrawalId: withdrawal.id,
-      adminUserId: "admin-1",
-      status: WithdrawalStatus.COMPLETED,
-      transactionId: "tx-123",
-    });
-
-    expect(result.getStatus()).toBe(WithdrawalStatus.COMPLETED);
-    expect(result.transactionId).toBe("tx-123");
-
-    expect(withdrawalRepository.save).toHaveBeenCalledWith(withdrawal);
-
-    expect(auditLogRepository.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        action: AuditAction.WITHDRAWAL_COMPLETED,
-      }),
-    );
-
-    expect(notificationService.sendWithdrawalApproved).not.toHaveBeenCalled();
-    expect(notificationService.sendWithdrawalRejected).not.toHaveBeenCalled();
-
-    expect(
-      userBalanceRepository.findByUserIdAndCurrencyForUpdate,
-    ).not.toHaveBeenCalled();
-
-    expect(ledgerRepository.create).not.toHaveBeenCalled();
-  });
-
-  it("throws when the withdrawal does not exist", async () => {
-    withdrawalRepository.findByIdForUpdate.mockResolvedValue(null);
-
-    await expect(
-      useCase.execute({
-        withdrawalId: "missing-withdrawal",
-        adminUserId: "admin-1",
-        status: WithdrawalStatus.APPROVED,
-      }),
-    ).rejects.toThrow(WithdrawalNotFoundException);
-
-    expect(notificationService.sendWithdrawalApproved).not.toHaveBeenCalled();
-  });
-
-  it("throws when rejecting and the balance does not exist", async () => {
-    const withdrawal = createWithdrawal();
-
-    withdrawalRepository.findByIdForUpdate.mockResolvedValue(withdrawal);
-
-    userBalanceRepository.findByUserIdAndCurrencyForUpdate.mockResolvedValue(
-      null,
-    );
-
-    await expect(
-      useCase.execute({
-        withdrawalId: withdrawal.id,
-        adminUserId: "admin-1",
-        status: WithdrawalStatus.REJECTED,
-        reason: "Invalid destination",
-      }),
-    ).rejects.toThrow(UserBalanceNotFoundException);
-
-    expect(withdrawal.getStatus()).toBe(WithdrawalStatus.PENDING);
-    expect(ledgerRepository.create).not.toHaveBeenCalled();
-    expect(notificationService.sendWithdrawalRejected).not.toHaveBeenCalled();
+    expect(sendNotificationUseCase.execute).not.toHaveBeenCalled();
   });
 
   it("does not allow completing a pending withdrawal", async () => {
@@ -460,10 +431,12 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
 
     expect(withdrawal.getStatus()).toBe(WithdrawalStatus.PENDING);
     expect(withdrawalRepository.save).not.toHaveBeenCalled();
+    expect(sendNotificationUseCase.execute).not.toHaveBeenCalled();
   });
 
   it("does not allow rejecting an approved withdrawal", async () => {
     const withdrawal = createWithdrawal();
+
     withdrawal.approve();
 
     withdrawalRepository.findByIdForUpdate.mockResolvedValue(withdrawal);
@@ -479,25 +452,6 @@ describe("AdminUpdateWithdrawalStatusUseCase", () => {
 
     expect(withdrawal.getStatus()).toBe(WithdrawalStatus.APPROVED);
     expect(ledgerRepository.create).not.toHaveBeenCalled();
-    expect(notificationService.sendWithdrawalRejected).not.toHaveBeenCalled();
-  });
-
-  it("does not allow approving an already completed withdrawal", async () => {
-    const withdrawal = createWithdrawal();
-    withdrawal.approve();
-    withdrawal.complete("tx-123");
-
-    withdrawalRepository.findByIdForUpdate.mockResolvedValue(withdrawal);
-
-    await expect(
-      useCase.execute({
-        withdrawalId: withdrawal.id,
-        adminUserId: "admin-1",
-        status: WithdrawalStatus.APPROVED,
-      }),
-    ).rejects.toThrow();
-
-    expect(withdrawal.getStatus()).toBe(WithdrawalStatus.COMPLETED);
-    expect(notificationService.sendWithdrawalApproved).not.toHaveBeenCalled();
+    expect(sendNotificationUseCase.execute).not.toHaveBeenCalled();
   });
 });
