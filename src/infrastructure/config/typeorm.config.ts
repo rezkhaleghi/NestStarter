@@ -9,6 +9,7 @@ import { WithdrawalOrmEntity } from "@infrastructure/database/orm-entities/withd
 import { TicketOrmEntity } from "../database/orm-entities/ticket.orm-entity";
 import { TicketMessageOrmEntity } from "../database/orm-entities/ticket-message.orm-entity";
 import { TicketCategoryOrmEntity } from "../database/orm-entities/ticket-category.orm-entity";
+import { NotificationOrmEntity } from "@infrastructure/database/orm-entities/notification.orm-entity";
 
 /**
  * NestJS database configuration.
@@ -35,6 +36,7 @@ export default registerAs(
       TicketOrmEntity,
       TicketMessageOrmEntity,
       TicketCategoryOrmEntity,
+      NotificationOrmEntity,
     ],
     synchronize: process.env.NODE_ENV === "development",
     // synchronize: true, // Set to false in production to avoid data loss

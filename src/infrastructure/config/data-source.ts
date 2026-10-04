@@ -11,6 +11,7 @@ import { WithdrawalOrmEntity } from "../database/orm-entities/withdrawal.orm-ent
 import { TicketOrmEntity } from "../database/orm-entities/ticket.orm-entity";
 import { TicketMessageOrmEntity } from "../database/orm-entities/ticket-message.orm-entity";
 import { TicketCategoryOrmEntity } from "../database/orm-entities/ticket-category.orm-entity";
+import { NotificationOrmEntity } from "@infrastructure/database/orm-entities/notification.orm-entity";
 
 /**
  * TypeORM CLI data source configuration.
@@ -38,9 +39,10 @@ export default new DataSource({
     TicketOrmEntity,
     TicketMessageOrmEntity,
     TicketCategoryOrmEntity,
+    NotificationOrmEntity,
   ],
   migrations: [__dirname + "/../database/migrations/*.{js,ts}"],
-  synchronize: false, // Set to false in production to avoid data loss
+  synchronize: true, // Set to false in production to avoid data loss
 });
 
 //                     Database
