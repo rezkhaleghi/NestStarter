@@ -29,6 +29,7 @@ export abstract class NotificationRepository {
   abstract findByUserId(
     userId: string,
     params: PageQuery<"createdAt">,
+    filters?: Pick<NotificationFilters, "type" | "channel">,
   ): Promise<PageResult<Notification>>;
 
   abstract findPage(

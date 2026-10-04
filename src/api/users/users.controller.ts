@@ -34,26 +34,19 @@ import { User } from "@domain/entities/user.entity";
 import { AuthSessionGuard } from "../auth/auth-session.guard";
 
 import { GetCurrentUserUseCase } from "@application/use-cases/users/get-current-user.use-case";
-
 import { UpdateCurrentUserUseCase } from "@application/use-cases/users/update-current-user.use-case";
-
 import { UpdateUserAvatarUseCase } from "@application/use-cases/users/update-user-avatar.use-case";
-
 import { DeleteUserAvatarUseCase } from "@application/use-cases/users/delete-user-avatar.use-case";
-
 import { SearchUsersUseCase } from "@application/use-cases/users/search-users.use-case";
-
-import { UpdateProfileDto } from "../auth/dtos/update-profile.dto";
-
-import { AuthenticatedUserResponseDto } from "../auth/dtos/authenticated-user.response.dto";
-
 import { GetUserBalancesUseCase } from "@application/use-cases/users/get-user-balances.use-case";
-import { ListUserBalancesQueryDto } from "./dtos/list-user-balances.query.dto";
-import { SearchUsersQueryDto } from "./dtos/search-users.query.dto";
 import { ListUserNotificationsUseCase } from "@application/use-cases/notifications/list-user-notifications.use-case";
-
 import { MarkNotificationReadUseCase } from "@application/use-cases/notifications/mark-notification-read.use-case";
 
+import { UpdateProfileDto } from "../auth/dtos/update-profile.dto";
+import { AuthenticatedUserResponseDto } from "../auth/dtos/authenticated-user.response.dto";
+
+import { ListUserBalancesQueryDto } from "./dtos/list-user-balances.query.dto";
+import { SearchUsersQueryDto } from "./dtos/search-users.query.dto";
 import { ListNotificationsQueryDto } from "./dtos/list-notifications.query.dto";
 import { NotificationResponseDto } from "./dtos/notification.response.dto";
 
@@ -260,6 +253,8 @@ export class UsersController {
       page: query.page,
       limit: query.limit,
       sortDirection: query.sortDirection,
+      channel: query.channel,
+      type: query.type,
     });
   }
 

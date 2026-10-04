@@ -1,5 +1,7 @@
 import { ListUserNotificationsUseCase } from "./list-user-notifications.use-case";
 
+import { NotificationChannel } from "@domain/enums/notification-channel.enum";
+import { NotificationType } from "@domain/enums/notification-type.enum";
 import { NotificationRepository } from "@domain/repositories/notification.repository";
 
 describe("ListUserNotificationsUseCase", () => {
@@ -40,6 +42,80 @@ describe("ListUserNotificationsUseCase", () => {
         limit: 20,
         sortBy: "createdAt",
         sortDirection: "DESC",
+      },
+      {
+        channel: undefined,
+        type: undefined,
+      },
+    );
+  });
+
+  it("filters the user's notifications by channel", async () => {
+    await useCase.execute({
+      userId: "user-1",
+      page: 1,
+      limit: 20,
+      channel: NotificationChannel.IN_APP,
+    });
+
+    expect(notificationRepositoryMock.findByUserId).toHaveBeenCalledWith(
+      "user-1",
+      {
+        page: 1,
+        limit: 20,
+        sortBy: "createdAt",
+        sortDirection: "DESC",
+      },
+      {
+        channel: NotificationChannel.IN_APP,
+        type: undefined,
+      },
+    );
+  });
+
+  it("filters the user's notifications by type", async () => {
+    await useCase.execute({
+      userId: "user-1",
+      page: 1,
+      limit: 20,
+      type: NotificationType.WITHDRAWAL_APPROVED,
+    });
+
+    expect(notificationRepositoryMock.findByUserId).toHaveBeenCalledWith(
+      "user-1",
+      {
+        page: 1,
+        limit: 20,
+        sortBy: "createdAt",
+        sortDirection: "DESC",
+      },
+      {
+        channel: undefined,
+        type: NotificationType.WITHDRAWAL_APPROVED,
+      },
+    );
+  });
+
+  it("filters the user's notifications by channel and type", async () => {
+    await useCase.execute({
+      userId: "user-1",
+      page: 1,
+      limit: 20,
+      channel: NotificationChannel.IN_APP,
+      type: NotificationType.WITHDRAWAL_APPROVED,
+    });
+
+    expect(notificationRepositoryMock.findByUserId).toHaveBeenCalledWith(
+      "user-1",
+      {
+        page: 1,
+        limit: 20,
+        sortBy: "createdAt",
+        sortDirection: "DESC",
+      },
+      {
+        channel: NotificationChannel.IN_APP,
+        type: NotificationType.WITHDRAWAL_APPROVED,
       },
     );
   });

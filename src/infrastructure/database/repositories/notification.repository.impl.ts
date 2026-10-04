@@ -58,10 +58,13 @@ export class NotificationRepositoryImpl extends NotificationRepository {
   async findByUserId(
     userId: string,
     params: PageQuery<"createdAt">,
+    filters?: Pick<NotificationFilters, "type" | "channel">,
   ): Promise<PageResult<Notification>> {
     return this.findPage(
       {
         userId,
+        type: filters?.type,
+        channel: filters?.channel,
       },
       params,
     );
