@@ -143,7 +143,7 @@ async function bootstrap() {
   if (swaggerEnabled) {
     const config = new DocumentBuilder()
       .setTitle("API")
-      .setDescription("Auto-generated API documentation")
+      .setDescription("NestStarter backend API documentation")
       .setVersion("1.0")
       .build();
 
