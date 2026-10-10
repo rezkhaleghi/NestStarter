@@ -36,6 +36,7 @@ import { ListAuditLogsQueryDto } from "./dtos/audit-logs/list-audit-logs.query.d
 import { ListUsersQueryDto } from "./dtos/users/list-users.query.dto";
 import { CreateUserDto } from "./dtos/users/create-user.dto";
 import { UpdateUserDto } from "./dtos/users/update-user.dto";
+import { SessionManager } from "@application/interfaces/session-manager.interface";
 
 /**
  * HTTP controller for administrator user management.
@@ -63,6 +64,7 @@ export class AdminUsersController {
     private readonly deleteAdminUserAvatarUseCase: DeleteAdminUserAvatarUseCase,
     private readonly getAdminStatisticsUseCase: GetAdminStatisticsUseCase,
     private readonly getAuditLogsUseCase: GetAuditLogsUseCase,
+    private readonly sessionManager: SessionManager,
   ) {}
 
   /**
@@ -315,6 +317,8 @@ export class AdminUsersController {
       userId: id,
       password: dto.password,
     });
+
+    await this.sessionManager.destroyAllSessions(id);
 
     return {
       message: "Password changed.",

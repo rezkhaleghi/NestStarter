@@ -28,4 +28,12 @@ export abstract class SessionManager {
     userId: string,
     currentSessionId: string,
   ): Promise<void>;
+
+  /**
+   * Destroys every known session belonging to the user.
+   *
+   * Used for security-sensitive operations such as an administrator
+   * resetting a user's password.
+   */
+  abstract destroyAllSessions(userId: string): Promise<void>;
 }

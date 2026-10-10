@@ -82,4 +82,43 @@ describe("RedisSessionManager", () => {
 
     expect(multi).not.toHaveBeenCalled();
   });
+
+  it("destroys all sessions belonging to a user", async () => {
+    sMembers.mockResolvedValue(["session-1", "session-2", "session-3"]);
+
+    exec.mockResolvedValue([]);
+
+    await service.destroyAllSessions("user-id");
+
+    expect(sMembers).toHaveBeenCalledWith("auth:sessions:user-id");
+
+    expect(multi).toHaveBeenCalled();
+
+    expect(del).toHaveBeenCalledWith("session:session-1");
+    expect(del).toHaveBeenCalledWith("session:session-2");
+    expect(del).toHaveBeenCalledWith("session:session-3");
+
+    expect(del).toHaveBeenCalledWith("auth:sessions:user-id");
+
+    expect(sRem).not.toHaveBeenCalled();
+
+    expect(exec).toHaveBeenCalled();
+  });
+
+  it("removes the session index when the user has no sessions", async () => {
+    sMembers.mockResolvedValue([]);
+
+    exec.mockResolvedValue([]);
+
+    await service.destroyAllSessions("user-id");
+
+    expect(sMembers).toHaveBeenCalledWith("auth:sessions:user-id");
+
+    expect(multi).toHaveBeenCalled();
+
+    expect(del).toHaveBeenCalledTimes(1);
+    expect(del).toHaveBeenCalledWith("auth:sessions:user-id");
+
+    expect(exec).toHaveBeenCalled();
+  });
 });

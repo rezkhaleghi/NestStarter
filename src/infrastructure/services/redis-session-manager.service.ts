@@ -63,6 +63,22 @@ export class RedisSessionManager extends SessionManager {
     await transaction.exec();
   }
 
+  async destroyAllSessions(userId: string): Promise<void> {
+    const indexKey = this.getUserSessionKey(userId);
+    const sessionIds = await this.redis.sMembers(indexKey);
+
+    const transaction = this.redis.multi();
+
+    for (const sessionId of sessionIds) {
+      transaction.del(this.getSessionKey(sessionId));
+    }
+
+    // Remove the index too, including any stale session IDs.
+    transaction.del(indexKey);
+
+    await transaction.exec();
+  }
+
   private getUserSessionKey(userId: string): string {
     return `${this.userSessionPrefix}${userId}`;
   }
