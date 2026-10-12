@@ -242,3 +242,24 @@ export class NotificationNotFoundException extends DomainException {
     super("Notification not found.");
   }
 }
+// Page
+
+export class PageNotFoundException extends DomainException {
+  constructor() {
+    super("Page not found.");
+  }
+}
+
+export class PageSlugAlreadyExistsException extends DomainException {
+  constructor() {
+    super("A page with this slug already exists.");
+  }
+}
+
+export class InvalidPageSlugException extends DomainException {
+  constructor() {
+    super(
+      "Page slug must contain lowercase letters, numbers, and single hyphens between segments.",
+    );
+  }
+}
