@@ -1,5 +1,4 @@
 import { Injectable } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
 import { Page } from "@domain/entities/page.entity";
@@ -19,10 +18,7 @@ import {
 
 @Injectable()
 export class PageRepositoryImpl extends PageRepository {
-  constructor(
-    @InjectRepository(PageOrmEntity)
-    private readonly repository: Repository<PageOrmEntity>,
-  ) {
+  constructor(private readonly repository: Repository<PageOrmEntity>) {
     super();
   }
 
@@ -67,10 +63,7 @@ export class PageRepositoryImpl extends PageRepository {
 
   async findPublishedBySlug(slug: string): Promise<Page | null> {
     const row = await this.repository.findOne({
-      where: {
-        slug,
-        status: PageStatus.PUBLISHED,
-      },
+      where: { slug, status: PageStatus.PUBLISHED },
     });
 
     return row ? this.toDomain(row) : null;
@@ -82,17 +75,23 @@ export class PageRepositoryImpl extends PageRepository {
   ): Promise<PageResult<Page>> {
     const query = this.repository.createQueryBuilder("page");
 
-    if (filters.status) {
+    if (filters.status !== undefined) {
       query.andWhere("page.status = :status", {
         status: filters.status,
       });
     }
 
+    const sortColumns = {
+      createdAt: "page.createdAt",
+      updatedAt: "page.updatedAt",
+      title: "page.title",
+    } as const;
+
     const sortBy = params.sortBy ?? "createdAt";
     const sortDirection = params.sortDirection ?? "DESC";
 
     query
-      .orderBy(`page.${sortBy}`, sortDirection)
+      .orderBy(sortColumns[sortBy], sortDirection)
       .addOrderBy("page.id", "ASC")
       .skip((params.page - 1) * params.limit)
       .take(params.limit);
@@ -119,13 +118,13 @@ export class PageRepositoryImpl extends PageRepository {
 
     const columns = getPostgresUniqueViolationColumns(error);
 
-    if (columns.length === 1 && columns[0] === "slug") {
+    if (columns.includes("slug")) {
       throw new PageSlugAlreadyExistsException();
     }
   }
 
   private toDomain(row: PageOrmEntity): Page {
-    return Page.create({
+    return Page.restore({
       id: row.id,
       title: row.title,
       slug: row.slug,

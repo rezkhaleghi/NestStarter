@@ -60,6 +60,13 @@ import { MarkNotificationReadUseCase } from "./use-cases/notifications/mark-noti
 
 import { AdminListNotificationsUseCase } from "./use-cases/admin-notifications/list-notifications.use-case";
 import { AdminGetNotificationUseCase } from "./use-cases/admin-notifications/get-notification.use-case";
+import { CreatePageUseCase } from "./use-cases/admin-pages/create-page.use-case";
+import { ListPagesUseCase } from "./use-cases/admin-pages/list-pages.use-case";
+import { GetPageUseCase } from "./use-cases/admin-pages/get-page.use-case";
+import { UpdatePageUseCase } from "./use-cases/admin-pages/update-page.use-case";
+import { DeletePageUseCase } from "./use-cases/admin-pages/delete-page.use-case";
+import { GetPublicPageUseCase } from "./use-cases/pages/get-page.use-case";
+
 /**
  * Registers application use cases. Infrastructure bindings are supplied by
  * the composition root and injected through application interfaces.
@@ -105,6 +112,16 @@ import { AdminGetNotificationUseCase } from "./use-cases/admin-notifications/get
     SendNotificationUseCase,
     ListUserNotificationsUseCase,
     MarkNotificationReadUseCase,
+
+    // Pages
+    GetPublicPageUseCase,
+
+    // Admin Pages
+    CreatePageUseCase,
+    ListPagesUseCase,
+    GetPageUseCase,
+    UpdatePageUseCase,
+    DeletePageUseCase,
 
     // Admin Notifications
     AdminListNotificationsUseCase,
@@ -159,25 +176,6 @@ import { AdminGetNotificationUseCase } from "./use-cases/admin-notifications/get
     LoginWithPasswordUseCase,
     LoginWithOtpUseCase,
 
-    // Admin users
-    ListUsersUseCase,
-    GetUserUseCase,
-    CreateAdminUserUseCase,
-    UpdateAdminUserUseCase,
-    DeleteAdminUserUseCase,
-    DeleteAdminUserAvatarUseCase,
-    GetAdminStatisticsUseCase,
-    GetAuditLogsUseCase,
-
-    // Admin financials
-    UpdateUserBalanceUseCase,
-    ListLedgersUseCase,
-    AdminListDepositsUseCase,
-    AdminGetDepositUseCase,
-    AdminListWithdrawalsUseCase,
-    AdminGetWithdrawalUseCase,
-    AdminUpdateWithdrawalStatusUseCase,
-
     // Deposits
     CreateDepositUseCase,
     VerifyDepositUseCase,
@@ -200,6 +198,16 @@ import { AdminGetNotificationUseCase } from "./use-cases/admin-notifications/get
     MarkNotificationReadUseCase,
     ListUserNotificationsUseCase,
 
+    // Page
+    GetPublicPageUseCase,
+
+    // Admin Page
+    CreatePageUseCase,
+    UpdatePageUseCase,
+    DeletePageUseCase,
+    ListPagesUseCase,
+    GetPageUseCase,
+
     // Admin Notifications
     AdminListNotificationsUseCase,
     AdminGetNotificationUseCase,
@@ -215,6 +223,25 @@ import { AdminGetNotificationUseCase } from "./use-cases/admin-notifications/get
     CreateTicketCategoryUseCase,
     UpdateTicketCategoryUseCase,
     DeactivateTicketCategoryUseCase,
+
+    // Admin users
+    ListUsersUseCase,
+    GetUserUseCase,
+    CreateAdminUserUseCase,
+    UpdateAdminUserUseCase,
+    DeleteAdminUserUseCase,
+    DeleteAdminUserAvatarUseCase,
+    GetAdminStatisticsUseCase,
+    GetAuditLogsUseCase,
+
+    // Admin financials
+    UpdateUserBalanceUseCase,
+    ListLedgersUseCase,
+    AdminListDepositsUseCase,
+    AdminGetDepositUseCase,
+    AdminListWithdrawalsUseCase,
+    AdminGetWithdrawalUseCase,
+    AdminUpdateWithdrawalStatusUseCase,
   ],
 })
 export class ApplicationModule {}

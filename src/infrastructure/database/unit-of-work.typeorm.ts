@@ -16,6 +16,7 @@ import { TicketRepositoryImpl } from "./repositories/ticket.repository.impl";
 import { TicketMessageRepositoryImpl } from "./repositories/ticket-message.repository.impl";
 import { TicketCategoryRepositoryImpl } from "./repositories/ticket-category.repository.impl";
 import { NotificationRepositoryImpl } from "./repositories/notification.repository.impl";
+import { PageRepositoryImpl } from "./repositories/page.repository.impl";
 
 import { UserOrmEntity } from "./orm-entities/user.orm-entity";
 import { UserBalanceOrmEntity } from "./orm-entities/user-balance.orm-entity";
@@ -27,6 +28,7 @@ import { TicketOrmEntity } from "./orm-entities/ticket.orm-entity";
 import { TicketMessageOrmEntity } from "./orm-entities/ticket-message.orm-entity";
 import { TicketCategoryOrmEntity } from "./orm-entities/ticket-category.orm-entity";
 import { NotificationOrmEntity } from "./orm-entities/notification.orm-entity";
+import { PageOrmEntity } from "./orm-entities/page.orm-entity";
 
 @Injectable()
 export class TypeOrmUnitOfWork implements UnitOfWork {
@@ -36,58 +38,43 @@ export class TypeOrmUnitOfWork implements UnitOfWork {
     work: (repositories: UnitOfWorkRepositories) => Promise<T>,
   ): Promise<T> {
     return this.dataSource.transaction(async (manager) => {
-      const userRepository = new UserRepositoryImpl(
-        manager.getRepository(UserOrmEntity),
-      );
+      const repositories: UnitOfWorkRepositories = {
+        userRepository: new UserRepositoryImpl(
+          manager.getRepository(UserOrmEntity),
+        ),
+        userBalanceRepository: new UserBalanceRepositoryImpl(
+          manager.getRepository(UserBalanceOrmEntity),
+        ),
+        auditLogRepository: new AuditLogRepositoryImpl(
+          manager.getRepository(AuditLogOrmEntity),
+        ),
+        ledgerRepository: new LedgerRepositoryImpl(
+          manager.getRepository(LedgerOrmEntity),
+        ),
+        depositRepository: new DepositRepositoryImpl(
+          manager.getRepository(DepositOrmEntity),
+        ),
+        withdrawalRepository: new WithdrawalRepositoryImpl(
+          manager.getRepository(WithdrawalOrmEntity),
+        ),
+        ticketRepository: new TicketRepositoryImpl(
+          manager.getRepository(TicketOrmEntity),
+        ),
+        ticketMessageRepository: new TicketMessageRepositoryImpl(
+          manager.getRepository(TicketMessageOrmEntity),
+        ),
+        ticketCategoryRepository: new TicketCategoryRepositoryImpl(
+          manager.getRepository(TicketCategoryOrmEntity),
+        ),
+        notificationRepository: new NotificationRepositoryImpl(
+          manager.getRepository(NotificationOrmEntity),
+        ),
+        pageRepository: new PageRepositoryImpl(
+          manager.getRepository(PageOrmEntity),
+        ),
+      };
 
-      const userBalanceRepository = new UserBalanceRepositoryImpl(
-        manager.getRepository(UserBalanceOrmEntity),
-      );
-
-      const auditLogRepository = new AuditLogRepositoryImpl(
-        manager.getRepository(AuditLogOrmEntity),
-      );
-
-      const ledgerRepository = new LedgerRepositoryImpl(
-        manager.getRepository(LedgerOrmEntity),
-      );
-
-      const depositRepository = new DepositRepositoryImpl(
-        manager.getRepository(DepositOrmEntity),
-      );
-
-      const withdrawalRepository = new WithdrawalRepositoryImpl(
-        manager.getRepository(WithdrawalOrmEntity),
-      );
-
-      const ticketRepository = new TicketRepositoryImpl(
-        manager.getRepository(TicketOrmEntity),
-      );
-
-      const ticketMessageRepository = new TicketMessageRepositoryImpl(
-        manager.getRepository(TicketMessageOrmEntity),
-      );
-
-      const ticketCategoryRepository = new TicketCategoryRepositoryImpl(
-        manager.getRepository(TicketCategoryOrmEntity),
-      );
-
-      const notificationRepository = new NotificationRepositoryImpl(
-        manager.getRepository(NotificationOrmEntity),
-      );
-
-      return work({
-        userRepository,
-        userBalanceRepository,
-        auditLogRepository,
-        ledgerRepository,
-        depositRepository,
-        withdrawalRepository,
-        ticketRepository,
-        ticketMessageRepository,
-        ticketCategoryRepository,
-        notificationRepository,
-      });
+      return work(repositories);
     });
   }
 }

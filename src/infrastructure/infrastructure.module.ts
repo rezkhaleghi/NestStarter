@@ -85,6 +85,10 @@ import { EnvironmentConfig } from "./config/environment.config";
 import { NotificationOrmEntity } from "./database/orm-entities/notification.orm-entity";
 import { NotificationRepositoryImpl } from "./database/repositories/notification.repository.impl";
 import { NotificationRepository } from "@domain/repositories/notification.repository";
+import { PageRepository } from "@domain/repositories/page.repository";
+import { PageRepositoryImpl } from "./database/repositories/page.repository.impl";
+import { HtmlSanitizer } from "@application/interfaces/html-sanitizer.interface";
+import { HtmlSanitizerService } from "./services/html-sanitizer.service";
 /**
  * Infrastructure composition root.
  *
@@ -422,6 +426,15 @@ import { NotificationRepository } from "@domain/repositories/notification.reposi
       provide: NotificationRepository,
       useClass: NotificationRepositoryImpl,
     },
+
+    {
+      provide: PageRepository,
+      useClass: PageRepositoryImpl,
+    },
+    {
+      provide: HtmlSanitizer,
+      useClass: HtmlSanitizerService,
+    },
   ],
 
   exports: [
@@ -446,6 +459,8 @@ import { NotificationRepository } from "@domain/repositories/notification.reposi
     PAYMENT_PROVIDER_RESOLVER,
     SessionManager,
     NotificationRepository,
+    PageRepository,
+    HtmlSanitizer,
   ],
 })
 export class InfrastructureModule {}

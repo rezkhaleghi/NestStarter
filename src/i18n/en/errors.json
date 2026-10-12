@@ -35,5 +35,8 @@
   "InvalidDecimalValueException": "Invalid decimal value.",
   "DecimalScaleExceededException": "The decimal value has too many decimal places.",
   "UnsupportedPaymentProviderException": "This payment provider is not supported.",
-  "NotificationNotFoundException": "Notification not found."
+  "NotificationNotFoundException": "Notification not found.",
+  "PageNotFoundException": "Page not found.",
+  "PageSlugAlreadyExistsException": "A page with this slug already exists.",
+  "InvalidPageSlugException": "Page slug must contain lowercase letters, numbers, and single hyphens between segments."
 }

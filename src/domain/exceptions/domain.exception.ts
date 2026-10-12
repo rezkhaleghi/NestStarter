@@ -263,3 +263,9 @@ export class InvalidPageSlugException extends DomainException {
     );
   }
 }
+
+export class InvalidPageStatusException extends DomainException {
+  constructor() {
+    super("Invalid page status.");
+  }
+}

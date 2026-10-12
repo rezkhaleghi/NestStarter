@@ -35,5 +35,8 @@
   "InvalidDecimalValueException": "مقدار اعشاری نامعتبر است.",
   "DecimalScaleExceededException": "تعداد ارقام اعشاری بیش از حد مجاز است.",
   "UnsupportedPaymentProviderException": "این ارائه‌دهنده پرداخت پشتیبانی نمی‌شود.",
-  "NotificationNotFoundException": "اعلان پیدا نشد."
+  "NotificationNotFoundException": "اعلان پیدا نشد.",
+  "PageNotFoundException": "صفحه پیدا نشد.",
+  "PageSlugAlreadyExistsException": "صفحه‌ای با این شناسه از قبل وجود دارد.",
+  "InvalidPageSlugException": "شناسه صفحه باید شامل حروف کوچک انگلیسی، اعداد و خط تیره بین بخش‌ها باشد."
 }
