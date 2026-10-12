@@ -1,0 +1,5 @@
+
+{
+  "INTERNAL_SERVER_ERROR": "An unexpected server error occurred.",
+  "REQUEST_FAILED": "The request could not be completed."
+}

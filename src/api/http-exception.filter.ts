@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Logger,
 } from "@nestjs/common";
+import { I18nContext } from "nestjs-i18n";
 import { Request, Response } from "express";
 
 import {
@@ -31,6 +32,7 @@ import {
   NotMatchException,
   OtpCooldownException,
   TicketAccessNotAllowedException,
+  TicketCategoryAlreadyExistsException,
   TicketCategoryNotFoundException,
   TicketClosedException,
   TicketMustAssignToAdminException,
@@ -45,7 +47,6 @@ import {
   UsernameAlreadyExistsException,
   WithdrawalNotFoundException,
   WithdrawalStatusChangeNotAllowedException,
-  TicketCategoryAlreadyExistsException,
 } from "@domain/exceptions/domain.exception";
 
 @Catch()
@@ -110,11 +111,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
 
     // Authorization
-    if (exception instanceof TicketAccessNotAllowedException) {
-      return HttpStatus.FORBIDDEN;
-    }
-
-    if (exception instanceof CannotDeleteSelfException) {
+    if (
+      exception instanceof TicketAccessNotAllowedException ||
+      exception instanceof CannotDeleteSelfException
+    ) {
       return HttpStatus.FORBIDDEN;
     }
 
@@ -154,8 +154,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       return HttpStatus.TOO_MANY_REQUESTS;
     }
 
-    // Everything else represents invalid input or a business-rule
-    // violation that the client can correct.
+    // Invalid input or a business-rule violation
     if (
       exception instanceof FieldMustExistException ||
       exception instanceof NotMatchException ||
@@ -174,11 +173,21 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
 
     // New domain exceptions default to 400 until explicitly classified.
-    // This prevents an expected domain failure from becoming a misleading 500.
     return HttpStatus.BAD_REQUEST;
   }
 
   private messageFor(exception: unknown, status: number): string | string[] {
+    if (exception instanceof DomainException) {
+      const key = `errors.${exception.name}`;
+      const translated = I18nContext.current()?.translate(key);
+
+      if (typeof translated === "string" && translated !== key) {
+        return translated;
+      }
+
+      return exception.message;
+    }
+
     if (exception instanceof HttpException) {
       const body = exception.getResponse();
 
@@ -195,8 +204,15 @@ export class HttpExceptionFilter implements ExceptionFilter {
       }
     }
 
-    if (exception instanceof DomainException) {
-      return exception.message;
+    const key =
+      status >= HttpStatus.INTERNAL_SERVER_ERROR
+        ? "common.INTERNAL_SERVER_ERROR"
+        : "common.REQUEST_FAILED";
+
+    const translated = I18nContext.current()?.translate(key);
+
+    if (typeof translated === "string" && translated !== key) {
+      return translated;
     }
 
     return status >= HttpStatus.INTERNAL_SERVER_ERROR

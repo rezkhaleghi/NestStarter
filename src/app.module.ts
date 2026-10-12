@@ -11,6 +11,12 @@ import { TicketsModule } from "./api/tickets/tickets.module";
 import { UsersModule } from "./api/users/users.module";
 import { WithdrawalsModule } from "./api/withdrawals/withdrawals.module";
 import { InfrastructureModule } from "./infrastructure/infrastructure.module";
+import {
+  AcceptLanguageResolver,
+  HeaderResolver,
+  I18nModule,
+} from "nestjs-i18n";
+import * as path from "path";
 
 /**
  * Root application module.
@@ -35,6 +41,15 @@ import { InfrastructureModule } from "./infrastructure/infrastructure.module";
         limit: 60,
       },
     ]),
+
+    I18nModule.forRoot({
+      fallbackLanguage: "en",
+      loaderOptions: {
+        path: path.join(__dirname, "i18n"),
+        watch: process.env.NODE_ENV !== "production",
+      },
+      resolvers: [new HeaderResolver(["x-lang"]), AcceptLanguageResolver],
+    }),
 
     /**
      * Infrastructure contains concrete implementations for things
