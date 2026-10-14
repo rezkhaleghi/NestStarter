@@ -14,9 +14,12 @@ describe("UpdatePageUseCase", () => {
       slug: "about",
       content: "Old content",
     });
+
     const repositories = {
       pageRepository: {
-        findByIdForUpdate: jest.fn().mockResolvedValue(page),
+        findByIdForUpdate: jest
+          .fn<(id: string) => Promise<Page | null>>()
+          .mockResolvedValue(page),
         save: jest
           .fn<(value: Page) => Promise<Page>>()
           .mockImplementation(async (value) => value),
@@ -27,9 +30,11 @@ describe("UpdatePageUseCase", () => {
           .mockResolvedValue(undefined),
       },
     };
+
     const unitOfWork = {
       execute: jest.fn(async (work: any) => work(repositories)),
     };
+
     const sanitizer = {
       sanitize: jest.fn<(html: string) => string>(() => "<p>Safe</p>"),
     };
@@ -50,12 +55,21 @@ describe("UpdatePageUseCase", () => {
     expect(result.slug).toBe("about-us");
     expect(result.content).toBe("<p>Safe</p>");
     expect(result.status).toBe(PageStatus.PUBLISHED);
+
+    expect(sanitizer.sanitize).toHaveBeenCalledWith(
+      '<p onclick="bad()">Safe</p>',
+    );
+
     expect(repositories.pageRepository.findByIdForUpdate).toHaveBeenCalledWith(
       "page-id",
     );
+    expect(repositories.pageRepository.save).toHaveBeenCalledWith(page);
+
+    expect(repositories.auditLogRepository.create).toHaveBeenCalledTimes(1);
 
     const audit = repositories.auditLogRepository.create.mock.calls[0][0];
-    expect(audit.action).toBe(AuditAction.ADMIN_PAGE_UPDATED);
+
+    expect(audit.action).toBe(AuditAction.PAGE_UPDATED);
     expect(audit.actorUserId).toBe("admin-id");
     expect(audit.metadata).toMatchObject({
       pageId: "page-id",
@@ -67,17 +81,23 @@ describe("UpdatePageUseCase", () => {
   it("throws when the page does not exist", async () => {
     const repositories = {
       pageRepository: {
-        findByIdForUpdate: jest.fn().mockResolvedValue(null),
-        save: jest.fn(),
+        findByIdForUpdate: jest
+          .fn<(id: string) => Promise<Page | null>>()
+          .mockResolvedValue(null),
+        save: jest.fn<(value: Page) => Promise<Page>>(),
       },
       auditLogRepository: {
-        create: jest.fn(),
+        create: jest.fn<(log: any) => Promise<any>>(),
       },
     };
+
     const unitOfWork = {
       execute: jest.fn(async (work: any) => work(repositories)),
     };
-    const sanitizer = { sanitize: (html: string) => html };
+
+    const sanitizer = {
+      sanitize: jest.fn<(html: string) => string>((html) => html),
+    };
 
     await expect(
       new UpdatePageUseCase(unitOfWork as any, sanitizer as any).execute({

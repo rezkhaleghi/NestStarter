@@ -11,18 +11,25 @@ describe("GetAdminPageUseCase", () => {
       title: "Draft",
       slug: "draft",
     });
+
     const pageRepository = {
-      findById: jest.fn().mockResolvedValue(page),
+      findById: jest
+        .fn<(id: string) => Promise<Page | null>>()
+        .mockResolvedValue(page),
     };
 
     await expect(
       new GetPageUseCase(pageRepository as any).execute("page-id"),
     ).resolves.toBe(page);
+
+    expect(pageRepository.findById).toHaveBeenCalledWith("page-id");
   });
 
   it("throws when the page does not exist", async () => {
     const pageRepository = {
-      findById: jest.fn().mockResolvedValue(null),
+      findById: jest
+        .fn<(id: string) => Promise<Page | null>>()
+        .mockResolvedValue(null),
     };
 
     await expect(

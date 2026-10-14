@@ -6,16 +6,20 @@ import { PageNotFoundException } from "@domain/exceptions/domain.exception";
 import { GetPublicPageUseCase } from "./get-page.use-case";
 
 describe("GetPublicPageUseCase", () => {
-  it("returns only a published page and sanitizes its content", async () => {
+  it("returns a published page and sanitizes its content", async () => {
     const page = Page.create({
       title: "About",
       slug: "about",
       content: "<script>bad()</script><p>Good</p>",
       status: PageStatus.PUBLISHED,
     });
+
     const pageRepository = {
-      findPublishedBySlug: jest.fn().mockResolvedValue(page),
+      findPublishedBySlug: jest
+        .fn<(slug: string) => Promise<Page | null>>()
+        .mockResolvedValue(page),
     };
+
     const sanitizer = {
       sanitize: jest.fn<(html: string) => string>(() => "<p>Good</p>"),
     };
@@ -32,16 +36,23 @@ describe("GetPublicPageUseCase", () => {
     expect(result.content).toBe("<p>Good</p>");
   });
 
-  it("returns 404 behavior for drafts and unknown slugs", async () => {
+  it("returns not-found behavior for drafts and unknown slugs", async () => {
     const pageRepository = {
-      findPublishedBySlug: jest.fn().mockResolvedValue(null),
+      findPublishedBySlug: jest
+        .fn<(slug: string) => Promise<Page | null>>()
+        .mockResolvedValue(null),
     };
-    const sanitizer = { sanitize: (html: string) => html };
+
+    const sanitizer = {
+      sanitize: jest.fn<(html: string) => string>((html) => html),
+    };
 
     await expect(
       new GetPublicPageUseCase(pageRepository as any, sanitizer as any).execute(
         "draft-page",
       ),
     ).rejects.toBeInstanceOf(PageNotFoundException);
+
+    expect(sanitizer.sanitize).not.toHaveBeenCalled();
   });
 });
