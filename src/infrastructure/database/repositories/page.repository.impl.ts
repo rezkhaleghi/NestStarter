@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
 import { Page } from "@domain/entities/page.entity";
@@ -18,7 +19,10 @@ import {
 
 @Injectable()
 export class PageRepositoryImpl extends PageRepository {
-  constructor(private readonly repository: Repository<PageOrmEntity>) {
+  constructor(
+    @InjectRepository(PageOrmEntity)
+    private readonly repository: Repository<PageOrmEntity>,
+  ) {
     super();
   }
 
