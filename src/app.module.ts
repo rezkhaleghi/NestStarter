@@ -17,6 +17,7 @@ import {
   I18nModule,
 } from "nestjs-i18n";
 import * as path from "path";
+import { PagesModule } from "@api/pages/pages.module";
 
 /**
  * Root application module.
@@ -73,6 +74,8 @@ import * as path from "path";
 
     // Operational endpoints such as health checks.
     HealthModule,
+
+    PagesModule,
   ],
 
   /**

@@ -89,6 +89,7 @@ import { PageRepository } from "@domain/repositories/page.repository";
 import { PageRepositoryImpl } from "./database/repositories/page.repository.impl";
 import { HtmlSanitizer } from "@application/interfaces/html-sanitizer.interface";
 import { HtmlSanitizerService } from "./services/html-sanitizer.service";
+import { PageOrmEntity } from "./database/orm-entities/page.orm-entity";
 /**
  * Infrastructure composition root.
  *
@@ -263,6 +264,7 @@ import { HtmlSanitizerService } from "./services/html-sanitizer.service";
       TicketMessageOrmEntity,
       TicketCategoryOrmEntity,
       NotificationOrmEntity,
+      PageOrmEntity,
     ]),
   ],
 
