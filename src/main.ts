@@ -12,7 +12,7 @@ import type { RedisClientType } from "redis";
 import type { Request, Response } from "express";
 import { AppModule } from "./app.module";
 import { EnvironmentConfig } from "@infrastructure/config/environment.config";
-//
+
 /**
  * Application bootstrap function.
  *
