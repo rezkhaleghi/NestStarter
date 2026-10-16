@@ -1,6 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import sanitizeHtml from "sanitize-html";
-
+import sanitizeHtml = require("sanitize-html");
 import { HtmlSanitizer } from "@application/interfaces/html-sanitizer.interface";
 
 /**
