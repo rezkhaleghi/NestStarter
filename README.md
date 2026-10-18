@@ -130,22 +130,19 @@ src/
 ├── api/
 │   ├── admin/
 │   ├── auth/
-│   ├── files/
-│   ├── health/
-│   └── users/
+│   ├── users/
+│   ├── ...
 │
 ├── application/
 │   ├── dtos/
 │   ├── interfaces/
 │   └── use-cases/
 │       ├── admin-financials/
-│       ├── admin-tickets/
 │       ├── admin-users/
+│       ├── ...
 │       ├── auth/
-│       ├── deposits/
-│       ├── tickets/
 │       ├── users/
-│       └── withdrawals/
+│       └── ...
 │
 ├── domain/
 │   ├── entities/
@@ -188,24 +185,6 @@ domain/
 The domain does not depend on NestJS, TypeORM, Express, Redis, MinIO, or PostgreSQL.
 
 ---
-
-# Domain Entities
-
-The current domain contains the following major entities:
-
-```text
-User
-UserBalance
-Ledger
-AuditLog
-
-Deposit
-Withdrawal
-
-Ticket
-TicketMessage
-TicketCategory
-```
 
 ## User
 
@@ -354,261 +333,6 @@ Transactional operations can create audit records through the transaction-scoped
 
 ---
 
-# Deposit
-
-`Deposit` represents an incoming payment.
-
-```text
-Deposit
-
-├── id
-├── userId
-├── currency
-├── amount
-├── status
-├── referenceId
-├── providerPaymentId
-├── transactionId
-├── createdAt
-├── updatedAt
-└── completedAt
-```
-
-Deposit statuses currently include:
-
-```text
-PENDING
-COMPLETED
-FAILED
-```
-
-The domain controls valid state changes such as:
-
-```text
-PENDING → COMPLETED
-PENDING → FAILED
-```
-
-A deposit has both an application-generated `referenceId` and an optional provider payment identifier.
-
----
-
-# Withdrawal
-
-`Withdrawal` represents a user's withdrawal request.
-
-```text
-Withdrawal
-
-├── id
-├── userId
-├── currency
-├── amount
-├── status
-├── destination
-├── referenceId
-├── transactionId
-├── rejectionReason
-├── createdAt
-├── updatedAt
-└── completedAt
-```
-
-Current withdrawal statuses are:
-
-```text
-PENDING
-APPROVED
-REJECTED
-COMPLETED
-```
-
-The domain controls valid state transitions.
-
-The current lifecycle is intentionally simple:
-
-```text
-User creates withdrawal
-        │
-        ▼
-     PENDING
-      /    \
-     /      \
-APPROVED   REJECTED
-   │          │
-   │          ▼
-   │        REFUND
-   │
-   ▼
-COMPLETED
-```
-
-`PROCESSING` and `FAILED` are not part of the current withdrawal domain lifecycle.
-
-The current implementation models the administrative workflow around approval, rejection/refund, and final completion after the external/manual transfer has actually been performed.
-
-# Administrative Withdrawal Workflow
-
-The current administrative workflow intentionally has two actions:
-
-```text
-Approve
-Reject
-```
-
-## Approve
-
-An administrator can approve a pending withdrawal:
-
-```text
-PENDING
-   │
-   ▼
-APPROVED
-```
-
-The approval is transactional and audit logged.
-
-Approval does not mean that the external transfer has already been completed.
-
-After the transfer is actually performed, the withdrawal can be completed:
-
-```text
-APPROVED
-   │
-   ▼
-COMPLETED
-```
-
-Completion records the optional external transaction ID when one is available.
-
-The current implementation does not introduce separate `PROCESSING` or `FAILED` states because the application currently uses a manual/external transfer workflow rather than a provider-managed withdrawal lifecycle.
-
----
-
-## Reject
-
-When an administrator rejects a pending withdrawal:
-
-```text
-PENDING
-   │
-   ▼
-REJECTED
-   │
-   ▼
-REFUND
-```
-
-The rejection workflow:
-
-1. Locks the withdrawal
-2. Changes its state to `REJECTED`
-3. Locks the user's balance
-4. Refunds the withdrawal amount
-5. Creates a `REFUND` ledger entry
-6. Saves the withdrawal
-7. Creates an audit record
-
-All database operations execute in one transaction.
-
-## The refund restores the amount that was deducted when the withdrawal was originally created.
-
-# Ticket
-
-`Ticket` represents a customer-support request.
-
-```text
-Ticket
-
-├── id
-├── userId
-├── categoryId
-├── subject
-├── status
-├── priority
-├── assignedToUserId
-├── createdAt
-├── updatedAt
-└── closedAt
-```
-
-Ticket status currently includes:
-
-```text
-OPEN
-IN_PROGRESS
-WAITING_FOR_USER
-WAITING_FOR_SUPPORT
-RESOLVED
-CLOSED
-```
-
-The domain enforces valid status transitions.
-
-For example:
-
-```text
-OPEN
-  │
-  ├──► IN_PROGRESS
-  ├──► WAITING_FOR_SUPPORT
-  └──► CLOSED
-```
-
-and:
-
-```text
-IN_PROGRESS
-  │
-  ├──► WAITING_FOR_USER
-  ├──► WAITING_FOR_SUPPORT
-  ├──► RESOLVED
-  └──► CLOSED
-```
-
-Invalid transitions are rejected by the domain.
-
----
-
-# TicketMessage
-
-`TicketMessage` represents a message belonging to a support ticket.
-
-Messages can be created by users or administrators through their respective application workflows.
-
-The ticket domain also exposes whether a ticket can currently receive replies.
-
----
-
-# TicketCategory
-
-`TicketCategory` represents a support-ticket category.
-
-```text
-TicketCategory
-
-├── id
-├── name
-├── description
-├── isActive
-├── createdAt
-└── updatedAt
-```
-
-Categories can be:
-
-```text
-created
-updated
-activated
-deactivated
-```
-
-Deactivation is used instead of removing a category from the system when the category should no longer be available for normal use.
-
----
-
 # Domain Entity Factories
 
 Domain entities use factory methods for normal creation.
@@ -619,14 +343,6 @@ For example:
 User.create({
   email,
   hashedPassword,
-});
-```
-
-```ts
-UserBalance.create({
-  userId,
-  currency,
-  amount,
 });
 ```
 
@@ -642,34 +358,10 @@ Ledger.create({
 ```
 
 ```ts
-Deposit.create({
-  userId,
-  currency,
-  amount,
-});
-```
-
-```ts
-Withdrawal.create({
-  userId,
-  currency,
-  amount,
-  destination,
-});
-```
-
-```ts
 Ticket.create({
   userId,
   subject,
   categoryId,
-});
-```
-
-```ts
-TicketCategory.create({
-  name,
-  description,
 });
 ```
 
@@ -678,48 +370,6 @@ Factories provide named construction parameters, sensible defaults, and a centra
 Entity IDs are generated by the domain when an ID is not explicitly supplied.
 
 This keeps identity generation consistent across the domain and persistence layers.
-
----
-
-# Domain Enums
-
-Important domain enums include:
-
-```text
-UserRole
-UserStatus
-
-AuditAction
-
-PaymentCurrency
-PaymentProvider
-
-LedgerType
-
-DepositStatus
-WithdrawalStatus
-
-TicketStatus
-TicketPriority
-```
-
-Ledger types currently include:
-
-```text
-ADMIN_ADJUSTMENT
-DEPOSIT
-WITHDRAWAL
-TRANSFER_IN
-TRANSFER_OUT
-REFUND
-```
-
-User roles currently include:
-
-```text
-USER
-ADMIN
-```
 
 ---
 
@@ -737,31 +387,7 @@ OtpCooldownException
 UserAlreadyExistsException
 UsernameAlreadyExistsException
 UserNotFoundException
-
-UserBalanceAlreadyExistsException
-UserBalanceNotFoundException
-InsufficientBalanceException
-
-InvalidDepositAmountException
-InvalidWithdrawalAmountException
-UnsupportedPaymentCurrencyException
-
-DepositNotFoundException
-WithdrawalNotFoundException
-
-WithdrawalStatusChangeNotAllowedException
-DepositChangeStatusNotAllowedException
-
-CannotRemoveLastAdminException
-CannotDeleteSelfException
-
-TicketNotFoundException
-TicketMessageNotFoundException
-TicketStatusTransitionException
-
-TicketCategoryNotFoundException
-
-GoogleAccountConflictException
+...
 ```
 
 All domain exceptions inherit from the application's domain exception base.
@@ -776,7 +402,7 @@ The API layer translates application/domain failures into HTTP responses.
 
 Repository contracts live outside the infrastructure implementation.
 
-Current repository responsibilities cover:
+Repository responsibilities examples:
 
 ```text
 UserRepository
@@ -788,8 +414,6 @@ DepositRepository
 WithdrawalRepository
 
 TicketRepository
-TicketMessageRepository
-TicketCategoryRepository
 ```
 
 Infrastructure provides TypeORM-based implementations.
@@ -855,23 +479,16 @@ A use case represents a meaningful operation the application can perform.
 
 Instead of a large generic service containing unrelated operations, NestStarter uses focused use cases.
 
-Examples include:
+User use case Examples:
 
 ```text
 CreateUserUseCase
 GetCurrentUserUseCase
 UpdateCurrentUserUseCase
 ChangeUserPasswordUseCase
-
-SearchUsersUseCase
-
-UpdateUserAvatarUseCase
-DeleteUserAvatarUseCase
-
-UpdateUserBalanceUseCase
 ```
 
-Financial use cases include:
+Financial use case Examples:
 
 ```text
 CreateDepositUseCase
@@ -879,31 +496,8 @@ VerifyDepositUseCase
 
 CreateWithdrawalUseCase
 
-AdminApproveWithdrawalUseCase
-AdminRejectWithdrawalUseCase
-
-AdminListDepositsUseCase
 AdminGetDepositUseCase
-
-AdminListWithdrawalsUseCase
 AdminGetWithdrawalUseCase
-```
-
-Ticket use cases include operations for:
-
-```text
-Creating tickets
-Viewing tickets
-Listing tickets
-Creating messages
-Assigning tickets
-Changing ticket status
-Changing priority
-
-Creating categories
-Updating categories
-Deactivating categories
-Listing categories
 ```
 
 This structure makes individual operations easier to understand, authorize, test, and audit.
@@ -1299,170 +893,6 @@ while the ledger retains the historical movements.
 
 ---
 
-# Admin Financial APIs
-
-Administrators can inspect financial records.
-
-Deposit administration provides:
-
-```text
-GET /admin/deposits
-GET /admin/deposits/:id
-```
-
-Withdrawal administration provides:
-
-```text
-GET /admin/withdrawals
-GET /admin/withdrawals/:id
-
-PATCH /admin/withdrawals/:id/approve
-PATCH /admin/withdrawals/:id/reject
-```
-
-Administrative financial listings support filtering, pagination, and sorting.
-
-Typical filters include:
-
-```text
-userId
-currency
-status
-referenceId
-providerPaymentId
-from
-to
-```
-
-Sorting supports fields such as:
-
-```text
-createdAt
-amount
-```
-
-Administrative financial routes are protected by `AdminAuthGuard`.
-
----
-
-# Tickets and Customer Support
-
-NestStarter includes a complete support-ticket foundation.
-
-Users can create and interact with their own tickets.
-
-Administrators can manage tickets globally.
-
-The ticket system supports:
-
-```text
-Tickets
-Ticket messages
-Ticket categories
-Assignment
-Priority
-Status transitions
-Administrative replies
-Category management
-```
-
----
-
-# User Ticket Operations
-
-The user-side ticket workflow supports operations such as:
-
-```text
-Create ticket
-List own tickets
-Get own ticket
-Create ticket message
-```
-
-User ticket access is scoped to the authenticated user's session.
-
-A user cannot retrieve another user's ticket simply by changing a ticket ID.
-
----
-
-# Administrative Ticket Operations
-
-Administrators can:
-
-```text
-List tickets
-View ticket details
-Reply to tickets
-Assign tickets
-Change ticket status
-Change ticket priority
-
-List categories
-Create categories
-Update categories
-Deactivate categories
-```
-
-The administrator's authenticated session is used as the audit actor.
-
-For example:
-
-```text
-Admin session
-     │
-     ▼
-AdminTicketsController
-     │
-     ▼
-UseCase(actorUserId)
-     │
-     ▼
-Domain operation
-     │
-     ▼
-AuditLog
-```
-
----
-
-# Ticket Status Rules
-
-Ticket status changes are controlled by the domain entity.
-
-The current states are:
-
-```text
-OPEN
-IN_PROGRESS
-WAITING_FOR_USER
-WAITING_FOR_SUPPORT
-RESOLVED
-CLOSED
-```
-
-The entity validates transitions instead of allowing arbitrary status changes.
-
-This prevents invalid state changes from being implemented accidentally in controllers.
-
----
-
-# Ticket Categories
-
-Administrators can manage support categories.
-
-Available operations include:
-
-```text
-GET    /admin/tickets/categories
-POST   /admin/tickets/categories
-PATCH  /admin/tickets/categories/:id
-PATCH  /admin/tickets/categories/:id/deactivate
-```
-
-Category mutations include the administrator's session ID so that the action can be audited.
-
----
-
 # Audit Logging
 
 Administrative and important application operations are audit logged.
@@ -1595,18 +1025,6 @@ The application uses an OTP abstraction so OTP delivery/storage details remain o
 
 ---
 
-# Google OAuth
-
-Google OAuth is implemented using Passport.
-
-The application supports Google authentication and account linking through the application layer.
-
-Google account identifiers are kept separate from password authentication.
-
-The domain prevents a different Google account from silently replacing an already-linked Google account.
-
----
-
 # Sessions
 
 NestStarter uses cookie-based server-side sessions.
@@ -1636,13 +1054,6 @@ This allows multiple application instances to share session state when they use 
 
 Authorization is based on the authenticated user's domain role.
 
-Current roles:
-
-```text
-USER
-ADMIN
-```
-
 Authenticated routes use session authentication.
 
 Administrative routes additionally use:
@@ -1670,85 +1081,6 @@ ADMIN?
 ```
 
 The authenticated session is also used as the actor identity for administrative mutations and audit records.
-
----
-
-# User Management
-
-User functionality includes:
-
-```text
-Create user
-Get current user
-Update current user
-Change password
-Search users
-Update avatar
-Delete avatar
-```
-
-Administrative functionality additionally includes:
-
-```text
-Create users
-Get users
-List users
-Update users
-Delete users
-
-Change roles
-Change status
-Change/reset passwords
-
-Manage avatars
-Update balances
-
-View audit logs
-View financial ledgers
-View statistics
-```
-
-Sensitive fields such as password hashes are not exposed through API response DTOs.
-
----
-
-# Admin User Management
-
-Administrative user mutations use the authenticated administrator as the actor.
-
-For mutations, the general pattern is:
-
-```text
-Admin Controller
-      │
-      ▼
-extract actorUserId from session
-      │
-      ▼
-Admin Use Case
-      │
-      ▼
-UnitOfWork
-      │
-      ▼
-load / lock entity
-      │
-      ▼
-domain operation
-      │
-      ▼
-persist
-      │
-      ▼
-AuditLog
-      │
-      ▼
-commit
-```
-
-This keeps authorization, transaction boundaries, domain rules, persistence, and auditing separated.
-
----
 
 # File Storage
 
@@ -1829,32 +1161,6 @@ MinIO
 
 This keeps image transformation independent from object storage.
 
----
-
-# Avatar Management
-
-Avatars are handled separately from ordinary profile updates.
-
-User operations include:
-
-```text
-UpdateUserAvatar
-DeleteUserAvatar
-```
-
-Administrative avatar operations are also supported.
-
-The avatar workflow can handle:
-
-- Image validation
-- Image processing
-- Object storage
-- Existing-avatar replacement
-- Avatar deletion
-- Avatar references
-
----
-
 # Redis
 
 Redis is used for short-lived and distributed application state.
@@ -1917,104 +1223,6 @@ TicketOrmEntity
 TicketMessageOrmEntity
 TicketCategoryOrmEntity
 ```
-
----
-
-# Database Identity
-
-Domain entities generate UUIDs when an ID is not supplied.
-
-The ORM entities use application-assigned UUID primary columns:
-
-```ts
-@PrimaryColumn("uuid")
-id!: string;
-```
-
-This keeps identity generation consistent between the domain and persistence layers.
-
----
-
-# Financial Database Constraints
-
-Financial records use PostgreSQL decimal/numeric columns with high precision.
-
-For example:
-
-```text
-numeric(30,18)
-```
-
-is used for financial amounts and balances.
-
-User balances also enforce uniqueness for:
-
-```text
-(userId, currency)
-```
-
-Deposits and withdrawals have unique application reference IDs.
-
-Deposit provider payment IDs are also uniquely constrained.
-
-These database constraints provide a second layer of protection in addition to application/domain rules.
-
----
-
-# Database Migrations
-
-The project uses TypeORM migrations for database schema changes.
-
-Migrations are stored under:
-
-```text
-src/infrastructure/database/migrations/
-```
-
-Migration commands are provided through the project's npm scripts.
-
-Generate a migration:
-
-```bash
-npm run migration:generate -- src/infrastructure/database/migrations/YourMigrationName
-```
-
-Run migrations:
-
-```bash
-npm run migration:run
-```
-
-Revert the latest migration:
-
-```bash
-npm run migration:revert
-```
-
-Production migrations:
-
-```bash
-npm run build
-npm run migration:run:prod
-```
-
-Production deployments should use explicit migrations rather than relying on schema synchronization.
-
----
-
-# Development Schema Synchronization
-
-The NestJS TypeORM configuration currently enables:
-
-```text
-synchronize: process.env.NODE_ENV === "development"
-```
-
-This means application-level schema synchronization is available during development.
-
-Production deployments should disable schema synchronization and use migrations.
-
-The TypeORM CLI has a separate `DataSource` configuration, so migration behavior should always be verified against the environment being deployed.
 
 ---
 
