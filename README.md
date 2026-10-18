@@ -1607,6 +1607,20 @@ Reads that do not require a transaction can use repository operations directly.
 
 ---
 
+## Database Schema Strategy
+
+NestStarter is designed to be cloned and customized. It uses TypeORM's `synchronize: true` in the default development workflow so that developers can get started without creating database migrations for every initial model change.
+
+The repository does not include application-specific migration files. Each developer is responsible for adapting the schema strategy when turning the boilerplate into their own application.
+
+**Development:** Use the default synchronization workflow with a local development database.
+
+**Production:** Do not assume the development synchronization setting is suitable for a database containing persistent data. Before deploying a customized application, choose an appropriate schema-evolution strategy. If you adopt TypeORM migrations, create and review them for your application's schema and configure deployment to run them.
+
+NestStarter is a starting point, not a production application that should be deployed unchanged.
+
+---
+
 # Current Major Features
 
 NestStarter currently provides foundations for:
