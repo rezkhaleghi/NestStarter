@@ -155,7 +155,6 @@ src/
 │   ├── auth/
 │   ├── config/
 │   ├── database/
-│   │   ├── migrations/
 │   │   ├── orm-entities/
 │   │   └── repositories/
 │   └── services/
@@ -1188,7 +1187,6 @@ The infrastructure database layer contains:
 ```text
 ORM entities
 Repository implementations
-Migrations
 Database configuration
 Transaction management
 ```
@@ -1808,12 +1806,6 @@ Then:
 npm run start:dev
 ```
 
-When using migrations explicitly:
-
-```bash
-npm run migration:run
-```
-
 ---
 
 # Common Commands
@@ -1837,10 +1829,10 @@ npm test -- --coverage
 # Tests sequentially
 npm test -- --runInBand
 
-# Generate migration
+# Generate migration //Optional
 npm run migration:generate
 
-# Run migrations
+# Run migrations  //Optional
 npm run migration:run
 
 # Revert migration
@@ -1864,7 +1856,7 @@ Before deployment:
 - Keep secrets outside version control
 - Use production SMTP credentials
 - Disable sensitive development logging
-- Use explicit database migrations
+- Use explicit database migrations (if you changed the schemas)
 - Disable database schema synchronization in production
 - Secure Redis with authentication/network controls
 - Secure MinIO/object storage
