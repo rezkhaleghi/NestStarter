@@ -407,10 +407,17 @@ import { PageOrmEntity } from "./database/orm-entities/page.orm-entity";
 
     {
       provide: PAYMENT_PROVIDERS,
-      inject: [FakePaymentProvider],
+      inject: [ConfigService, FakePaymentProvider],
       useFactory: (
+        configService: ConfigService,
         fakePaymentProvider: FakePaymentProvider,
       ): PaymentProviderInterface[] => {
+        const nodeEnv = configService.get<string>("NODE_ENV");
+
+        if (nodeEnv !== "development" && nodeEnv !== "test") {
+          return [];
+        }
+
         return [fakePaymentProvider];
       },
     },
