@@ -1450,15 +1450,6 @@ Development infrastructure can be started with Docker Compose:
 docker compose up --build
 ```
 
-The project also contains a production-oriented Compose configuration:
-
-```bash
-docker compose \
-  --env-file .env.production \
-  -f docker-compose.production.yml \
-  up --build -d
-```
-
 Stop the development stack:
 
 ```bash
@@ -1470,8 +1461,6 @@ Remove containers and persisted Docker volumes:
 ```bash
 docker compose down -v
 ```
-
-The production Compose setup is designed to keep internal infrastructure services such as PostgreSQL and Redis from being unnecessarily exposed to the host.
 
 ---
 
