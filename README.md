@@ -1971,10 +1971,6 @@ Current values such as `UserBalance.amount` represent current state.
 
 Immutable `Ledger` records represent financial history.
 
-### Financial arithmetic must preserve precision
-
-Money and payment amounts should not rely on JavaScript floating-point arithmetic.
-
 ### Database constraints provide defense in depth
 
 Important uniqueness and integrity rules should be reinforced at the database level where appropriate.
