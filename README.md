@@ -1989,7 +1989,7 @@ MIT
 
 - GitHub: https://github.com/rezkhaleghi
 - LinkedIn: https://linkedin.com/in/rezaxkhaleghi
-- Email: `rezaxkhaleghi@gmail.com`
+- Email: rezaxkhaleghi@gmail.com
 
 ---
 
