@@ -1712,7 +1712,7 @@ Observability / administration
 
 ---
 
-# Getting Started
+# Getting Started:
 
 ## Requirements
 
